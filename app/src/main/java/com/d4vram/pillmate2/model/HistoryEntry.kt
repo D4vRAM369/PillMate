@@ -1,6 +1,7 @@
 package com.d4vram.pillmate2.model
 
 import androidx.compose.ui.graphics.Color
+import java.time.LocalDateTime
 
 /**
  * 📈 Entrada del historial de medicamentos tomados
@@ -11,5 +12,7 @@ data class HistoryEntry(
     val time: String,
     val date: String,
     val color: Color,
-    val emoji: String
+    val emoji: String,
+    val notes: String = "",
+    val timestamp: LocalDateTime = LocalDateTime.now()
 )

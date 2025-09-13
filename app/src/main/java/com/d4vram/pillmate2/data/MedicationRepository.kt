@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 /**
@@ -97,16 +99,61 @@ class MedicationRepository {
 
     private fun addToHistory(medication: Medication) {
         val currentHistory = _historyEntries.value.toMutableList()
+        val now = LocalDateTime.now()
         val newEntry = HistoryEntry(
             id = UUID.randomUUID().toString(),
             medicationName = medication.name,
             time = getCurrentTime(),
-            date = "Hoy",
+            date = formatDate(now),
             color = medication.color,
-            emoji = medication.emoji
+            emoji = medication.emoji,
+            notes = "",
+            timestamp = now
         )
         currentHistory.add(0, newEntry) // Agregar al inicio
-        _historyEntries.value = currentHistory.take(10) // Mantener solo los últimos 10
+        _historyEntries.value = currentHistory // Ya no limitamos a 10, guardamos todas las entradas
+    }
+
+    /**
+     * 📝 Actualizar las notas de una entrada del historial
+     */
+    fun updateHistoryNotes(entryId: String, notes: String) {
+        val currentHistory = _historyEntries.value.toMutableList()
+        val entryIndex = currentHistory.indexOfFirst { it.id == entryId }
+        
+        if (entryIndex != -1) {
+            val updatedEntry = currentHistory[entryIndex].copy(notes = notes)
+            currentHistory[entryIndex] = updatedEntry
+            _historyEntries.value = currentHistory
+        }
+    }
+
+    /**
+     * 🗑️ Eliminar las notas de una entrada del historial
+     */
+    fun deleteHistoryNotes(entryId: String) {
+        val currentHistory = _historyEntries.value.toMutableList()
+        val entryIndex = currentHistory.indexOfFirst { it.id == entryId }
+        
+        if (entryIndex != -1) {
+            val updatedEntry = currentHistory[entryIndex].copy(notes = "")
+            currentHistory[entryIndex] = updatedEntry
+            _historyEntries.value = currentHistory
+        }
+    }
+
+    private fun formatDate(dateTime: LocalDateTime): String {
+        val today = LocalDateTime.now()
+        val yesterday = today.minusDays(1)
+        
+        return when {
+            dateTime.toLocalDate() == today.toLocalDate() -> "Hoy"
+            dateTime.toLocalDate() == yesterday.toLocalDate() -> "Ayer"
+            else -> {
+                val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+                dateTime.format(formatter)
+            }
+        }
     }
 
     private fun calculateStats(): Stats {
@@ -192,11 +239,53 @@ class MedicationRepository {
     }
 
     private fun getSampleHistory(): List<HistoryEntry> {
+        val now = LocalDateTime.now()
         return listOf(
-            HistoryEntry("h1", "Vitamina D", "12:45", "Hoy", Color(0xFF10B981), "💧"),
-            HistoryEntry("h2", "Omeprazol", "08:15", "Hoy", Color(0xFF8B5CF6), "💊"),
-            HistoryEntry("h3", "Melatonina", "21:00", "Ayer", Color(0xFF6366F1), "🌙"),
-            HistoryEntry("h4", "Aspirina", "19:30", "Ayer", Color(0xFFF59E0B), "💊")
+            // Hoy
+            HistoryEntry("h1", "Vitamina D", "12:45", "Hoy", Color(0xFF10B981), "💧", 
+                notes = "Tomado con el almuerzo", timestamp = now.minusHours(2)),
+            HistoryEntry("h2", "Omeprazol", "08:15", "Hoy", Color(0xFF8B5CF6), "💊", 
+                timestamp = now.minusHours(6)),
+            
+            // Ayer
+            HistoryEntry("h3", "Melatonina", "21:00", "Ayer", Color(0xFF6366F1), "🌙", 
+                notes = "Antes de dormir", timestamp = now.minusDays(1).minusHours(3)),
+            HistoryEntry("h4", "Aspirina", "19:30", "Ayer", Color(0xFFF59E0B), "💊", 
+                timestamp = now.minusDays(1).minusHours(5)),
+            HistoryEntry("h5", "Vitamina D", "12:30", "Ayer", Color(0xFF10B981), "💧", 
+                timestamp = now.minusDays(1).minusHours(12)),
+            HistoryEntry("h6", "Omeprazol", "08:00", "Ayer", Color(0xFF8B5CF6), "💊", 
+                timestamp = now.minusDays(1).minusHours(16)),
+                
+            // Esta semana
+            HistoryEntry("h7", "Ibuprofeno", "22:15", "02/03/2025", Color(0xFF6366F1), "💊", 
+                timestamp = now.minusDays(2).minusHours(2)),
+            HistoryEntry("h8", "Aspirina", "18:00", "02/03/2025", Color(0xFFF59E0B), "💊", 
+                timestamp = now.minusDays(2).minusHours(6)),
+            HistoryEntry("h9", "Vitamina D", "13:15", "01/03/2025", Color(0xFF10B981), "💧", 
+                notes = "Con la comida principal", timestamp = now.minusDays(3).minusHours(1)),
+            HistoryEntry("h10", "Omeprazol", "09:00", "01/03/2025", Color(0xFF8B5CF6), "💊", 
+                timestamp = now.minusDays(3).minusHours(7)),
+                
+            // Semana pasada
+            HistoryEntry("h11", "Melatonina", "21:30", "28/02/2025", Color(0xFF6366F1), "🌙", 
+                timestamp = now.minusDays(6).minusHours(3)),
+            HistoryEntry("h12", "Aspirina", "17:45", "27/02/2025", Color(0xFFF59E0B), "💊", 
+                notes = "Por dolor de cabeza", timestamp = now.minusDays(7).minusHours(5)),
+            HistoryEntry("h13", "Vitamina D", "12:00", "26/02/2025", Color(0xFF10B981), "💧", 
+                timestamp = now.minusDays(8).minusHours(0)),
+            HistoryEntry("h14", "Omeprazol", "08:30", "25/02/2025", Color(0xFF8B5CF6), "💊", 
+                timestamp = now.minusDays(9).minusHours(6)),
+                
+            // Mes pasado
+            HistoryEntry("h15", "Ibuprofeno", "20:00", "20/02/2025", Color(0xFF6366F1), "💊", 
+                notes = "Dosis de la noche", timestamp = now.minusDays(14).minusHours(4)),
+            HistoryEntry("h16", "Aspirina", "16:30", "15/02/2025", Color(0xFFF59E0B), "💊", 
+                timestamp = now.minusDays(19).minusHours(2)),
+            HistoryEntry("h17", "Vitamina D", "11:45", "10/02/2025", Color(0xFF10B981), "💧", 
+                timestamp = now.minusDays(24).minusHours(1)),
+            HistoryEntry("h18", "Omeprazol", "07:15", "05/02/2025", Color(0xFF8B5CF6), "💊", 
+                notes = "En ayunas como siempre", timestamp = now.minusDays(29).minusHours(9))
         )
     }
 }

@@ -317,7 +317,10 @@ private fun HistorySection(
     ) {
         Column {
             historyEntries.forEachIndexed { index, entry ->
-                HistoryItem(historyEntry = entry)
+                HistoryItem(
+                    historyEntry = entry,
+                    showNotesIndicator = entry.notes.isNotEmpty()
+                )
                 if (index < historyEntries.size - 1) {
                     HorizontalDivider(
                         modifier = Modifier.padding(horizontal = 16.dp),

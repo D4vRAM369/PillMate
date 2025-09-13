@@ -21,6 +21,7 @@ import com.d4vram.pillmate2.model.HistoryEntry
 @Composable
 fun HistoryItem(
     historyEntry: HistoryEntry,
+    showNotesIndicator: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -63,20 +64,41 @@ fun HistoryItem(
             )
         }
 
-        // Badge de "Tomada"
-        Surface(
-            shape = RoundedCornerShape(8.dp),
-            color = Color(0xFFD1FAE5)
+        // Indicadores
+        Row(
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "Tomada",
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 10.sp
-                ),
-                color = Color(0xFF065F46)
-            )
+            // Indicador de notas si las hay
+            if (showNotesIndicator) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.tertiaryContainer
+                ) {
+                    Text(
+                        text = "📝",
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 10.sp
+                    )
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+            }
+            
+            // Badge de "Tomada"
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = Color(0xFFD1FAE5)
+            ) {
+                Text(
+                    text = "Tomada",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 10.sp
+                    ),
+                    color = Color(0xFF065F46)
+                )
+            }
         }
     }
 }
