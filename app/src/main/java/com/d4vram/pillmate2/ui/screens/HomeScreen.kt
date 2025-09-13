@@ -30,7 +30,9 @@ import com.d4vram.pillmate2.ui.theme.HeaderGradientStart
 @Composable
 fun HomeScreen(
     repository: MedicationRepository = viewModel(),
-    onAddMedication: () -> Unit
+    onAddMedication: () -> Unit,
+    onEditMedication: (String) -> Unit = {},
+    onDeleteMedication: (String) -> Unit = {}
 ) {
     // Estados observables del repositorio
     val medications by repository.medications.collectAsState()
@@ -72,6 +74,8 @@ fun HomeScreen(
                     repository.takeMedication(medicationId)
                 },
                 onAddMedication = onAddMedication,
+                onEditMedication = onEditMedication,
+                onDeleteMedication = onDeleteMedication,
                 modifier = Modifier.padding(horizontal = 24.dp)
             )
         }
@@ -224,6 +228,8 @@ private fun MedicationGrid(
     medications: List<com.d4vram.pillmate2.model.Medication>,
     onTakeMedication: (String) -> Unit,
     onAddMedication: () -> Unit,
+    onEditMedication: (String) -> Unit = {},
+    onDeleteMedication: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     LazyVerticalGrid(
@@ -237,7 +243,9 @@ private fun MedicationGrid(
         items(medications) { medication ->
             MedicationCard(
                 medication = medication,
-                onTakeMedication = onTakeMedication
+                onTakeMedication = onTakeMedication,
+                onEditMedication = onEditMedication,
+                onDeleteMedication = onDeleteMedication
             )
         }
 

@@ -19,7 +19,9 @@ import com.d4vram.pillmate2.ui.components.MedicationCard
 @Composable
 fun MedicationsScreen(
     repository: MedicationRepository = viewModel(),
-    onAddMedication: () -> Unit
+    onAddMedication: () -> Unit,
+    onEditMedication: (String) -> Unit = {},
+    onDeleteMedication: (String) -> Unit = {}
 ) {
     val medications by repository.medications.collectAsState()
 
@@ -73,6 +75,8 @@ fun MedicationsScreen(
                             onTakeMedication = { medicationId ->
                                 repository.takeMedication(medicationId)
                             },
+                            onEditMedication = onEditMedication,
+                            onDeleteMedication = onDeleteMedication,
                             modifier = Modifier.weight(1f)
                         )
                     }

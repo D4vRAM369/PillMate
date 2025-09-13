@@ -14,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.d4vram.pillmate2.data.MedicationRepository
+import com.d4vram.pillmate2.ui.screens.AddEditMedicationScreen
 import com.d4vram.pillmate2.ui.screens.HistoryScreen
 import com.d4vram.pillmate2.ui.screens.HomeScreen
 import com.d4vram.pillmate2.ui.screens.MedicationsScreen
@@ -73,8 +74,13 @@ fun PillMateNavigation() {
                 HomeScreen(
                     repository = repository,
                     onAddMedication = {
-                        // En una app real, navegaríamos a AddMedicationScreen
-                        // navController.navigate("add_medication")
+                        navController.navigate("add_medication")
+                    },
+                    onEditMedication = { medicationId ->
+                        navController.navigate("edit_medication/$medicationId")
+                    },
+                    onDeleteMedication = { medicationId ->
+                        repository.deleteMedication(medicationId)
                     }
                 )
             }
@@ -83,7 +89,13 @@ fun PillMateNavigation() {
                 MedicationsScreen(
                     repository = repository,
                     onAddMedication = {
-                        // Navegar a AddMedicationScreen
+                        navController.navigate("add_medication")
+                    },
+                    onEditMedication = { medicationId ->
+                        navController.navigate("edit_medication/$medicationId")
+                    },
+                    onDeleteMedication = { medicationId ->
+                        repository.deleteMedication(medicationId)
                     }
                 )
             }
@@ -94,6 +106,28 @@ fun PillMateNavigation() {
 
             composable(Screen.Settings.route) {
                 SettingsScreen()
+            }
+            
+            // Pantalla para agregar medicamento
+            composable("add_medication") {
+                AddEditMedicationScreen(
+                    repository = repository,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+            
+            // Pantalla para editar medicamento
+            composable("edit_medication/{medicationId}") { backStackEntry ->
+                val medicationId = backStackEntry.arguments?.getString("medicationId")
+                AddEditMedicationScreen(
+                    repository = repository,
+                    medicationId = medicationId,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
             }
         }
     }

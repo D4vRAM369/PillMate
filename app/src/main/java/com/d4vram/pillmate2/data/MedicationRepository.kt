@@ -55,6 +55,46 @@ class MedicationRepository {
         }
     }
 
+    /**
+     * ➕ Agregar un nuevo medicamento
+     */
+    fun addMedication(medication: Medication) {
+        val currentMedications = _medications.value.toMutableList()
+        currentMedications.add(medication)
+        _medications.value = currentMedications
+        _stats.value = calculateStats()
+    }
+
+    /**
+     * ✏️ Actualizar un medicamento existente
+     */
+    fun updateMedication(medication: Medication) {
+        val currentMedications = _medications.value.toMutableList()
+        val index = currentMedications.indexOfFirst { it.id == medication.id }
+        if (index != -1) {
+            currentMedications[index] = medication
+            _medications.value = currentMedications
+            _stats.value = calculateStats()
+        }
+    }
+
+    /**
+     * 🗑️ Eliminar un medicamento
+     */
+    fun deleteMedication(medicationId: String) {
+        val currentMedications = _medications.value.toMutableList()
+        currentMedications.removeAll { it.id == medicationId }
+        _medications.value = currentMedications
+        _stats.value = calculateStats()
+    }
+
+    /**
+     * 🔍 Obtener un medicamento por ID
+     */
+    fun getMedicationById(medicationId: String): Medication? {
+        return _medications.value.find { it.id == medicationId }
+    }
+
     private fun addToHistory(medication: Medication) {
         val currentHistory = _historyEntries.value.toMutableList()
         val newEntry = HistoryEntry(
