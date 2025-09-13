@@ -10,6 +10,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.d4vram.pillmate2.ui.navigation.PillMateNavigation
 import com.d4vram.pillmate2.ui.theme.PillMateTheme
+import com.d4vram.pillmate2.ui.theme.rememberThemeManager
 
 /**
  * 🚀 Actividad principal de la aplicación
@@ -21,12 +22,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            PillMateTheme {
+            val themeManager = rememberThemeManager()
+            
+            PillMateTheme(themeManager = themeManager) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    PillMateNavigation()
+                    PillMateNavigation(themeManager = themeManager)
                 }
             }
         }

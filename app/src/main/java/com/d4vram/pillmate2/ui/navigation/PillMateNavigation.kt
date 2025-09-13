@@ -19,6 +19,7 @@ import com.d4vram.pillmate2.ui.screens.HistoryScreen
 import com.d4vram.pillmate2.ui.screens.HomeScreen
 import com.d4vram.pillmate2.ui.screens.MedicationsScreen
 import com.d4vram.pillmate2.ui.screens.SettingsScreen
+import com.d4vram.pillmate2.ui.theme.ThemeManager
 
 /**
  * 🧭 Sistema de navegación principal
@@ -26,7 +27,7 @@ import com.d4vram.pillmate2.ui.screens.SettingsScreen
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PillMateNavigation() {
+fun PillMateNavigation(themeManager: ThemeManager) {
     val navController = rememberNavController()
     val repository = remember { MedicationRepository() }
 
@@ -105,7 +106,7 @@ fun PillMateNavigation() {
             }
 
             composable(Screen.Settings.route) {
-                SettingsScreen()
+                SettingsScreen(themeManager = themeManager, repository = repository)
             }
             
             // Pantalla para agregar medicamento

@@ -147,26 +147,14 @@ fun AddEditMedicationScreen(
             Spacer(modifier = Modifier.height(16.dp))
             
             // Tipo de medicamento
-            ExposedDropdownMenuBox(
-                expanded = false,
-                onExpandedChange = { }
-            ) {
-                OutlinedTextField(
-                    value = type,
-                    onValueChange = { },
-                    readOnly = true,
-                    label = { Text("Tipo") },
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(expanded = false)
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
-                        .clickable {
-                            // Aquí puedes implementar un dropdown si quieres más tipos
-                        }
-                )
-            }
+            OutlinedTextField(
+                value = type,
+                onValueChange = { type = it },
+                label = { Text("Tipo (ej: Comprimido, Cápsula, Jarabe, Gotas)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                placeholder = { Text("Comprimido") }
+            )
             
             Spacer(modifier = Modifier.height(24.dp))
             

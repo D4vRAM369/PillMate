@@ -97,6 +97,24 @@ class MedicationRepository {
         return _medications.value.find { it.id == medicationId }
     }
 
+    /**
+     * 🔄 Reordenar medicamentos
+     */
+    fun reorderMedications(fromIndex: Int, toIndex: Int) {
+        val currentMedications = _medications.value.toMutableList()
+        if (fromIndex in 0 until currentMedications.size && toIndex in 0 until currentMedications.size) {
+            val item = currentMedications.removeAt(fromIndex)
+            currentMedications.add(toIndex, item)
+            _medications.value = currentMedications
+        }
+    }
+
+    fun clearAllData() {
+        _medications.value = emptyList()
+        _historyEntries.value = emptyList()
+        _stats.value = Stats(0, 0, 0)
+    }
+
     private fun addToHistory(medication: Medication) {
         val currentHistory = _historyEntries.value.toMutableList()
         val now = LocalDateTime.now()
@@ -140,6 +158,11 @@ class MedicationRepository {
             currentHistory[entryIndex] = updatedEntry
             _historyEntries.value = currentHistory
         }
+    }
+
+    fun deleteHistoryEntry(entryId: String) {
+        _historyEntries.value = _historyEntries.value.filter { it.id != entryId }
+        _stats.value = calculateStats()
     }
 
     private fun formatDate(dateTime: LocalDateTime): String {

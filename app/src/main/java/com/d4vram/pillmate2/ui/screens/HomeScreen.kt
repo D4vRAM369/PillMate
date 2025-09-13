@@ -1,6 +1,7 @@
 package com.d4vram.pillmate2.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -15,13 +16,20 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d4vram.pillmate2.data.MedicationRepository
+import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.ui.components.HistoryItem
 import com.d4vram.pillmate2.ui.components.MedicationCard
+import com.d4vram.pillmate2.ui.components.NotesModal
+import com.d4vram.pillmate2.ui.components.ReorderableMedicationGrid
 import com.d4vram.pillmate2.ui.components.StatCard
 import com.d4vram.pillmate2.ui.theme.HeaderGradientEnd
 import com.d4vram.pillmate2.ui.theme.HeaderGradientStart
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.rememberSwipeToDismissBoxState
+import androidx.compose.material3.SwipeToDismissBoxValue
 
 /**
  * 🏠 Pantalla principal de la app
@@ -39,71 +47,102 @@ fun HomeScreen(
     val historyEntries by repository.historyEntries.collectAsState()
     val stats by repository.stats.collectAsState()
 
-    LazyColumn(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        item {
-            // Header con gradiente verde
-            HeaderSection(
-                onAddMedication = onAddMedication
-            )
+    // Estado para el modal de notas / entrada seleccionada
+    var selectedHistoryEntry by remember { mutableStateOf<HistoryEntry?>(null) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            item {
+                // Header con gradiente verde
+                HeaderSection(
+                    onAddMedication = onAddMedication
+                )
+            }
+
+            item {
+                // Fila de estadísticas
+                StatsSection(
+                    stats = stats,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)
+                )
+            }
+
+            item {
+                // Título de medicamentos
+                SectionTitle(
+                    title = "🏠 Mis Medicamentos",
+                    subtitle = "Presiona para registrar",
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+            }
+
+            item {
+                // Grid de medicamentos reordenable
+                ReorderableMedicationGrid(
+                    medications = medications,
+                    onTakeMedication = { medicationId ->
+                        repository.takeMedication(medicationId)
+                    },
+                    onAddMedication = onAddMedication,
+                    onEditMedication = onEditMedication,
+                    onDeleteMedication = onDeleteMedication,
+                    onReorder = { fromIndex, toIndex ->
+                        repository.reorderMedications(fromIndex, toIndex)
+                    },
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+
+            item {
+                // Título del historial
+                SectionTitle(
+                    title = "📊 Historial Reciente",
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+            }
+
+            item {
+                // Lista del historial
+                HistorySection(
+                    historyEntries = historyEntries,
+                    onEntryClick = { entry -> selectedHistoryEntry = entry },
+                    repository = repository,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+            }
+
+            item {
+                // Espacio para el bottom navigation
+                Spacer(modifier = Modifier.height(100.dp))
+            }
         }
 
-        item {
-            // Fila de estadísticas
-            StatsSection(
-                stats = stats,
-                modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)
-            )
-        }
-
-        item {
-            // Título de medicamentos
-            SectionTitle(
-                title = "🏠 Mis Medicamentos",
-                subtitle = "Presiona para registrar",
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
-        }
-
-        item {
-            // Grid de medicamentos
-            MedicationGrid(
-                medications = medications,
-                onTakeMedication = { medicationId ->
-                    repository.takeMedication(medicationId)
+        // ===== Diálogo simple para mostrar notas (opcional) =====
+        // Si ya tienes un NotesModal propio, puedes reemplazar este bloque
+        // por tu componente:
+        // NotesModal(historyEntry = selectedHistoryEntry, onDismiss = { selectedHistoryEntry = null }, onSave = { ... })
+        selectedHistoryEntry?.let { entry ->
+            AlertDialog(
+                onDismissRequest = { selectedHistoryEntry = null },
+                title = { Text(text = "Notas") },
+                text = {
+                    val notesText = entry.notes.ifBlank { "Sin notas para esta entrada." }
+                    Text(notesText)
                 },
-                onAddMedication = onAddMedication,
-                onEditMedication = onEditMedication,
-                onDeleteMedication = onDeleteMedication,
-                modifier = Modifier.padding(horizontal = 24.dp)
+                confirmButton = {
+                    TextButton(onClick = { selectedHistoryEntry = null }) {
+                        Text("Cerrar")
+                    }
+                }
             )
         }
-
-        item {
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-
-        item {
-            // Título del historial
-            SectionTitle(
-                title = "📊 Historial Reciente",
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
-        }
-
-        item {
-            // Lista del historial
-            HistorySection(
-                historyEntries = historyEntries,
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
-        }
-
-        item {
-            // Espacio para el bottom navigation
-            Spacer(modifier = Modifier.height(100.dp))
-        }
+        // ========================================================
     }
 }
 
@@ -302,9 +341,12 @@ private fun AddMedicationCard(
 /**
  * 📜 Sección del historial
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HistorySection(
-    historyEntries: List<com.d4vram.pillmate2.model.HistoryEntry>,
+    historyEntries: List<HistoryEntry>,
+    onEntryClick: (HistoryEntry) -> Unit,
+    repository: MedicationRepository,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -317,10 +359,50 @@ private fun HistorySection(
     ) {
         Column {
             historyEntries.forEachIndexed { index, entry ->
-                HistoryItem(
-                    historyEntry = entry,
-                    showNotesIndicator = entry.notes.isNotEmpty()
-                )
+                SwipeToDismissBox(
+                    state = rememberSwipeToDismissBoxState(
+                        confirmValueChange = { value ->
+                            value == SwipeToDismissBoxValue.Settled // No permitir dismiss
+                        }
+                    ),
+                    backgroundContent = {
+                        val isSwiped = rememberSwipeToDismissBoxState().targetValue != SwipeToDismissBoxValue.Settled
+                        if (isSwiped) {
+                            Box(Modifier.fillMaxSize().background(Color.Red.copy(alpha = 0.2f))) {
+                                Row(
+                                    modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp),
+                                    horizontalArrangement = Arrangement.End
+                                ) {
+                                    Surface(
+                                        color = Color.Green,
+                                        shape = RoundedCornerShape(4.dp),
+                                        modifier = Modifier.clickable { onEntryClick(entry) }
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(8.dp)) {
+                                            Text("✏️", fontSize = 16.sp)
+                                        }
+                                    }
+                                    Spacer(Modifier.width(8.dp))
+                                    Surface(
+                                        color = Color.Red,
+                                        shape = RoundedCornerShape(4.dp),
+                                        modifier = Modifier.clickable { repository.deleteHistoryEntry(entry.id) }
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(8.dp)) {
+                                            Text("🗑️", fontSize = 16.sp)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                ) {
+                    HistoryItem(
+                        historyEntry = entry,
+                        showNotesIndicator = entry.notes.isNotEmpty(),
+                        modifier = Modifier.clickable { onEntryClick(entry) }
+                    )
+                }
                 if (index < historyEntries.size - 1) {
                     HorizontalDivider(
                         modifier = Modifier.padding(horizontal = 16.dp),

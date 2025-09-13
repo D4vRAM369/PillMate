@@ -75,8 +75,18 @@ dependencies {
     // Navigation para Compose
     implementation("androidx.navigation:navigation-compose:2.7.6")
 
+    // ==== ICONOS ====
+    // Paquete que incluye la mayoría de iconos (FileDownload, FileUpload, Backup, QuestionMark, VolumeUp, etc.)
+    implementation("androidx.compose.material:material-icons-extended")
+
     // ViewModel para Compose
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
+    
+    // DataStore para preferencias
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    
+    // Foundation para drag and drop
+    implementation("androidx.compose.foundation:foundation:1.6.0")
 
     // AppCompat para el tema básico
     implementation("androidx.appcompat:appcompat:1.6.1")
