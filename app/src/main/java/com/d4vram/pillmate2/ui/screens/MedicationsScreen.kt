@@ -1,0 +1,91 @@
+package com.d4vram.pillmate2.ui.screens
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.d4vram.pillmate2.data.MedicationRepository
+import com.d4vram.pillmate2.ui.components.MedicationCard
+
+/**
+ * 💊 Pantalla de gestión de medicamentos
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MedicationsScreen(
+    repository: MedicationRepository = viewModel(),
+    onAddMedication: () -> Unit
+) {
+    val medications by repository.medications.collectAsState()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "💊 Mis Medicamentos",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onAddMedication,
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Text(
+                    text = "+",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            }
+        }
+    ) { paddingValues ->
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            items(medications.chunked(2)) { medicationPair ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    medicationPair.forEachIndexed { _, medication ->
+                        MedicationCard(
+                            medication = medication,
+                            onTakeMedication = { medicationId ->
+                                repository.takeMedication(medicationId)
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    if (medicationPair.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+
+            item {
+                Spacer(modifier = Modifier.height(80.dp))
+            }
+        }
+    }
+}

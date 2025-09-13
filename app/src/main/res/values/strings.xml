@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">PillMate</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_medications">Medicamentos</string>
+    <string name="nav_history">Historial</string>
+    <string name="nav_settings">Ajustes</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">💊 PillMate</string>
+    <string name="home_subtitle">Seguimiento Personal</string>
+    <string name="stats_taken_today">Tomadas Hoy</string>
+    <string name="stats_this_week">Esta Semana</string>
+    <string name="stats_adherence">Adherencia</string>
+
+    <!-- Medications -->
+    <string name="medications_title">Mis Medicamentos</string>
+    <string name="medications_subtitle">Presiona para registrar</string>
+    <string name="add_medication">Agregar Medicamento</string>
+
+    <!-- History -->
+    <string name="history_title">Historial Reciente</string>
+    <string name="history_taken">Tomada</string>
+
+    <!-- Settings -->
+    <string name="settings_notifications">Notificaciones</string>
+    <string name="settings_data">Datos</string>
+    <string name="settings_info">Información</string>
+</resources>
