@@ -12,9 +12,11 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 import java.security.MessageDigest
 import java.security.SecureRandom
 
@@ -85,7 +87,7 @@ class SecurityManager(private val context: Context) {
         }
     }
 
-    suspend fun setPin(pin: String) {
+    suspend fun setPin(pin: String) = withContext(Dispatchers.IO) {
         val saltBytes = ByteArray(16).apply { SecureRandom().nextBytes(this) }
         val salt = Base64.encodeToString(saltBytes, Base64.NO_WRAP)
         val hash = hashPin(pin, saltBytes)
@@ -95,31 +97,33 @@ class SecurityManager(private val context: Context) {
         }
     }
 
-    suspend fun clearPin() {
+    suspend fun clearPin() = withContext(Dispatchers.IO) {
         context.securityDataStore.edit { prefs ->
             prefs.remove(PIN_HASH_KEY)
             prefs.remove(PIN_SALT_KEY)
         }
     }
 
-    suspend fun verifyPin(pin: String): Boolean {
+    suspend fun verifyPin(pin: String): Boolean = withContext(Dispatchers.IO) {
         val prefs = context.securityDataStore.data.first()
-        val storedHash = prefs[PIN_HASH_KEY] ?: return false
-        val saltBase64 = prefs[PIN_SALT_KEY] ?: return false
+        val storedHashBase64 = prefs[PIN_HASH_KEY] ?: return@withContext false
+        val saltBase64 = prefs[PIN_SALT_KEY] ?: return@withContext false
         val saltBytes = Base64.decode(saltBase64, Base64.NO_WRAP)
-        val hash = hashPin(pin, saltBytes)
-        return storedHash == hash
+        val computedHashBase64 = hashPin(pin, saltBytes)
+        val storedHashBytes = Base64.decode(storedHashBase64, Base64.NO_WRAP)
+        val computedHashBytes = Base64.decode(computedHashBase64, Base64.NO_WRAP)
+        MessageDigest.isEqual(storedHashBytes, computedHashBytes)
     }
 
-    suspend fun isLockActive(now: Long = System.currentTimeMillis()): Boolean {
+    suspend fun isLockActive(now: Long = System.currentTimeMillis()): Boolean = withContext(Dispatchers.IO) {
         val prefs = context.securityDataStore.data.first()
         val enabled = prefs[LOCK_ENABLED_KEY] ?: false
-        if (!enabled) return false
+        if (!enabled) return@withContext false
         val lastUnlock = prefs[LAST_UNLOCK_KEY] ?: 0L
         val duration = prefs[AUTO_LOCK_DURATION_KEY]
             ?: (DEFAULT_AUTO_LOCK_MINUTES * 60_000L)
-        if (lastUnlock == 0L) return true
-        return now - lastUnlock >= duration
+        if (lastUnlock == 0L) return@withContext true
+        return@withContext now - lastUnlock >= duration
     }
 
     private fun hashPin(pin: String, salt: ByteArray): String {

@@ -24,6 +24,8 @@ import com.d4vram.pillmate2.ui.security.SecuritySettings
 import com.d4vram.pillmate2.ui.security.AppLockScreen
 import kotlinx.coroutines.launch
 
+private const val RECENT_UNLOCK_GRACE_MS = 1200L
+
 /**
  * 🚀 Actividad principal de la aplicación
  * Punto de entrada de la app
@@ -43,6 +45,8 @@ class MainActivity : FragmentActivity() {
             var lockErrorMessage by remember { mutableStateOf<String?>(null) }
             var requestBiometric by remember { mutableStateOf(false) }
             var autoBiometricAttempted by remember { mutableStateOf(false) }
+            var isActivityResumed by remember { mutableStateOf(false) }
+            var lastSuccessfulUnlockTime by remember { mutableStateOf(0L) }
 
             val context = LocalContext.current
             val executor = remember(context) { ContextCompat.getMainExecutor(context) }
@@ -60,7 +64,9 @@ class MainActivity : FragmentActivity() {
                 BiometricPrompt(activity, executor, object : BiometricPrompt.AuthenticationCallback() {
                     override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                         scope.launch {
-                            securityManager.recordUnlock()
+                            val now = System.currentTimeMillis()
+                            securityManager.recordUnlock(now)
+                            lastSuccessfulUnlockTime = now
                             lockErrorMessage = null
                             isLocked = false
                             autoBiometricAttempted = false
@@ -81,18 +87,33 @@ class MainActivity : FragmentActivity() {
                 })
             }
 
-            LaunchedEffect(securitySettings.lockEnabled, securitySettings.autoLockDurationMs, securitySettings.lastUnlockTimestamp) {
+            LaunchedEffect(
+                securitySettings.lockEnabled,
+                securitySettings.autoLockDurationMs,
+                securitySettings.lastUnlockTimestamp,
+                isActivityResumed
+            ) {
                 if (securitySettings.lockEnabled && securitySettings.isPinConfigured) {
                     val shouldLock = securityManager.isLockActive()
-                    isLocked = shouldLock
-                    if (!shouldLock) {
+                    if (shouldLock) {
+                        val justUnlocked = isActivityResumed && lastSuccessfulUnlockTime != 0L &&
+                            System.currentTimeMillis() - lastSuccessfulUnlockTime < RECENT_UNLOCK_GRACE_MS
+                        if (justUnlocked) {
+                            lastSuccessfulUnlockTime = 0L
+                        } else {
+                            isLocked = true
+                        }
+                    } else {
+                        isLocked = false
                         lockErrorMessage = null
                         autoBiometricAttempted = false
+                        lastSuccessfulUnlockTime = 0L
                     }
                 } else {
                     isLocked = false
                     lockErrorMessage = null
                     autoBiometricAttempted = false
+                    lastSuccessfulUnlockTime = 0L
                 }
             }
 
@@ -108,10 +129,21 @@ class MainActivity : FragmentActivity() {
                                 }
                             }
                         }
+                        Lifecycle.Event.ON_RESUME -> {
+                            isActivityResumed = true
+                        }
+                        Lifecycle.Event.ON_PAUSE -> {
+                            isActivityResumed = false
+                        }
                         Lifecycle.Event.ON_STOP -> {
+                            isActivityResumed = false
                             if (securitySettings.lockEnabled && securitySettings.isPinConfigured) {
                                 scope.launch {
-                                    securityManager.recordUnlock()
+                                    if (isLocked) {
+                                        securityManager.clearUnlockTimestamp()
+                                    } else {
+                                        securityManager.recordUnlock()
+                                    }
                                 }
                             }
                         }
@@ -133,10 +165,23 @@ class MainActivity : FragmentActivity() {
                 }
             }
 
-            LaunchedEffect(requestBiometric) {
-                if (requestBiometric) {
-                    biometricPrompt.authenticate(promptInfo)
-                    requestBiometric = false
+            LaunchedEffect(requestBiometric, isActivityResumed) {
+                if (requestBiometric && isActivityResumed) {
+                    lockErrorMessage = null
+                    try {
+                        biometricPrompt.authenticate(promptInfo)
+                    } catch (e: IllegalStateException) {
+                        lockErrorMessage = e.message ?: "No fue posible iniciar la autenticación biométrica"
+                        requestBiometric = false
+                        autoBiometricAttempted = true
+                    } catch (e: SecurityException) {
+                        lockErrorMessage = e.message ?: "Permisos biométricos no disponibles"
+                        requestBiometric = false
+                        autoBiometricAttempted = true
+                    }
+                    if (requestBiometric) {
+                        requestBiometric = false
+                    }
                 }
             }
 
@@ -158,7 +203,9 @@ class MainActivity : FragmentActivity() {
                                     scope.launch {
                                         val valid = securityManager.verifyPin(pin)
                                         if (valid) {
-                                            securityManager.recordUnlock()
+                                            val now = System.currentTimeMillis()
+                                            securityManager.recordUnlock(now)
+                                            lastSuccessfulUnlockTime = now
                                             lockErrorMessage = null
                                             isLocked = false
                                             autoBiometricAttempted = false
