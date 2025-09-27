@@ -16,5 +16,6 @@ data class Medication(
     val takenToday: Int = 0,
     val dailyGoal: Int = 1,
     val lastTaken: String? = null,
-    val isPrn: Boolean = false // PRN = Pro Re Nata (según necesidad)
+    val isPrn: Boolean = false,
+    val sortOrder: Int = 0 // PRN = Pro Re Nata (según necesidad) + orden en la cuadrícula
 )

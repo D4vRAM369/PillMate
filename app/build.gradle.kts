@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
+    id("org.jetbrains.kotlin.kapt")
 }
 
 android {
@@ -90,6 +91,11 @@ dependencies {
 
     // AppCompat para el tema básico
     implementation("androidx.appcompat:appcompat:1.6.1")
+
+    // Room para persistencia avanzada con SQLite
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+    kapt("androidx.room:room-compiler:2.6.1")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

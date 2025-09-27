@@ -15,7 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.d4vram.pillmate2.data.MedicationRepository
-import com.d4vram.pillmate2.data.MedicationStorage
+import com.d4vram.pillmate2.data.local.PillMateDatabase
 import com.d4vram.pillmate2.ui.screens.AddEditMedicationScreen
 import com.d4vram.pillmate2.ui.screens.HistoryScreen
 import com.d4vram.pillmate2.ui.screens.HomeScreen
@@ -32,7 +32,13 @@ import com.d4vram.pillmate2.ui.theme.ThemeManager
 fun PillMateNavigation(themeManager: ThemeManager) {
     val navController = rememberNavController()
     val context = LocalContext.current.applicationContext
-    val repository = remember { MedicationRepository(MedicationStorage(context)) }
+    val repository = remember {
+        val database = PillMateDatabase.getInstance(context)
+        MedicationRepository(
+            medicationDao = database.medicationDao(),
+            historyDao = database.historyDao()
+        )
+    }
 
     Scaffold(
         bottomBar = {
