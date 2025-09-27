@@ -6,15 +6,17 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.material3.SwipeToDismissBoxValue
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.input.pointer.consumePositionChange
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,6 +26,16 @@ import com.d4vram.pillmate2.ui.components.HistoryItem
 import com.d4vram.pillmate2.ui.components.NotesModal
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
+import kotlin.math.roundToInt
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 /**
  * 📊 Pantalla del historial completo
@@ -153,57 +165,15 @@ fun HistoryScreen(
                     )
                 }
 
-                items(entries) { entry ->
-                    val dismissState = rememberSwipeToDismissBoxState(
-                        confirmValueChange = { value ->
-                            value == SwipeToDismissBoxValue.Settled // No permitir dismiss
-                        }
+                itemsIndexed(entries) { index, entry ->
+                    SwipeableHistoryItem(
+                        historyEntry = entry,
+                        onEntryClick = { selectedHistoryEntry = it },
+                        onEdit = { selectedHistoryEntry = it },
+                        onDelete = { repository.deleteHistoryEntry(it) }
                     )
-
-                    SwipeToDismissBox(
-                        state = dismissState,
-                        backgroundContent = {
-                            val isSwiped = dismissState.targetValue != SwipeToDismissBoxValue.Settled
-                            if (isSwiped) {
-                                Box(Modifier.fillMaxSize().background(Color.Red.copy(alpha = 0.2f))) {
-                                    Row(
-                                        modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp),
-                                        horizontalArrangement = Arrangement.End
-                                    ) {
-                                        Surface(
-                                            color = Color.Green,
-                                            shape = RoundedCornerShape(4.dp),
-                                            modifier = Modifier.clickable { selectedHistoryEntry = entry }
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(8.dp)) {
-                                                Text("✏️", fontSize = 16.sp)
-                                            }
-                                        }
-                                        Spacer(Modifier.width(8.dp))
-                                        Surface(
-                                            color = Color.Red,
-                                            shape = RoundedCornerShape(4.dp),
-                                            modifier = Modifier.clickable { repository.deleteHistoryEntry(entry.id) }
-                                        ) {
-                                            Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(8.dp)) {
-                                                Text("🗑️", fontSize = 16.sp)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    ) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth().clickable { selectedHistoryEntry = entry },
-                            shape = RoundedCornerShape(8.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                        ) {
-                            HistoryItem(
-                                historyEntry = entry,
-                                showNotesIndicator = entry.notes.isNotEmpty()
-                            )
-                        }
+                    if (index < entries.lastIndex) {
+                        Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
 
@@ -230,6 +200,127 @@ fun HistoryScreen(
             onDeleteNotes = { entryId ->
                 repository.deleteHistoryNotes(entryId)
             }
+        )
+    }
+}
+
+@Composable
+private fun SwipeableHistoryItem(
+    historyEntry: HistoryEntry,
+    onEntryClick: (HistoryEntry) -> Unit,
+    onEdit: (HistoryEntry) -> Unit,
+    onDelete: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val scope = rememberCoroutineScope()
+    var offset by remember { mutableFloatStateOf(0f) }
+    var animationJob by remember { mutableStateOf<Job?>(null) }
+    val actionCount = 2
+    val actionButtonWidth = 56.dp
+    val actionSpacing = 8.dp
+    val actionButtonHeight = 48.dp
+    val rowHorizontalPadding = 16.dp
+    val totalSpacing = actionSpacing * (actionCount - 1)
+    val totalRevealOffset = (actionButtonWidth * actionCount) + totalSpacing + rowHorizontalPadding
+    val density = LocalDensity.current
+    val totalRevealOffsetPx = remember(density) { density.run { totalRevealOffset.toPx() } }
+
+    fun animateTo(target: Float) {
+        animationJob?.cancel()
+        animationJob = scope.launch {
+            animate(
+                initialValue = offset,
+                targetValue = target,
+                animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing)
+            ) { value, _ ->
+                offset = value
+            }
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .pointerInput(totalRevealOffsetPx) {
+                detectHorizontalDragGestures(
+                    onHorizontalDrag = { change, dragAmount ->
+                        change.consumePositionChange()
+                        animationJob?.cancel()
+                        val newOffset = (offset + dragAmount).coerceIn(-totalRevealOffsetPx, 0f)
+                        offset = newOffset
+                    },
+                    onDragCancel = { animateTo(0f) },
+                    onDragEnd = {
+                        val shouldOpen = offset <= -totalRevealOffsetPx * 0.35f
+                        animateTo(if (shouldOpen) -totalRevealOffsetPx else 0f)
+                    }
+                )
+            }
+    ) {
+        Row(
+            modifier = Modifier
+                .matchParentSize()
+                .padding(horizontal = rowHorizontalPadding),
+            horizontalArrangement = Arrangement.spacedBy(actionSpacing, Alignment.End),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            HistoryActionButton(
+                label = "✏️",
+                backgroundColor = Color(0xFF22C55E),
+                modifier = Modifier.size(width = actionButtonWidth, height = actionButtonHeight)
+            ) {
+                animateTo(0f)
+                onEdit(historyEntry)
+            }
+            HistoryActionButton(
+                label = "🗑️",
+                backgroundColor = Color(0xFFEF4444),
+                modifier = Modifier.size(width = actionButtonWidth, height = actionButtonHeight)
+            ) {
+                animateTo(0f)
+                onDelete(historyEntry.id)
+            }
+        }
+
+        Card(
+            modifier = Modifier
+                .offset { IntOffset(offset.roundToInt(), 0) }
+                .fillMaxWidth()
+                .clickable {
+                    if (offset < 0f) {
+                        animateTo(0f)
+                    } else {
+                        onEntryClick(historyEntry)
+                    }
+                },
+            shape = RoundedCornerShape(8.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            HistoryItem(
+                historyEntry = historyEntry,
+                showNotesIndicator = historyEntry.notes.isNotEmpty()
+            )
+        }
+    }
+}
+
+@Composable
+private fun HistoryActionButton(
+    label: String,
+    backgroundColor: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(backgroundColor)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            fontSize = 18.sp
         )
     }
 }

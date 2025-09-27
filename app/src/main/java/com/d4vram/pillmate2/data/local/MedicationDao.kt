@@ -12,6 +12,9 @@ interface MedicationDao {
     @Query("SELECT * FROM medications ORDER BY sortOrder ASC")
     fun observeMedications(): Flow<List<MedicationEntity>>
 
+    @Query("SELECT * FROM medications ORDER BY sortOrder ASC")
+    suspend fun getAllMedications(): List<MedicationEntity>
+
     @Query("SELECT COUNT(*) FROM medications")
     suspend fun countMedications(): Int
 

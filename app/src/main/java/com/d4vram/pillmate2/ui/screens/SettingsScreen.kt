@@ -2,6 +2,7 @@ package com.d4vram.pillmate2.ui.screens
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -16,11 +17,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.d4vram.pillmate2.ui.theme.ThemeManager
-import kotlinx.coroutines.launch
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import com.d4vram.pillmate2.data.MedicationRepository
+import com.d4vram.pillmate2.data.BackupManager
+import com.d4vram.pillmate2.data.CsvUtils
+import com.d4vram.pillmate2.ui.theme.ThemeManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.core.content.FileProvider
+import java.io.File
+import java.text.DateFormat
+import java.util.Date
 
 /**
  * ⚙️ Pantalla de configuración
@@ -31,27 +40,53 @@ fun SettingsScreen(themeManager: ThemeManager, repository: MedicationRepository)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val isDarkMode by themeManager.isDarkMode.collectAsState(initial = false)
-    
-    var showExportSuccess by remember { mutableStateOf(false) }
-    var showImportSuccess by remember { mutableStateOf(false) }
-    
+    val snackbarHostState = remember { SnackbarHostState() }
+    var snackbarMessage by remember { mutableStateOf<String?>(null) }
+
+    val backupManager = remember { BackupManager(context.applicationContext, repository) }
+    val lastBackupMillis by backupManager.lastBackupFlow.collectAsState(initial = null)
+    val lastBackupText = remember(lastBackupMillis) {
+        lastBackupMillis?.let { millis ->
+            DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(millis))
+        } ?: "Sin copias"
+    }
+
+    LaunchedEffect(snackbarMessage) {
+        snackbarMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            snackbarMessage = null
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        try {
+            val file = backupManager.createAutomaticBackupIfNeeded()
+            if (file != null) {
+                snackbarMessage = "Copia automática guardada: ${file.name}"
+            }
+        } catch (e: Exception) {
+            snackbarMessage = "Error en copia automática: ${e.message ?: "desconocido"}"
+        }
+    }
+
     // Launcher para seleccionar archivo CSV
     val csvImportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
-            try {
-                val inputStream = context.contentResolver.openInputStream(it)
-                val reader = BufferedReader(InputStreamReader(inputStream))
-                val csvContent = reader.readText()
-                // Aquí procesarías el CSV
-                showImportSuccess = true
-            } catch (e: Exception) {
-                // Manejar error
+            scope.launch {
+                try {
+                    val csvContent = readTextFromUri(context, it)
+                    val parsed = CsvUtils.parseCsv(csvContent)
+                    repository.replaceAllData(parsed.medications, parsed.history)
+                    snackbarMessage = "Datos importados correctamente"
+                } catch (e: Exception) {
+                    snackbarMessage = "Error al importar: ${e.message ?: "desconocido"}"
+                }
             }
         }
     }
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -64,7 +99,8 @@ fun SettingsScreen(themeManager: ThemeManager, repository: MedicationRepository)
                     )
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -138,8 +174,15 @@ fun SettingsScreen(themeManager: ThemeManager, repository: MedicationRepository)
                         description = "Crear archivo CSV con medicamentos e historial",
                         icon = Icons.Default.FileDownload,
                         onClick = {
-                            exportToCsv(context)
-                            showExportSuccess = true
+                            scope.launch {
+                                try {
+                                    val file = createExportFile(context, repository)
+                                    shareFile(context, file)
+                                    snackbarMessage = "CSV exportado: ${file.name}"
+                                } catch (e: Exception) {
+                                    snackbarMessage = "Error al exportar: ${e.message ?: "desconocido"}"
+                                }
+                            }
                         }
                     )
                     SettingsItem(
@@ -147,19 +190,32 @@ fun SettingsScreen(themeManager: ThemeManager, repository: MedicationRepository)
                         description = "Cargar datos desde archivo CSV",
                         icon = Icons.Default.FileUpload,
                         onClick = {
-                            csvImportLauncher.launch("text/csv")
+                            csvImportLauncher.launch("text/*")
                         }
                     )
                     SettingsItem(
                         title = "Limpiar todos los datos",
                         description = "Eliminar todos los medicamentos y entradas",
                         icon = Icons.Default.Delete,
-                        onClick = { repository.clearAllData() }
+                        onClick = {
+                            repository.clearAllData()
+                            snackbarMessage = "Datos eliminados"
+                        }
                     )
                     SettingsItem(
                         title = "Copia de seguridad",
-                        description = "Respaldar todos los datos",
-                        icon = Icons.Default.Backup
+                        description = "Última copia: $lastBackupText",
+                        icon = Icons.Default.Backup,
+                        onClick = {
+                            scope.launch {
+                                try {
+                                    val file = backupManager.createManualBackup()
+                                    snackbarMessage = "Copia guardada: ${file.name}"
+                                } catch (e: Exception) {
+                                    snackbarMessage = "Error en copia: ${e.message ?: "desconocido"}"
+                                }
+                            }
+                        }
                     )
                 }
             }
@@ -185,43 +241,6 @@ fun SettingsScreen(themeManager: ThemeManager, repository: MedicationRepository)
         }
     }
     
-    // Snackbar para mostrar éxito en exportación
-    if (showExportSuccess) {
-        LaunchedEffect(showExportSuccess) {
-            kotlinx.coroutines.delay(2000)
-            showExportSuccess = false
-        }
-        
-        Snackbar(
-            modifier = Modifier.padding(16.dp),
-            action = {
-                TextButton(onClick = { showExportSuccess = false }) {
-                    Text("Cerrar")
-                }
-            }
-        ) {
-            Text("✅ CSV exportado correctamente")
-        }
-    }
-    
-    // Snackbar para mostrar éxito en importación
-    if (showImportSuccess) {
-        LaunchedEffect(showImportSuccess) {
-            kotlinx.coroutines.delay(2000)
-            showImportSuccess = false
-        }
-        
-        Snackbar(
-            modifier = Modifier.padding(16.dp),
-            action = {
-                TextButton(onClick = { showImportSuccess = false }) {
-                    Text("Cerrar")
-                }
-            }
-        ) {
-            Text("✅ CSV importado correctamente")
-        }
-    }
 }
 
 @Composable
@@ -314,56 +333,32 @@ private fun SettingsItem(
     }
 }
 
-/**
- * 📄 Función para exportar datos a CSV
- */
-private fun exportToCsv(context: Context) {
-    try {
-        val csvData = generateCsvData()
-        
-        // Crear intent para compartir archivo
-        val shareIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            type = "text/csv"
-            putExtra(Intent.EXTRA_TEXT, csvData)
-            putExtra(Intent.EXTRA_SUBJECT, "Datos PillMate - ${System.currentTimeMillis()}")
-        }
-        
-        context.startActivity(Intent.createChooser(shareIntent, "Exportar CSV"))
-    } catch (e: Exception) {
-        // Manejar error de exportación
-    }
+private suspend fun createExportFile(
+    context: Context,
+    repository: MedicationRepository
+): File = withContext(Dispatchers.IO) {
+    val medications = repository.getMedicationsSnapshot()
+    val history = repository.getHistorySnapshot()
+    val csv = CsvUtils.buildCsv(medications, history)
+    val directory = context.getExternalFilesDir("exports") ?: context.filesDir
+    if (!directory.exists()) directory.mkdirs()
+    val file = File(directory, "pillmate_export_${System.currentTimeMillis()}.csv")
+    file.writeText(csv)
+    file
 }
 
-/**
- * 📊 Generar contenido CSV con medicamentos e historial
- */
-private fun generateCsvData(): String {
-    val stringBuilder = StringBuilder()
-    
-    // Header para medicamentos
-    stringBuilder.appendLine("MEDICAMENTOS")
-    stringBuilder.appendLine("ID,Nombre,Dosis,Tipo,Color_Hex,Emoji,Tomado_Hoy,Meta_Diaria,Es_PRN")
-    
-    // Datos de ejemplo de medicamentos (en una app real vendrían del repository)
-    stringBuilder.appendLine("1,Omeprazol,20mg,Cápsula,#8B5CF6,💊,2,1,false")
-    stringBuilder.appendLine("2,Aspirina,100mg,Pastilla,#F59E0B,💊,0,2,false")
-    stringBuilder.appendLine("3,Vitamina D,1000 IU,Gota,#10B981,💧,1,1,false")
-    stringBuilder.appendLine("4,Melatonina,3mg,Pastilla,#6366F1,🌙,0,1,false")
-    stringBuilder.appendLine("5,Ibuprofeno,400mg,Según necesidad,#EF4444,💊,0,0,true")
-    
-    stringBuilder.appendLine()
-    
-    // Header para historial
-    stringBuilder.appendLine("HISTORIAL")
-    stringBuilder.appendLine("ID,Medicamento,Fecha,Hora,Notas")
-    
-    // Datos de ejemplo de historial
-    stringBuilder.appendLine("h1,Vitamina D,2025-03-06,12:45,Tomado con el almuerzo")
-    stringBuilder.appendLine("h2,Omeprazol,2025-03-06,08:15,")
-    stringBuilder.appendLine("h3,Melatonina,2025-03-05,21:00,Antes de dormir")
-    stringBuilder.appendLine("h4,Aspirina,2025-03-05,19:30,")
-    stringBuilder.appendLine("h5,Vitamina D,2025-03-05,12:30,")
-    
-    return stringBuilder.toString()
+private suspend fun readTextFromUri(context: Context, uri: Uri): String = withContext(Dispatchers.IO) {
+    context.contentResolver.openInputStream(uri)?.use { input ->
+        input.bufferedReader().use { it.readText() }
+    } ?: throw IllegalArgumentException("Archivo no disponible")
+}
+
+private fun shareFile(context: Context, file: File) {
+    val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/csv"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(shareIntent, "Compartir CSV"))
 }

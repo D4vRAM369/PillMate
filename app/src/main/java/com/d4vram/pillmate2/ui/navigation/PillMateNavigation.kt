@@ -35,6 +35,7 @@ fun PillMateNavigation(themeManager: ThemeManager) {
     val repository = remember {
         val database = PillMateDatabase.getInstance(context)
         MedicationRepository(
+            database = database,
             medicationDao = database.medicationDao(),
             historyDao = database.historyDao()
         )

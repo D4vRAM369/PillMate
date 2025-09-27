@@ -6,8 +6,10 @@ import com.d4vram.pillmate2.data.local.HistoryDao
 import com.d4vram.pillmate2.data.local.HistoryEntryEntity
 import com.d4vram.pillmate2.data.local.MedicationDao
 import com.d4vram.pillmate2.data.local.MedicationEntity
+import com.d4vram.pillmate2.data.local.PillMateDatabase
 import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.model.Medication
+import androidx.room.withTransaction
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -28,6 +30,7 @@ import kotlinx.coroutines.launch
  * Gestiona medicamentos, historial y estadísticas reactivas.
  */
 class MedicationRepository(
+    private val database: PillMateDatabase,
     private val medicationDao: MedicationDao,
     private val historyDao: HistoryDao
 ) {
@@ -167,6 +170,33 @@ class MedicationRepository(
     fun deleteHistoryEntry(entryId: String) {
         scope.launch {
             historyDao.deleteById(entryId)
+        }
+    }
+
+    suspend fun getMedicationsSnapshot(): List<Medication> {
+        return medicationDao.getAllMedications().map { it.toDomain() }
+    }
+
+    suspend fun getHistorySnapshot(): List<HistoryEntry> {
+        return historyDao.getAllHistory().map { it.toDomain() }
+    }
+
+    suspend fun replaceAllData(
+        medications: List<Medication>,
+        history: List<HistoryEntry>
+    ) {
+        database.withTransaction {
+            medicationDao.clear()
+            historyDao.clear()
+            if (medications.isNotEmpty()) {
+                val ordered = medications.mapIndexed { index, medication ->
+                    medication.copy(sortOrder = index).toEntity()
+                }
+                medicationDao.upsertMedications(ordered)
+            }
+            if (history.isNotEmpty()) {
+                historyDao.insertAll(history.map { it.toEntity() })
+            }
         }
     }
 
