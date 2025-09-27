@@ -195,12 +195,19 @@ fun HistoryScreen(
         NotesModal(
             historyEntry = entry,
             onDismiss = { selectedHistoryEntry = null },
-            onSaveNotes = { entryId, notes ->
-                repository.updateHistoryNotes(entryId, notes)
+            onSaveChanges = { entryId, notes, newTimestamp ->
+                if (notes != entry.notes) {
+                    repository.updateHistoryNotes(entryId, notes)
+                }
+                val sanitizedOriginal = entry.timestamp.withSecond(0).withNano(0)
+                if (newTimestamp != sanitizedOriginal) {
+                    repository.updateHistoryTimestamp(entryId, newTimestamp)
+                }
                 selectedHistoryEntry = null
             },
             onDeleteNotes = { entryId ->
                 repository.deleteHistoryNotes(entryId)
+                selectedHistoryEntry = null
             }
         )
     }

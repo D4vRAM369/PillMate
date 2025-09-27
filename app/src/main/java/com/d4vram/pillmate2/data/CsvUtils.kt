@@ -45,7 +45,7 @@ object CsvUtils {
 
         builder.appendLine()
         builder.appendLine(SECTION_HISTORY)
-        builder.appendLine("id,medicationName,time,date,colorArgb,emoji,notes,timestampIso")
+        builder.appendLine("id,medicationName,time,date,colorArgb,emoji,quantity,notes,timestampIso")
         history.forEach { entry ->
             builder.appendLine(
                 listOf(
@@ -55,6 +55,7 @@ object CsvUtils {
                     entry.date,
                     entry.color.toArgb().toString(),
                     entry.emoji,
+                    entry.quantity.toString(),
                     entry.notes.replace("\n", "\\n"),
                     entry.timestamp.toString()
                 ).joinToCsv()
@@ -111,6 +112,13 @@ object CsvUtils {
             if (tokens.size < 8) {
                 throw IllegalArgumentException("Fila de historial incompleta")
             }
+            val quantity = if (tokens.size >= 9) {
+                tokens[6].toIntOrNull() ?: 1
+            } else {
+                1
+            }
+            val notesIndex = if (tokens.size >= 9) 7 else 6
+            val timestampIndex = if (tokens.size >= 9) 8 else 7
             history.add(
                 HistoryEntry(
                     id = tokens[0],
@@ -119,8 +127,9 @@ object CsvUtils {
                     date = tokens[3],
                     color = Color(tokens[4].toInt()),
                     emoji = tokens[5],
-                    notes = tokens[6].replace("\\n", "\n"),
-                    timestamp = runCatching { LocalDateTime.parse(tokens[7]) }.getOrElse { LocalDateTime.now() }
+                    quantity = quantity,
+                    notes = tokens[notesIndex].replace("\\n", "\n"),
+                    timestamp = runCatching { LocalDateTime.parse(tokens[timestampIndex]) }.getOrElse { LocalDateTime.now() }
                 )
             )
             index++

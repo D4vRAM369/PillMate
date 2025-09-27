@@ -71,8 +71,8 @@ fun MedicationsScreen(
                     medicationPair.forEachIndexed { _, medication ->
                         MedicationCard(
                             medication = medication,
-                            onTakeMedication = { medicationId ->
-                                repository.takeMedication(medicationId)
+                            onTakeMedication = { medicationId, quantity ->
+                                repository.takeMedication(medicationId, quantity)
                             },
                             onEditMedication = onEditMedication,
                             onDeleteMedication = onDeleteMedication,

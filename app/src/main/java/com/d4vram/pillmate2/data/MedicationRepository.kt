@@ -10,11 +10,10 @@ import com.d4vram.pillmate2.data.local.PillMateDatabase
 import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.model.Medication
 import androidx.room.withTransaction
-import java.text.SimpleDateFormat
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Date
-import java.util.Locale
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,8 +21,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /**
  * 🗃️ Repositorio que conecta la UI con Room
@@ -50,9 +51,9 @@ class MedicationRepository(
         .map { entities -> entities.map { it.toDomain() } }
         .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
-    val stats: StateFlow<Stats> = medicationsFlow
-        .map { calculateStats(it) }
-        .stateIn(scope, SharingStarted.Eagerly, Stats(0, 0, 0))
+    val stats: StateFlow<Stats> = combine(historyEntries, medicationsFlow) { history, medications ->
+        calculateStats(history, medications)
+    }.stateIn(scope, SharingStarted.Eagerly, Stats(0, 0, 0))
 
     init {
         scope.launch {
@@ -74,24 +75,26 @@ class MedicationRepository(
         val adherencePercentage: Int
     )
 
-    fun takeMedication(medicationId: String) {
+    fun takeMedication(medicationId: String, quantity: Int = 1) {
         scope.launch {
             val medication = medicationDao.getMedicationById(medicationId) ?: return@launch
-            val lastTaken = getCurrentTime()
+            val safeQuantity = quantity.coerceAtLeast(1)
+            val now = LocalDateTime.now().withSecond(0).withNano(0)
+            val formattedTime = formatTime(now)
             val updated = medication.copy(
-                takenToday = medication.takenToday + 1,
-                lastTaken = lastTaken
+                takenToday = medication.takenToday + safeQuantity,
+                lastTaken = formattedTime
             )
             medicationDao.upsertMedication(updated)
 
-            val now = LocalDateTime.now()
             val historyEntry = HistoryEntryEntity(
                 id = UUID.randomUUID().toString(),
                 medicationName = updated.name,
-                time = lastTaken,
+                time = formattedTime,
                 date = formatDate(now),
                 colorArgb = updated.colorArgb,
                 emoji = updated.emoji,
+                quantity = safeQuantity,
                 notes = "",
                 timestampIso = now.toString()
             )
@@ -173,6 +176,19 @@ class MedicationRepository(
         }
     }
 
+    fun updateHistoryTimestamp(entryId: String, newDateTime: LocalDateTime) {
+        scope.launch {
+            val formattedTime = formatTime(newDateTime)
+            val formattedDate = formatDate(newDateTime)
+            historyDao.updateTimestamp(
+                id = entryId,
+                time = formattedTime,
+                date = formattedDate,
+                timestampIso = newDateTime.toString()
+            )
+        }
+    }
+
     suspend fun getMedicationsSnapshot(): List<Medication> {
         return medicationDao.getAllMedications().map { it.toDomain() }
     }
@@ -200,21 +216,31 @@ class MedicationRepository(
         }
     }
 
-    private fun calculateStats(medications: List<Medication>): Stats {
-        val takenToday = medications.sumOf { it.takenToday }
-        val totalGoals = medications.sumOf { it.dailyGoal }
-        val adherence = if (totalGoals > 0) (takenToday * 100) / totalGoals else 0
+    private fun calculateStats(history: List<HistoryEntry>, medications: List<Medication>): Stats {
+        val today = LocalDate.now()
+        val takenToday = history
+            .filter { it.timestamp.toLocalDate() == today }
+            .sumOf { it.quantity }
+
+        val takenThisWeek = history
+            .filter {
+                val daysDiff = ChronoUnit.DAYS.between(it.timestamp.toLocalDate(), today)
+                daysDiff in 0..6
+            }
+            .sumOf { it.quantity }
+
+        val totalGoals = medications.filterNot { it.isPrn }.sumOf { it.dailyGoal }
+        val adherence = if (totalGoals > 0) {
+            ((takenToday.toDouble() / totalGoals.toDouble()) * 100.0).roundToInt().coerceIn(0, 100)
+        } else {
+            0
+        }
 
         return Stats(
             takenToday = takenToday,
-            takenThisWeek = takenToday + 3,
-            adherencePercentage = adherence.coerceAtMost(100)
+            takenThisWeek = takenThisWeek,
+            adherencePercentage = adherence
         )
-    }
-
-    private fun getCurrentTime(): String {
-        val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
-        return formatter.format(Date())
     }
 
     private fun formatDate(dateTime: LocalDateTime): String {
@@ -229,6 +255,11 @@ class MedicationRepository(
                 dateTime.format(formatter)
             }
         }
+    }
+
+    private fun formatTime(dateTime: LocalDateTime): String {
+        val formatter = DateTimeFormatter.ofPattern("HH:mm")
+        return dateTime.format(formatter)
     }
 
     private fun MedicationEntity.toDomain(): Medication = Medication(
@@ -266,6 +297,7 @@ class MedicationRepository(
         date = date,
         color = Color(colorArgb),
         emoji = emoji,
+        quantity = quantity,
         notes = notes,
         timestamp = runCatching { LocalDateTime.parse(timestampIso) }.getOrElse { LocalDateTime.now() }
     )
@@ -277,6 +309,7 @@ class MedicationRepository(
         date = date,
         colorArgb = color.toArgb(),
         emoji = emoji,
+        quantity = quantity,
         notes = notes,
         timestampIso = timestamp.toString()
     )

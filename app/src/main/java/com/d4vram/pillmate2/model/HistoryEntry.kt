@@ -13,6 +13,7 @@ data class HistoryEntry(
     val date: String,
     val color: Color,
     val emoji: String,
+    val quantity: Int = 1,
     val notes: String = "",
     val timestamp: LocalDateTime = LocalDateTime.now()
 )

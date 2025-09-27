@@ -83,8 +83,8 @@ fun HomeScreen(
                 // Grid de medicamentos reordenable
                 ReorderableMedicationGrid(
                     medications = medications,
-                    onTakeMedication = { medicationId ->
-                        repository.takeMedication(medicationId)
+                    onTakeMedication = { medicationId, quantity ->
+                        repository.takeMedication(medicationId, quantity)
                     },
                     onAddMedication = onAddMedication,
                     onEditMedication = onEditMedication,
@@ -291,7 +291,7 @@ private fun SectionTitle(
 @Composable
 private fun MedicationGrid(
     medications: List<com.d4vram.pillmate2.model.Medication>,
-    onTakeMedication: (String) -> Unit,
+    onTakeMedication: (String, Int) -> Unit,
     onAddMedication: () -> Unit,
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {},

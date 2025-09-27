@@ -68,6 +68,24 @@ fun HistoryItem(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
+            if (historyEntry.quantity > 1) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer
+                ) {
+                    Text(
+                        text = "x${historyEntry.quantity}",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 10.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
+                Spacer(modifier = Modifier.width(4.dp))
+            }
+
             // Indicador de notas si las hay
             if (showNotesIndicator) {
                 Surface(

@@ -23,6 +23,9 @@ interface HistoryDao {
     @Query("UPDATE history SET notes = :notes WHERE id = :id")
     suspend fun updateNotes(id: String, notes: String)
 
+    @Query("UPDATE history SET time = :time, date = :date, timestampIso = :timestampIso WHERE id = :id")
+    suspend fun updateTimestamp(id: String, time: String, date: String, timestampIso: String)
+
     @Query("DELETE FROM history WHERE id = :id")
     suspend fun deleteById(id: String)
 

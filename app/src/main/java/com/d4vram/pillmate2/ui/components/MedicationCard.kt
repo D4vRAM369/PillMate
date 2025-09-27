@@ -31,14 +31,16 @@ import kotlinx.coroutines.delay
 @Composable
 fun MedicationCard(
     medication: Medication,
-    onTakeMedication: (String) -> Unit,
+    onTakeMedication: (String, Int) -> Unit,
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {},
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     // Estado para la animación al hacer click
     var isPressed by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
+    var showQuantityDialog by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (isPressed) 0.95f else 1f,
         animationSpec = spring(
@@ -54,9 +56,9 @@ fun MedicationCard(
     Card(
         modifier = modifier
             .scale(scale)
-            .clickable {
+            .clickable(enabled = enabled) {
                 isPressed = true
-                onTakeMedication(medication.id)
+                showQuantityDialog = true
             },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
@@ -199,6 +201,17 @@ fun MedicationCard(
             }
         }
     }
+
+    if (showQuantityDialog) {
+        TakeMedicationDialog(
+            medication = medication,
+            onDismiss = { showQuantityDialog = false },
+            onConfirm = { quantity ->
+                onTakeMedication(medication.id, quantity)
+                showQuantityDialog = false
+            }
+        )
+    }
 }
 
 /**
@@ -287,4 +300,93 @@ private fun PillIcon(
             }
         }
     }
+}
+
+@Composable
+private fun TakeMedicationDialog(
+    medication: Medication,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit
+) {
+    var quantity by remember { mutableStateOf(1) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "Registrar toma",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text(
+                    text = "¿Cuántas unidades de ${medication.name}?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = medication.dose,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        FilledIconButton(
+                            onClick = { if (quantity > 1) quantity-- },
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Text("-")
+                        }
+
+                        Text(
+                            text = quantity.toString(),
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+
+                        FilledIconButton(
+                            onClick = { quantity = (quantity + 1).coerceAtMost(999) },
+                            colors = IconButtonDefaults.filledIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text(
+                                text = "+",
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        }
+                    }
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf(1, 2, 5).forEach { quick ->
+                        AssistChip(
+                            onClick = { quantity = (quantity + quick).coerceAtMost(999) },
+                            label = { Text("+${quick}") }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = { onConfirm(quantity.coerceAtLeast(1)) }) {
+                Text("Registrar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }
