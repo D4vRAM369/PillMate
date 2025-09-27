@@ -8,7 +8,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.ui.components.MedicationCard
 
@@ -18,7 +17,7 @@ import com.d4vram.pillmate2.ui.components.MedicationCard
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MedicationsScreen(
-    repository: MedicationRepository = viewModel(),
+    repository: MedicationRepository,
     onAddMedication: () -> Unit,
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {}

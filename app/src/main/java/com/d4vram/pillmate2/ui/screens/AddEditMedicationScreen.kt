@@ -47,12 +47,14 @@ fun AddEditMedicationScreen(
     var minute by remember { mutableStateOf("00") }
     var selectedDays by remember { mutableStateOf(setOf<String>()) }
     var isPrn by remember { mutableStateOf(false) }
+    var existingMedication by remember { mutableStateOf<Medication?>(null) }
     
     // Cargar datos si estamos editando
     LaunchedEffect(medicationId) {
         medicationId?.let { id ->
             val medication = repository.getMedicationById(id)
             medication?.let {
+                existingMedication = it
                 name = it.name
                 dose = it.dose
                 type = it.type
@@ -88,14 +90,21 @@ fun AddEditMedicationScreen(
                     TextButton(
                         onClick = {
                             if (name.isNotBlank() && dose.isNotBlank()) {
-                                val medication = Medication(
+                                val baseMedication = existingMedication ?: Medication(
                                     id = medicationId ?: UUID.randomUUID().toString(),
                                     name = name,
                                     dose = dose,
                                     type = type,
                                     color = selectedColor,
+                                    emoji = selectedEmoji
+                                )
+                                val medication = baseMedication.copy(
+                                    name = name,
+                                    dose = dose,
+                                    type = type,
+                                    color = selectedColor,
                                     emoji = selectedEmoji,
-                                    dailyGoal = dailyGoal.toIntOrNull() ?: 1,
+                                    dailyGoal = dailyGoal.toIntOrNull() ?: baseMedication.dailyGoal,
                                     isPrn = isPrn
                                 )
                                 

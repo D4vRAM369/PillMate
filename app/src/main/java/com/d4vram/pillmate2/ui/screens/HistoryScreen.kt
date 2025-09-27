@@ -18,7 +18,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.ui.components.HistoryItem
@@ -39,7 +38,7 @@ enum class TimePeriod(val label: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
-    repository: MedicationRepository = viewModel()
+    repository: MedicationRepository
 ) {
     val historyEntries by repository.historyEntries.collectAsState()
     val stats by repository.stats.collectAsState()

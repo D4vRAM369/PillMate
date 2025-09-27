@@ -3,29 +3,67 @@ package com.d4vram.pillmate2.data
 import androidx.compose.ui.graphics.Color
 import com.d4vram.pillmate2.model.Medication
 import com.d4vram.pillmate2.model.HistoryEntry
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.*
+import java.util.Date
+import java.util.Locale
+import java.util.UUID
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * 🗃️ Repositorio que maneja todos los datos de medicamentos
  * En una app real, esto se conectaría a Room Database
  */
-class MedicationRepository {
+class MedicationRepository(
+    private val storage: MedicationStorage
+) {
+
+    // Usamos un scope propio para lanzar las operaciones de IO sin bloquear la UI
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     // Estados observables para la UI
-    private val _medications = MutableStateFlow(getSampleMedications())
+    private val _medications = MutableStateFlow<List<Medication>>(emptyList())
     val medications: StateFlow<List<Medication>> = _medications.asStateFlow()
 
-    private val _historyEntries = MutableStateFlow(getSampleHistory())
+    private val _historyEntries = MutableStateFlow<List<HistoryEntry>>(emptyList())
     val historyEntries: StateFlow<List<HistoryEntry>> = _historyEntries.asStateFlow()
 
-    private val _stats = MutableStateFlow(calculateStats())
+    private val _stats = MutableStateFlow(Stats(0, 0, 0))
     val stats: StateFlow<Stats> = _stats.asStateFlow()
+
+    init {
+        // Cargamos datos persistidos; si no hay, inicializamos con datos demo y los guardamos
+        scope.launch {
+            val storedMedications = storage.loadMedications()
+            val initialMedications = if (storedMedications.isEmpty()) {
+                val samples = getSampleMedications()
+                storage.saveMedications(samples)
+                samples
+            } else {
+                storedMedications
+            }
+
+            val storedHistory = storage.loadHistory()
+            val initialHistory = if (storedHistory.isEmpty()) {
+                val samples = getSampleHistory()
+                storage.saveHistory(samples)
+                samples
+            } else {
+                storedHistory
+            }
+
+            _medications.value = initialMedications
+            _historyEntries.value = initialHistory
+            _stats.value = calculateStats(initialMedications)
+        }
+    }
 
     data class Stats(
         val takenToday: Int,
@@ -47,13 +85,10 @@ class MedicationRepository {
                 lastTaken = getCurrentTime()
             )
             currentMedications[medicationIndex] = updatedMedication
-            _medications.value = currentMedications
+            updateMedications(currentMedications)
 
-            // Agregar al historial
-            addToHistory(medication)
-
-            // Actualizar estadísticas
-            _stats.value = calculateStats()
+            // Agregamos al historial la versión actualizada para reflejar la hora correcta
+            addToHistory(updatedMedication)
         }
     }
 
@@ -63,8 +98,7 @@ class MedicationRepository {
     fun addMedication(medication: Medication) {
         val currentMedications = _medications.value.toMutableList()
         currentMedications.add(medication)
-        _medications.value = currentMedications
-        _stats.value = calculateStats()
+        updateMedications(currentMedications)
     }
 
     /**
@@ -75,8 +109,7 @@ class MedicationRepository {
         val index = currentMedications.indexOfFirst { it.id == medication.id }
         if (index != -1) {
             currentMedications[index] = medication
-            _medications.value = currentMedications
-            _stats.value = calculateStats()
+            updateMedications(currentMedications)
         }
     }
 
@@ -86,8 +119,7 @@ class MedicationRepository {
     fun deleteMedication(medicationId: String) {
         val currentMedications = _medications.value.toMutableList()
         currentMedications.removeAll { it.id == medicationId }
-        _medications.value = currentMedications
-        _stats.value = calculateStats()
+        updateMedications(currentMedications)
     }
 
     /**
@@ -105,7 +137,7 @@ class MedicationRepository {
         if (fromIndex in 0 until currentMedications.size && toIndex in 0 until currentMedications.size) {
             val item = currentMedications.removeAt(fromIndex)
             currentMedications.add(toIndex, item)
-            _medications.value = currentMedications
+            updateMedications(currentMedications)
         }
     }
 
@@ -113,6 +145,10 @@ class MedicationRepository {
         _medications.value = emptyList()
         _historyEntries.value = emptyList()
         _stats.value = Stats(0, 0, 0)
+        scope.launch {
+            storage.saveMedications(emptyList())
+            storage.saveHistory(emptyList())
+        }
     }
 
     private fun addToHistory(medication: Medication) {
@@ -129,7 +165,7 @@ class MedicationRepository {
             timestamp = now
         )
         currentHistory.add(0, newEntry) // Agregar al inicio
-        _historyEntries.value = currentHistory // Ya no limitamos a 10, guardamos todas las entradas
+        updateHistory(currentHistory)
     }
 
     /**
@@ -142,7 +178,7 @@ class MedicationRepository {
         if (entryIndex != -1) {
             val updatedEntry = currentHistory[entryIndex].copy(notes = notes)
             currentHistory[entryIndex] = updatedEntry
-            _historyEntries.value = currentHistory
+            updateHistory(currentHistory)
         }
     }
 
@@ -156,13 +192,13 @@ class MedicationRepository {
         if (entryIndex != -1) {
             val updatedEntry = currentHistory[entryIndex].copy(notes = "")
             currentHistory[entryIndex] = updatedEntry
-            _historyEntries.value = currentHistory
+            updateHistory(currentHistory)
         }
     }
 
     fun deleteHistoryEntry(entryId: String) {
-        _historyEntries.value = _historyEntries.value.filter { it.id != entryId }
-        _stats.value = calculateStats()
+        val updatedHistory = _historyEntries.value.filter { it.id != entryId }
+        updateHistory(updatedHistory)
     }
 
     private fun formatDate(dateTime: LocalDateTime): String {
@@ -179,8 +215,7 @@ class MedicationRepository {
         }
     }
 
-    private fun calculateStats(): Stats {
-        val medications = _medications.value
+    private fun calculateStats(medications: List<Medication>): Stats {
         val takenToday = medications.sumOf { it.takenToday }
         val totalGoals = medications.sumOf { it.dailyGoal }
         val adherence = if (totalGoals > 0) (takenToday * 100) / totalGoals else 0
@@ -190,6 +225,17 @@ class MedicationRepository {
             takenThisWeek = takenToday + 3, // Simulado
             adherencePercentage = adherence.coerceAtMost(100)
         )
+    }
+
+    private fun updateMedications(updated: List<Medication>) {
+        _medications.value = updated
+        _stats.value = calculateStats(updated)
+        scope.launch { storage.saveMedications(updated) }
+    }
+
+    private fun updateHistory(updated: List<HistoryEntry>) {
+        _historyEntries.value = updated
+        scope.launch { storage.saveHistory(updated) }
     }
 
     private fun getCurrentTime(): String {

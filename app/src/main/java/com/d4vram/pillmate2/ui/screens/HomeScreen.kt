@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.ui.components.HistoryItem
@@ -37,7 +36,7 @@ import androidx.compose.material3.SwipeToDismissBoxValue
  */
 @Composable
 fun HomeScreen(
-    repository: MedicationRepository = viewModel(),
+    repository: MedicationRepository,
     onAddMedication: () -> Unit,
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {}

@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -14,6 +15,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.d4vram.pillmate2.data.MedicationRepository
+import com.d4vram.pillmate2.data.MedicationStorage
 import com.d4vram.pillmate2.ui.screens.AddEditMedicationScreen
 import com.d4vram.pillmate2.ui.screens.HistoryScreen
 import com.d4vram.pillmate2.ui.screens.HomeScreen
@@ -29,7 +31,8 @@ import com.d4vram.pillmate2.ui.theme.ThemeManager
 @Composable
 fun PillMateNavigation(themeManager: ThemeManager) {
     val navController = rememberNavController()
-    val repository = remember { MedicationRepository() }
+    val context = LocalContext.current.applicationContext
+    val repository = remember { MedicationRepository(MedicationStorage(context)) }
 
     Scaffold(
         bottomBar = {
