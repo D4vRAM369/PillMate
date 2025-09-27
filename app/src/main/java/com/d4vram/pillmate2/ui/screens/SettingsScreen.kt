@@ -22,11 +22,17 @@ import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.BackupManager
 import com.d4vram.pillmate2.data.CsvUtils
+import com.d4vram.pillmate2.ui.security.SecurityManager
+import com.d4vram.pillmate2.ui.security.SecuritySettings
 import com.d4vram.pillmate2.ui.theme.AppUiStyle
 import com.d4vram.pillmate2.ui.theme.ThemeManager
+import androidx.biometric.BiometricManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.core.content.FileProvider
@@ -39,7 +45,11 @@ import java.util.Date
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(themeManager: ThemeManager, repository: MedicationRepository) {
+fun SettingsScreen(
+    themeManager: ThemeManager,
+    repository: MedicationRepository,
+    securityManager: SecurityManager
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val isDarkMode by themeManager.isDarkMode.collectAsState(initial = false)
@@ -47,6 +57,23 @@ fun SettingsScreen(themeManager: ThemeManager, repository: MedicationRepository)
     val snackbarHostState = remember { SnackbarHostState() }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var showUiDialog by remember { mutableStateOf(false) }
+    val securitySettings by securityManager.settings.collectAsState(initial = SecuritySettings())
+    var showPinSetupDialog by remember { mutableStateOf(false) }
+    var showPinChangeDialog by remember { mutableStateOf(false) }
+    var showTimeoutPicker by remember { mutableStateOf(false) }
+    var pendingEnableLock by remember { mutableStateOf(false) }
+
+    val biometricManager = remember { BiometricManager.from(context) }
+    val canAuthenticateBiometric = remember(biometricManager) {
+        biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
+            BiometricManager.BIOMETRIC_SUCCESS
+    }
+
+    LaunchedEffect(canAuthenticateBiometric, securitySettings.biometricEnabled) {
+        if (!canAuthenticateBiometric && securitySettings.biometricEnabled) {
+            securityManager.setBiometricEnabled(false)
+        }
+    }
 
     val backupManager = remember { BackupManager(context.applicationContext, repository) }
     val lastBackupMillis by backupManager.lastBackupFlow.collectAsState(initial = null)
@@ -167,6 +194,120 @@ fun SettingsScreen(themeManager: ThemeManager, repository: MedicationRepository)
             }
 
             item {
+                SettingsSection(title = "🔒 Seguridad") {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Bloqueo de la app",
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = if (securitySettings.lockEnabled) "Activado" else "Desactivado",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Switch(
+                            checked = securitySettings.lockEnabled,
+                            onCheckedChange = { enabled ->
+                                scope.launch {
+                                    if (enabled) {
+                                        if (!securitySettings.isPinConfigured) {
+                                            pendingEnableLock = true
+                                            showPinSetupDialog = true
+                                            snackbarMessage = "Configura un PIN para activar el bloqueo"
+                                        } else {
+                                            securityManager.setLockEnabled(true)
+                                            securityManager.recordUnlock()
+                                            snackbarMessage = "Bloqueo activado"
+                                        }
+                                    } else {
+                                        securityManager.setLockEnabled(false)
+                                        securityManager.setBiometricEnabled(false)
+                                        snackbarMessage = "Bloqueo desactivado"
+                                    }
+                                }
+                            }
+                        )
+                    }
+
+                    if (securitySettings.lockEnabled) {
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        SettingsItem(
+                            title = "Cambiar PIN",
+                            description = "Actualizar código de acceso",
+                            icon = Icons.Default.Lock,
+                            onClick = { showPinChangeDialog = true }
+                        )
+
+                        if (canAuthenticateBiometric) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Desbloquear con huella",
+                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Text(
+                                        text = if (securitySettings.biometricEnabled) "Activado" else "Desactivado",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Switch(
+                                    checked = securitySettings.biometricEnabled,
+                                    onCheckedChange = { checked ->
+                                        scope.launch {
+                                            securityManager.setBiometricEnabled(checked)
+                                        }
+                                    }
+                                )
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "Tu dispositivo no soporta autenticación biométrica fuerte.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                        val timeoutLabel = lockTimeoutLabel(securitySettings.autoLockDurationMs)
+                        SettingsItem(
+                            title = "Tiempo antes de bloquear",
+                            description = timeoutLabel,
+                            icon = Icons.Default.Schedule,
+                            onClick = { showTimeoutPicker = true }
+                        )
+                    } else if (!securitySettings.isPinConfigured) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        SettingsItem(
+                            title = "Configurar PIN",
+                            description = "Define un código para proteger tu información",
+                            icon = Icons.Default.Security,
+                            onClick = { showPinSetupDialog = true }
+                        )
+                    }
+                }
+            }
+
+            item {
                 SettingsSection(title = "🔔 Notificaciones") {
                     SettingsItem(
                         title = "Recordatorios",
@@ -254,7 +395,7 @@ fun SettingsScreen(themeManager: ThemeManager, repository: MedicationRepository)
             }
         }
     }
-    
+
     if (showUiDialog) {
         AlertDialog(
             onDismissRequest = { showUiDialog = false },
@@ -303,6 +444,291 @@ fun SettingsScreen(themeManager: ThemeManager, repository: MedicationRepository)
             }
         )
     }
+
+    if (showPinSetupDialog) {
+        PinSetupDialog(
+            onDismiss = {
+                showPinSetupDialog = false
+                pendingEnableLock = false
+            },
+            onConfirm = { pin ->
+                try {
+                    securityManager.setPin(pin)
+                    securityManager.recordUnlock()
+                    if (pendingEnableLock) {
+                        securityManager.setLockEnabled(true)
+                        pendingEnableLock = false
+                        snackbarMessage = "Bloqueo activado"
+                    } else {
+                        snackbarMessage = "PIN guardado"
+                    }
+                    null
+                } catch (e: Exception) {
+                    e.message ?: "No se pudo guardar el PIN"
+                }
+            }
+        )
+    }
+
+    if (showPinChangeDialog) {
+        PinChangeDialog(
+            onDismiss = { showPinChangeDialog = false },
+            onConfirm = { currentPin, newPin ->
+                try {
+                    val valid = securityManager.verifyPin(currentPin)
+                    if (!valid) {
+                        "PIN actual incorrecto"
+                    } else {
+                        securityManager.setPin(newPin)
+                        snackbarMessage = "PIN actualizado"
+                        null
+                    }
+                } catch (e: Exception) {
+                    e.message ?: "Error al actualizar el PIN"
+                }
+            }
+        )
+    }
+
+    if (showTimeoutPicker) {
+        LockTimeoutDialog(
+            currentDuration = securitySettings.autoLockDurationMs,
+            onDismiss = { showTimeoutPicker = false },
+            onTimeoutSelected = { duration ->
+                securityManager.updateAutoLockDuration(duration)
+                snackbarMessage = "Tiempo de bloqueo actualizado"
+                showTimeoutPicker = false
+            }
+        )
+    }
+}
+
+private val lockTimeoutOptions = listOf(
+    0L to "Inmediato",
+    30_000L to "30 segundos",
+    60_000L to "1 minuto",
+    300_000L to "5 minutos",
+    600_000L to "10 minutos"
+)
+
+private fun lockTimeoutLabel(durationMs: Long): String {
+    return lockTimeoutOptions.firstOrNull { it.first == durationMs }?.second
+        ?: "Personalizado (${durationMs / 1000}s)"
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PinSetupDialog(
+    onDismiss: () -> Unit,
+    onConfirm: suspend (String) -> String?
+) {
+    val scope = rememberCoroutineScope()
+    var pin by remember { mutableStateOf("") }
+    var confirmPin by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = { if (!isSubmitting) onDismiss() },
+        title = { Text("Configurar PIN") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { if (it.length <= 8) pin = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("PIN (4-8 dígitos)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    visualTransformation = PasswordVisualTransformation()
+                )
+                OutlinedTextField(
+                    value = confirmPin,
+                    onValueChange = { if (it.length <= 8) confirmPin = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("Confirmar PIN") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    visualTransformation = PasswordVisualTransformation()
+                )
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage!!,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !isSubmitting,
+                onClick = {
+                    when {
+                        pin.length < 4 -> errorMessage = "El PIN debe tener al menos 4 dígitos"
+                        pin != confirmPin -> errorMessage = "Los PIN no coinciden"
+                        else -> {
+                            errorMessage = null
+                            isSubmitting = true
+                            scope.launch {
+                                val error = onConfirm(pin)
+                                isSubmitting = false
+                                if (error == null) {
+                                    pin = ""
+                                    confirmPin = ""
+                                    onDismiss()
+                                } else {
+                                    errorMessage = error
+                                }
+                            }
+                        }
+                    }
+                }
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(enabled = !isSubmitting, onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PinChangeDialog(
+    onDismiss: () -> Unit,
+    onConfirm: suspend (String, String) -> String?
+) {
+    val scope = rememberCoroutineScope()
+    var currentPin by remember { mutableStateOf("") }
+    var newPin by remember { mutableStateOf("") }
+    var confirmNewPin by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isSubmitting by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = { if (!isSubmitting) onDismiss() },
+        title = { Text("Cambiar PIN") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = currentPin,
+                    onValueChange = { if (it.length <= 8) currentPin = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("PIN actual") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    visualTransformation = PasswordVisualTransformation()
+                )
+                OutlinedTextField(
+                    value = newPin,
+                    onValueChange = { if (it.length <= 8) newPin = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("Nuevo PIN") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    visualTransformation = PasswordVisualTransformation()
+                )
+                OutlinedTextField(
+                    value = confirmNewPin,
+                    onValueChange = { if (it.length <= 8) confirmNewPin = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("Confirmar nuevo PIN") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    visualTransformation = PasswordVisualTransformation()
+                )
+                if (errorMessage != null) {
+                    Text(
+                        text = errorMessage!!,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                enabled = !isSubmitting,
+                onClick = {
+                    when {
+                        newPin.length < 4 -> errorMessage = "El nuevo PIN debe tener al menos 4 dígitos"
+                        newPin != confirmNewPin -> errorMessage = "Los nuevos PIN no coinciden"
+                        newPin == currentPin -> errorMessage = "El nuevo PIN debe ser diferente"
+                        else -> {
+                            errorMessage = null
+                            isSubmitting = true
+                            scope.launch {
+                                val error = onConfirm(currentPin, newPin)
+                                isSubmitting = false
+                                if (error == null) {
+                                    currentPin = ""
+                                    newPin = ""
+                                    confirmNewPin = ""
+                                    onDismiss()
+                                } else {
+                                    errorMessage = error
+                                }
+                            }
+                        }
+                    }
+                }
+            ) {
+                Text("Actualizar")
+            }
+        },
+        dismissButton = {
+            TextButton(enabled = !isSubmitting, onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+private fun LockTimeoutDialog(
+    currentDuration: Long,
+    onDismiss: () -> Unit,
+    onTimeoutSelected: suspend (Long) -> Unit
+) {
+    val scope = rememberCoroutineScope()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Tiempo antes de bloquear") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                lockTimeoutOptions.forEach { (duration, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable {
+                                scope.launch {
+                                    onTimeoutSelected(duration)
+                                }
+                            }
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = duration == currentDuration,
+                            onClick = {
+                                scope.launch {
+                                    onTimeoutSelected(duration)
+                                }
+                            }
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(label)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        }
+    )
 }
 
 @Composable
