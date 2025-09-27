@@ -36,6 +36,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import com.d4vram.pillmate2.ui.theme.AppUiStyle
+import com.d4vram.pillmate2.ui.theme.LocalUiStyle
 
 /**
  * 📊 Pantalla del historial completo
@@ -215,6 +217,8 @@ private fun SwipeableHistoryItem(
     val scope = rememberCoroutineScope()
     var offset by remember { mutableFloatStateOf(0f) }
     var animationJob by remember { mutableStateOf<Job?>(null) }
+    val uiStyle = LocalUiStyle.current
+    val colorScheme = MaterialTheme.colorScheme
     val actionCount = 2
     val actionButtonWidth = 56.dp
     val actionSpacing = 8.dp
@@ -264,9 +268,31 @@ private fun SwipeableHistoryItem(
             horizontalArrangement = Arrangement.spacedBy(actionSpacing, Alignment.End),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val editColor = if (uiStyle == AppUiStyle.MaterialYou) {
+                colorScheme.secondaryContainer
+            } else {
+                Color(0xFF22C55E)
+            }
+            val editContentColor = if (uiStyle == AppUiStyle.MaterialYou) {
+                colorScheme.onSecondaryContainer
+            } else {
+                Color.White
+            }
+            val deleteColor = if (uiStyle == AppUiStyle.MaterialYou) {
+                colorScheme.errorContainer
+            } else {
+                Color(0xFFEF4444)
+            }
+            val deleteContentColor = if (uiStyle == AppUiStyle.MaterialYou) {
+                colorScheme.onErrorContainer
+            } else {
+                Color.White
+            }
+
             HistoryActionButton(
                 label = "✏️",
-                backgroundColor = Color(0xFF22C55E),
+                backgroundColor = editColor,
+                contentColor = editContentColor,
                 modifier = Modifier.size(width = actionButtonWidth, height = actionButtonHeight)
             ) {
                 animateTo(0f)
@@ -274,7 +300,8 @@ private fun SwipeableHistoryItem(
             }
             HistoryActionButton(
                 label = "🗑️",
-                backgroundColor = Color(0xFFEF4444),
+                backgroundColor = deleteColor,
+                contentColor = deleteContentColor,
                 modifier = Modifier.size(width = actionButtonWidth, height = actionButtonHeight)
             ) {
                 animateTo(0f)
@@ -308,6 +335,7 @@ private fun SwipeableHistoryItem(
 private fun HistoryActionButton(
     label: String,
     backgroundColor: Color,
+    contentColor: Color = Color.White,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -320,7 +348,8 @@ private fun HistoryActionButton(
     ) {
         Text(
             text = label,
-            fontSize = 18.sp
+            fontSize = 18.sp,
+            color = contentColor
         )
     }
 }

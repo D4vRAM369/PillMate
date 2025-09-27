@@ -12,7 +12,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -20,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.BackupManager
 import com.d4vram.pillmate2.data.CsvUtils
+import com.d4vram.pillmate2.ui.theme.AppUiStyle
 import com.d4vram.pillmate2.ui.theme.ThemeManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -40,8 +43,10 @@ fun SettingsScreen(themeManager: ThemeManager, repository: MedicationRepository)
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val isDarkMode by themeManager.isDarkMode.collectAsState(initial = false)
+    val uiStyle by themeManager.uiStyle.collectAsState(initial = AppUiStyle.Default)
     val snackbarHostState = remember { SnackbarHostState() }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
+    var showUiDialog by remember { mutableStateOf(false) }
 
     val backupManager = remember { BackupManager(context.applicationContext, repository) }
     val lastBackupMillis by backupManager.lastBackupFlow.collectAsState(initial = null)
@@ -149,6 +154,15 @@ fun SettingsScreen(themeManager: ThemeManager, repository: MedicationRepository)
                             }
                         )
                     }
+
+                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    SettingsItem(
+                        title = "Estilo de interfaz",
+                        description = "Actual: ${uiStyle.title}",
+                        icon = Icons.Default.Palette,
+                        onClick = { showUiDialog = true }
+                    )
                 }
             }
 
@@ -241,6 +255,54 @@ fun SettingsScreen(themeManager: ThemeManager, repository: MedicationRepository)
         }
     }
     
+    if (showUiDialog) {
+        AlertDialog(
+            onDismissRequest = { showUiDialog = false },
+            title = { Text("Estilo de interfaz") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    AppUiStyle.entries.forEach { style ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    showUiDialog = false
+                                    scope.launch { themeManager.setUiStyle(style) }
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = style == uiStyle,
+                                onClick = {
+                                    showUiDialog = false
+                                    scope.launch { themeManager.setUiStyle(style) }
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = style.title,
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                                )
+                                Text(
+                                    text = style.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showUiDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
 }
 
 @Composable

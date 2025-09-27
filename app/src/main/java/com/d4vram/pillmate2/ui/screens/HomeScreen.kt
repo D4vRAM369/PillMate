@@ -26,6 +26,8 @@ import com.d4vram.pillmate2.ui.components.ReorderableMedicationGrid
 import com.d4vram.pillmate2.ui.components.StatCard
 import com.d4vram.pillmate2.ui.theme.HeaderGradientEnd
 import com.d4vram.pillmate2.ui.theme.HeaderGradientStart
+import com.d4vram.pillmate2.ui.theme.AppUiStyle
+import com.d4vram.pillmate2.ui.theme.LocalUiStyle
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.SwipeToDismissBoxValue
@@ -152,14 +154,23 @@ fun HomeScreen(
 private fun HeaderSection(
     onAddMedication: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                brush = Brush.horizontalGradient(
-                    colors = listOf(HeaderGradientStart, HeaderGradientEnd)
+    val uiStyle = LocalUiStyle.current
+    val headerModifier = Modifier
+        .fillMaxWidth()
+        .let { base ->
+            if (uiStyle == AppUiStyle.MaterialYou) {
+                base.background(MaterialTheme.colorScheme.primaryContainer)
+            } else {
+                base.background(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(HeaderGradientStart, HeaderGradientEnd)
+                    )
                 )
-            )
+            }
+        }
+
+    Box(
+        modifier = headerModifier
             .padding(horizontal = 24.dp, vertical = 20.dp)
     ) {
         Column {
@@ -168,12 +179,20 @@ private fun HeaderSection(
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold
                 ),
-                color = Color.White
+                color = if (uiStyle == AppUiStyle.MaterialYou) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                } else {
+                    Color.White
+                }
             )
             Text(
                 text = "Seguimiento Personal",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = 0.9f)
+                color = if (uiStyle == AppUiStyle.MaterialYou) {
+                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                } else {
+                    Color.White.copy(alpha = 0.9f)
+                }
             )
         }
 
@@ -181,8 +200,16 @@ private fun HeaderSection(
         FloatingActionButton(
             onClick = onAddMedication,
             modifier = Modifier.align(Alignment.CenterEnd),
-            containerColor = Color.White.copy(alpha = 0.2f),
-            contentColor = Color.White
+            containerColor = if (uiStyle == AppUiStyle.MaterialYou) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                Color.White.copy(alpha = 0.2f)
+            },
+            contentColor = if (uiStyle == AppUiStyle.MaterialYou) {
+                MaterialTheme.colorScheme.onPrimary
+            } else {
+                Color.White
+            }
         ) {
             Text(
                 text = "+",
