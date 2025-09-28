@@ -2,14 +2,13 @@ package com.d4vram.pillmate2.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.data.MedicationRepository
-import com.d4vram.pillmate2.ui.components.MedicationCard
+import com.d4vram.pillmate2.ui.components.ReorderableMedicationGrid
 
 /**
  * 💊 Pantalla de gestión de medicamentos
@@ -56,34 +55,26 @@ fun MedicationsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(horizontal = 16.dp)
         ) {
             item {
                 Spacer(modifier = Modifier.height(8.dp))
             }
 
-            items(medications.chunked(2)) { medicationPair ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    medicationPair.forEachIndexed { _, medication ->
-                        MedicationCard(
-                            medication = medication,
-                            onTakeMedication = { medicationId, quantity ->
-                                repository.takeMedication(medicationId, quantity)
-                            },
-                            onEditMedication = onEditMedication,
-                            onDeleteMedication = onDeleteMedication,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    if (medicationPair.size == 1) {
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-                }
+            item {
+                ReorderableMedicationGrid(
+                    medications = medications,
+                    onTakeMedication = { medicationId, quantity ->
+                        repository.takeMedication(medicationId, quantity)
+                    },
+                    onEditMedication = onEditMedication,
+                    onDeleteMedication = onDeleteMedication,
+                    onAddMedication = onAddMedication,
+                    onReorder = { fromIndex, toIndex ->
+                        repository.reorderMedications(fromIndex, toIndex)
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
             item {

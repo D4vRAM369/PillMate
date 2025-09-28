@@ -1,7 +1,7 @@
 package com.d4vram.pillmate2.ui.components
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -9,12 +9,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -36,29 +38,116 @@ fun ReorderableMedicationGrid(
     modifier: Modifier = Modifier
 ) {
     var draggedItem by remember { mutableStateOf<Int?>(null) }
+    var draggedItemKey by remember { mutableStateOf<String?>(null) }
     var isDragging by remember { mutableStateOf(false) }
-    
-    val density = LocalDensity.current
-    
+    var dragOffset by remember { mutableStateOf(Offset.Zero) }
+
+    val localMedications = remember { mutableStateListOf<Medication>() }
+
+    LaunchedEffect(medications, isDragging) {
+        val incomingById = medications.associateBy { it.id }
+        if (!isDragging || localMedications.isEmpty()) {
+            localMedications.clear()
+            localMedications.addAll(medications)
+        } else {
+            for (index in localMedications.indices) {
+                val current = localMedications[index]
+                val updated = incomingById[current.id]
+                if (updated != null && updated != current) {
+                    localMedications[index] = updated
+                }
+            }
+        }
+    }
+
+    val gridState = rememberLazyGridState()
+    val totalItems = localMedications.size + 1 // +1 por card de agregar
+    val rows = (totalItems + 1) / 2
+    val gridHeight = (rows * 180).dp
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier.height((((medications.size + 1) / 2 + 1) * 180).dp),
-        userScrollEnabled = !isDragging
+        modifier = modifier.height(gridHeight),
+        userScrollEnabled = !isDragging,
+        state = gridState
     ) {
         itemsIndexed(
-            medications,
+            localMedications,
             key = { _, medication -> medication.id }
         ) { index, medication ->
-            val isBeingDragged = draggedItem == index
-            
+            val isBeingDragged = draggedItemKey == medication.id
+            val translation = if (isBeingDragged) dragOffset else Offset.Zero
+
+            val dragModifier = Modifier.pointerInput(medication.id) {
+                detectDragGesturesAfterLongPress(
+                    onDragStart = {
+                        draggedItem = index
+                        draggedItemKey = medication.id
+                        isDragging = true
+                        dragOffset = Offset.Zero
+                    },
+                    onDragEnd = {
+                        draggedItem = null
+                        draggedItemKey = null
+                        isDragging = false
+                        dragOffset = Offset.Zero
+                    },
+                    onDragCancel = {
+                        draggedItem = null
+                        draggedItemKey = null
+                        isDragging = false
+                        dragOffset = Offset.Zero
+                    }
+                ) { change, dragAmount ->
+                    change.consumePositionChange()
+                    dragOffset += dragAmount
+
+                    val currentIndex = draggedItem ?: return@detectDragGesturesAfterLongPress
+                    val layoutInfo = gridState.layoutInfo
+                    if (currentIndex !in localMedications.indices) return@detectDragGesturesAfterLongPress
+                    val draggedInfo = layoutInfo.visibleItemsInfo.firstOrNull { it.key == medication.id }
+                        ?: return@detectDragGesturesAfterLongPress
+
+                    val itemCenter = Offset(
+                        x = draggedInfo.offset.x + draggedInfo.size.width / 2f + dragOffset.x,
+                        y = draggedInfo.offset.y + draggedInfo.size.height / 2f + dragOffset.y
+                    )
+
+                    val targetInfo = layoutInfo.visibleItemsInfo.firstOrNull { info ->
+                        itemCenter.x in info.offset.x.toFloat()..(info.offset.x + info.size.width).toFloat() &&
+                        itemCenter.y in info.offset.y.toFloat()..(info.offset.y + info.size.height).toFloat()
+                    }
+
+                    val targetIndex = targetInfo?.index
+                    if (targetIndex != null && targetIndex != currentIndex) {
+                        val movedMedication = localMedications.removeAt(currentIndex)
+                        val insertionIndex = if (targetIndex > currentIndex) {
+                            targetIndex.coerceAtMost(localMedications.size)
+                        } else {
+                            targetIndex.coerceIn(0, localMedications.size)
+                        }
+                        localMedications.add(insertionIndex, movedMedication)
+                        val delta = Offset(
+                            (targetInfo.offset.x - draggedInfo.offset.x).toFloat(),
+                            (targetInfo.offset.y - draggedInfo.offset.y).toFloat()
+                        )
+                        dragOffset -= delta
+                        draggedItem = insertionIndex
+                        draggedItemKey = movedMedication.id
+                        onReorder(currentIndex, insertionIndex)
+                    }
+                }
+            }
+
             MedicationCard(
                 medication = medication,
                 onTakeMedication = if (isDragging) { { _, _ -> } } else { onTakeMedication },
                 onEditMedication = if (isDragging) { {} } else { onEditMedication },
                 onDeleteMedication = if (isDragging) { {} } else { onDeleteMedication },
                 enabled = !isDragging,
+                dragModifier = dragModifier,
                 modifier = Modifier
                     .animateItemPlacement()
                     .zIndex(if (isBeingDragged) 1f else 0f)
@@ -66,25 +155,13 @@ fun ReorderableMedicationGrid(
                         alpha = if (isBeingDragged) 0.8f else 1f
                         scaleX = if (isBeingDragged) 1.05f else 1f
                         scaleY = if (isBeingDragged) 1.05f else 1f
+                        translationX = translation.x
+                        translationY = translation.y
                     }
                     .shadow(
                         elevation = if (isBeingDragged) 8.dp else 0.dp,
                         shape = RoundedCornerShape(16.dp)
                     )
-                    .pointerInput(medication.id) {
-                        detectDragGestures(
-                            onDragStart = {
-                                draggedItem = index
-                                isDragging = true
-                            },
-                            onDragEnd = {
-                                draggedItem = null
-                                isDragging = false
-                            }
-                        ) { _, _ ->
-                            // El reordenamiento se maneja automáticamente por animateItemPlacement
-                        }
-                    }
             )
         }
         

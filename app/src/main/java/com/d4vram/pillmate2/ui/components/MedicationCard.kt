@@ -35,6 +35,7 @@ fun MedicationCard(
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {},
     enabled: Boolean = true,
+    dragModifier: Modifier = Modifier,
     modifier: Modifier = Modifier
 ) {
     // Estado para la animación al hacer click
@@ -53,8 +54,10 @@ fun MedicationCard(
     // Determinar si ya se tomó hoy
     val isTakenToday = medication.takenToday > 0
 
+    val combinedModifier = dragModifier.then(modifier)
+
     Card(
-        modifier = modifier
+        modifier = combinedModifier
             .scale(scale)
             .clickable(enabled = enabled) {
                 isPressed = true
