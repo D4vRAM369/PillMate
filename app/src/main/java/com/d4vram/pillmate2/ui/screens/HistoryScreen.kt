@@ -24,8 +24,11 @@ import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.ui.components.HistoryItem
 import com.d4vram.pillmate2.ui.components.NotesModal
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 import kotlin.math.roundToInt
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animate
@@ -63,16 +66,17 @@ fun HistoryScreen(
     // Filtrar entradas según el período seleccionado
     val filteredEntries = remember(historyEntries, selectedPeriod) {
         val now = LocalDateTime.now()
+        val today = now.toLocalDate()
         when (selectedPeriod) {
             TimePeriod.ALL -> historyEntries
             TimePeriod.TODAY -> historyEntries.filter {
-                ChronoUnit.DAYS.between(it.timestamp, now) == 0L
+                it.timestamp.toLocalDate() == today
             }
             TimePeriod.WEEK -> historyEntries.filter {
-                ChronoUnit.DAYS.between(it.timestamp, now) <= 7
+                ChronoUnit.DAYS.between(it.timestamp.toLocalDate(), today) <= 7
             }
             TimePeriod.MONTH -> historyEntries.filter {
-                ChronoUnit.DAYS.between(it.timestamp, now) <= 30
+                ChronoUnit.DAYS.between(it.timestamp.toLocalDate(), today) <= 30
             }
         }
     }
@@ -362,25 +366,22 @@ private fun HistoryActionButton(
 }
 
 private fun groupEntriesByPeriod(entries: List<HistoryEntry>): List<Pair<String, List<HistoryEntry>>> {
-    val now = LocalDateTime.now()
-    val grouped = mutableMapOf<String, MutableList<HistoryEntry>>()
+    if (entries.isEmpty()) return emptyList()
 
-    entries.forEach { entry ->
-        val daysDiff = ChronoUnit.DAYS.between(entry.timestamp, now)
-        val group = when {
-            daysDiff == 0L -> "Hoy"
-            daysDiff == 1L -> "Ayer"
-            daysDiff <= 7 -> "Esta semana"
-            daysDiff <= 30 -> "Este mes"
-            else -> "Anteriores"
+    val today = LocalDate.now()
+    val locale = Locale("es", "ES")
+    val dateFormatter = DateTimeFormatter.ofPattern("EEE dd/MM/yy", locale)
+
+    val groupedByDate = entries.groupBy { it.timestamp.toLocalDate() }
+    val sortedDates = groupedByDate.keys.sortedDescending()
+
+    return sortedDates.map { entryDate ->
+        val daysDiff = ChronoUnit.DAYS.between(entryDate, today)
+        val label = when (daysDiff) {
+            0L -> "Hoy"
+            1L -> "Ayer"
+            else -> dateFormatter.format(entryDate).replaceFirstChar { it.titlecase(locale) }
         }
-
-        grouped.getOrPut(group) { mutableListOf() }.add(entry)
-    }
-
-    // Ordenar grupos por relevancia temporal
-    val orderedGroups = listOf("Hoy", "Ayer", "Esta semana", "Este mes", "Anteriores")
-    return orderedGroups.mapNotNull { group ->
-        grouped[group]?.let { group to it.sortedByDescending { it.timestamp } }
+        label to groupedByDate.getValue(entryDate).sortedByDescending { it.timestamp }
     }
 }
