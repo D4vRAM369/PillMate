@@ -13,5 +13,6 @@ data class HistoryEntryEntity(
     val emoji: String,
     val quantity: Int,
     val notes: String,
-    val timestampIso: String
+    val timestampIso: String,
+    val dose: String?
 )

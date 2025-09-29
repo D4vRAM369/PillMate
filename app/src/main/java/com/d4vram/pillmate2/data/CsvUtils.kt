@@ -24,7 +24,7 @@ object CsvUtils {
         val builder = StringBuilder()
         builder.appendLine(HEADER)
         builder.appendLine(SECTION_MEDICATIONS)
-        builder.appendLine("id,name,dose,type,colorArgb,emoji,takenToday,dailyGoal,lastTaken,isPrn,sortOrder")
+        builder.appendLine("id,name,dose,type,colorArgb,emoji,takenToday,dailyGoal,lastTaken,isPrn,sortOrder,scheduleTime,scheduleDays")
         medications.forEach { medication ->
             builder.appendLine(
                 listOf(
@@ -38,14 +38,16 @@ object CsvUtils {
                     medication.dailyGoal.toString(),
                     medication.lastTaken ?: "",
                     medication.isPrn.toString(),
-                    medication.sortOrder.toString()
+                    medication.sortOrder.toString(),
+                    medication.scheduleTime ?: "",
+                    medication.scheduleDays.joinToString("|")
                 ).joinToCsv()
             )
         }
 
         builder.appendLine()
         builder.appendLine(SECTION_HISTORY)
-        builder.appendLine("id,medicationName,time,date,colorArgb,emoji,quantity,notes,timestampIso")
+        builder.appendLine("id,medicationName,time,date,colorArgb,emoji,quantity,notes,timestampIso,dose")
         history.forEach { entry ->
             builder.appendLine(
                 listOf(
@@ -57,7 +59,8 @@ object CsvUtils {
                     entry.emoji,
                     entry.quantity.toString(),
                     entry.notes.replace("\n", "\\n"),
-                    entry.timestamp.toString()
+                    entry.timestamp.toString(),
+                    entry.dose.orEmpty()
                 ).joinToCsv()
             )
         }
@@ -83,6 +86,7 @@ object CsvUtils {
             if (tokens.size < 11) {
                 throw IllegalArgumentException("Fila de medicamentos incompleta")
             }
+            val hasSchedule = tokens.size >= 13
             medications.add(
                 Medication(
                     id = tokens[0],
@@ -95,7 +99,9 @@ object CsvUtils {
                     dailyGoal = tokens[7].toIntOrNull() ?: 1,
                     lastTaken = tokens[8].ifBlank { null },
                     isPrn = tokens[9].toBooleanStrictOrNull() ?: false,
-                    sortOrder = tokens[10].toIntOrNull() ?: 0
+                    sortOrder = tokens[10].toIntOrNull() ?: 0,
+                    scheduleTime = if (hasSchedule) tokens[11].ifBlank { null } else null,
+                    scheduleDays = if (hasSchedule) tokens[12].split('|').mapNotNull { it.trim().takeIf { value -> value.isNotEmpty() } } else emptyList()
                 )
             )
             index++
@@ -112,13 +118,18 @@ object CsvUtils {
             if (tokens.size < 8) {
                 throw IllegalArgumentException("Fila de historial incompleta")
             }
-            val quantity = if (tokens.size >= 9) {
-                tokens[6].toIntOrNull() ?: 1
-            } else {
-                1
-            }
-            val notesIndex = if (tokens.size >= 9) 7 else 6
-            val timestampIndex = if (tokens.size >= 9) 8 else 7
+            val quantityToken = tokens.getOrNull(6)
+            val parsedQuantity = quantityToken?.toIntOrNull()
+            val quantity = parsedQuantity ?: 1
+            val notesIndex = if (parsedQuantity != null) 7 else 6
+            val timestampIndex = if (parsedQuantity != null) 8 else 7
+            val doseIndex = timestampIndex + 1
+            val notesValue = tokens.getOrNull(notesIndex)?.replace("\\n", "\n") ?: ""
+            val timestampString = tokens.getOrNull(timestampIndex)
+            val parsedTimestamp = timestampString?.let { ts ->
+                runCatching { LocalDateTime.parse(ts) }.getOrNull()
+            } ?: LocalDateTime.now()
+            val doseValue = tokens.getOrNull(doseIndex)?.ifBlank { null }
             history.add(
                 HistoryEntry(
                     id = tokens[0],
@@ -128,8 +139,9 @@ object CsvUtils {
                     color = Color(tokens[4].toInt()),
                     emoji = tokens[5],
                     quantity = quantity,
-                    notes = tokens[notesIndex].replace("\\n", "\n"),
-                    timestamp = runCatching { LocalDateTime.parse(tokens[timestampIndex]) }.getOrElse { LocalDateTime.now() }
+                    notes = notesValue,
+                    timestamp = parsedTimestamp,
+                    dose = doseValue
                 )
             )
             index++

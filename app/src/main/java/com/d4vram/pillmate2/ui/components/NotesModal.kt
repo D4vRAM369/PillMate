@@ -104,8 +104,12 @@ fun NotesModal(
                         Spacer(modifier = Modifier.width(12.dp))
                         
                         Column {
+                            val title = listOfNotNull(
+                                historyEntry.medicationName,
+                                historyEntry.dose?.takeIf { it.isNotBlank() }
+                            ).joinToString(" • ")
                             Text(
-                                text = historyEntry.medicationName,
+                                text = title,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )

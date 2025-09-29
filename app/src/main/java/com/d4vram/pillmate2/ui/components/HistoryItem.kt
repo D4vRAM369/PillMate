@@ -50,8 +50,12 @@ fun HistoryItem(
         Column(
             modifier = Modifier.weight(1f)
         ) {
+            val title = listOfNotNull(
+                historyEntry.medicationName,
+                historyEntry.dose?.takeIf { it.isNotBlank() }
+            ).joinToString(separator = " • ")
             Text(
-                text = historyEntry.medicationName,
+                text = title,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     fontWeight = FontWeight.SemiBold
                 ),

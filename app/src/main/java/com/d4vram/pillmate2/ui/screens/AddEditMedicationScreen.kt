@@ -96,7 +96,9 @@ fun AddEditMedicationScreen(
                                     dose = dose,
                                     type = type,
                                     color = selectedColor,
-                                    emoji = selectedEmoji
+                                    emoji = selectedEmoji,
+                                    scheduleTime = null,
+                                    scheduleDays = emptyList()
                                 )
                                 val medication = baseMedication.copy(
                                     name = name,
@@ -105,7 +107,9 @@ fun AddEditMedicationScreen(
                                     color = selectedColor,
                                     emoji = selectedEmoji,
                                     dailyGoal = dailyGoal.toIntOrNull() ?: baseMedication.dailyGoal,
-                                    isPrn = isPrn
+                                    isPrn = isPrn,
+                                    scheduleTime = baseMedication.scheduleTime,
+                                    scheduleDays = baseMedication.scheduleDays
                                 )
                                 
                                 if (isEditing) {

@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -15,5 +16,7 @@ data class MedicationEntity(
     val dailyGoal: Int,
     val lastTaken: String?,
     val isPrn: Boolean,
-    val sortOrder: Int
+    val sortOrder: Int,
+    val scheduleTime: String? = null,
+    @ColumnInfo(defaultValue = "") val scheduleDays: String = ""
 )

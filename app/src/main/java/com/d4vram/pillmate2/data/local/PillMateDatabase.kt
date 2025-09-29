@@ -4,10 +4,12 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [MedicationEntity::class, HistoryEntryEntity::class],
-    version = 2,
+    version = 4,
     exportSchema = false
 )
 abstract class PillMateDatabase : RoomDatabase() {
@@ -24,7 +26,20 @@ abstract class PillMateDatabase : RoomDatabase() {
                     context.applicationContext,
                     PillMateDatabase::class.java,
                     "pillmate.db"
-                ).fallbackToDestructiveMigration().build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_2_3, MIGRATION_3_4).build().also { INSTANCE = it }
+            }
+        }
+
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE medications ADD COLUMN scheduleTime TEXT")
+                database.execSQL("ALTER TABLE medications ADD COLUMN scheduleDays TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE history ADD COLUMN dose TEXT")
             }
         }
     }
