@@ -2,6 +2,7 @@
 <paths xmlns:android="http://schemas.android.com/apk/res/android">
     <external-files-path name="exports" path="exports/" />
     <external-files-path name="backups" path="backups/" />
+    <external-files-path name="voice_backups" path="" />
     <files-path name="internal" path="" />
     <cache-path name="shared_audio" path="" />
 </paths>

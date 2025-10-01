@@ -91,6 +91,10 @@ class VoiceNoteRepository(
         voiceNoteDao.update(updated)
     }
 
+    suspend fun getAllNotesForExport(): List<VoiceNote> = withContext(Dispatchers.IO) {
+        voiceNoteDao.getAllNotes().map { it.toDomain() }
+    }
+
     private fun VoiceNoteEntity.toDomain(): VoiceNote = VoiceNote(
         id = id,
         title = title,
@@ -100,7 +104,9 @@ class VoiceNoteRepository(
         encryptedFileName = encryptedFileName,
         noteSaltBase64 = noteSaltBase64,
         noteIvBase64 = noteIvBase64,
-        fileSizeBytes = fileSizeBytes
+        fileSizeBytes = fileSizeBytes,
+        category = category,
+        tags = tags
     )
 
     private fun formatTimestampLabel(epochMillis: Long): String {

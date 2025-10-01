@@ -10,9 +10,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.d4vram.pillmate2.data.voice.VoiceNoteEncryption
 import com.d4vram.pillmate2.data.voice.VoiceNoteRepository
+import com.d4vram.pillmate2.data.voice.VoiceNoteExporter
+import com.d4vram.pillmate2.data.voice.ExportResult
 import com.d4vram.pillmate2.model.VoiceNote
 import com.d4vram.pillmate2.ui.security.VoiceNoteSecurityManager
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +33,7 @@ class VoiceNotesViewModel(
 ) : AndroidViewModel(application) {
 
     private val recorder = VoiceNoteRecorder(application.applicationContext)
+    private val exporter = VoiceNoteExporter(application.applicationContext, repository)
     private var recordingTimerJob: Job? = null
     private var currentTempRecording: File? = null
     private var sessionPassword: CharArray? = null
@@ -326,6 +331,73 @@ class VoiceNotesViewModel(
             }
         }
     }
+    
+    fun exportAllNotes() {
+        if (!_uiState.value.unlocked) {
+            _uiState.update { it.copy(errorMessage = "Desbloquea las notas primero") }
+            return
+        }
+        val password = sessionPassword
+        if (password == null) {
+            _uiState.update { it.copy(errorMessage = "Desbloquea las notas primero") }
+            return
+        }
+        
+        viewModelScope.launch {
+            _uiState.update { it.copy(isExporting = true, infoMessage = "Exportando notas...") }
+            
+            try {
+                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                val exportFile = File(getApplication<Application>().getExternalFilesDir(null), "notas_voz_backup_$timestamp.zip")
+                
+                when (val result = exporter.exportAllNotesToZip(password, exportFile)) {
+                    is ExportResult.Success -> {
+                        // Compartir el archivo ZIP
+                        val uri = FileProvider.getUriForFile(
+                            getApplication(),
+                            "${getApplication<Application>().packageName}.provider",
+                            result.file
+                        )
+                        
+                        val shareIntent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(Intent.EXTRA_STREAM, uri)
+                            putExtra(Intent.EXTRA_SUBJECT, "Backup de Notas de Voz")
+                            putExtra(Intent.EXTRA_TEXT, "Archivo de respaldo con ${result.noteCount} notas de voz cifradas")
+                            type = "application/zip"
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+                        
+                        val chooserIntent = Intent.createChooser(shareIntent, "Exportar backup de notas")
+                        chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        getApplication<Application>().startActivity(chooserIntent)
+                        
+                        _uiState.update { 
+                            it.copy(
+                                isExporting = false, 
+                                infoMessage = "Backup exportado: ${result.noteCount} notas"
+                            ) 
+                        }
+                    }
+                    is ExportResult.Error -> {
+                        _uiState.update { 
+                            it.copy(
+                                isExporting = false, 
+                                errorMessage = result.message
+                            ) 
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                _uiState.update { 
+                    it.copy(
+                        isExporting = false, 
+                        errorMessage = e.localizedMessage ?: "Error al exportar"
+                    ) 
+                }
+            }
+        }
+    }
 
     override fun onCleared() {
         super.onCleared()
@@ -350,7 +422,8 @@ class VoiceNotesViewModel(
         val playingNoteId: String? = null,
         val voiceNotes: List<VoiceNote> = emptyList(),
         val infoMessage: String? = null,
-        val errorMessage: String? = null
+        val errorMessage: String? = null,
+        val isExporting: Boolean = false
     )
 
     companion object {

@@ -9,7 +9,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
     entities = [MedicationEntity::class, HistoryEntryEntity::class, VoiceNoteEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class PillMateDatabase : RoomDatabase() {
@@ -27,7 +27,7 @@ abstract class PillMateDatabase : RoomDatabase() {
                     context.applicationContext,
                     PillMateDatabase::class.java,
                     "pillmate.db"
-                ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6).build().also { INSTANCE = it }
             }
         }
 
@@ -59,6 +59,13 @@ abstract class PillMateDatabase : RoomDatabase() {
                         "fileSizeBytes INTEGER NOT NULL" +
                         ")"
                 )
+            }
+        }
+
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE voice_notes ADD COLUMN category TEXT NOT NULL DEFAULT 'DEFAULT'")
+                database.execSQL("ALTER TABLE voice_notes ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'")
             }
         }
     }

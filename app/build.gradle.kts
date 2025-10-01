@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose") version "2.0.0"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
     id("org.jetbrains.kotlin.kapt")
 }
 
@@ -98,6 +99,12 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
     kapt("androidx.room:room-compiler:2.6.1")
+    
+    // Serialización Kotlin
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    
+    // ZIP4J para archivos ZIP cifrados
+    implementation("net.lingala.zip4j:zip4j:2.11.5")
 
     // Testing
     testImplementation("junit:junit:4.13.2")

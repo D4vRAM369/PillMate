@@ -24,6 +24,7 @@ import com.d4vram.pillmate2.data.BackupManager
 import com.d4vram.pillmate2.data.CsvUtils
 import com.d4vram.pillmate2.ui.security.SecurityManager
 import com.d4vram.pillmate2.ui.security.SecuritySettings
+import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
 import com.d4vram.pillmate2.ui.theme.AppUiStyle
 import com.d4vram.pillmate2.ui.theme.ThemeManager
 import androidx.biometric.BiometricManager
@@ -33,6 +34,7 @@ import kotlinx.coroutines.withContext
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.core.content.FileProvider
@@ -62,6 +64,7 @@ fun SettingsScreen(
     var showPinChangeDialog by remember { mutableStateOf(false) }
     var showTimeoutPicker by remember { mutableStateOf(false) }
     var pendingEnableLock by remember { mutableStateOf(false) }
+    var showVoiceNotePasswordDialog by remember { mutableStateOf(false) }
 
     val biometricManager = remember { BiometricManager.from(context) }
     val canAuthenticateBiometric = remember(biometricManager) {
@@ -77,6 +80,7 @@ fun SettingsScreen(
 
     val backupManager = remember { BackupManager(context.applicationContext, repository) }
     val lastBackupMillis by backupManager.lastBackupFlow.collectAsState(initial = null)
+    val voiceNoteSecurityManager = rememberVoiceNoteSecurityManager()
     val lastBackupText = remember(lastBackupMillis) {
         lastBackupMillis?.let { millis ->
             DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(millis))
@@ -376,6 +380,17 @@ fun SettingsScreen(
             }
 
             item {
+                SettingsSection(title = "🎙️ Notas de Voz") {
+                    SettingsItem(
+                        title = "Cambiar contraseña de notas",
+                        description = "Modificar contraseña y pista de las notas de voz",
+                        icon = Icons.Default.Lock,
+                        onClick = { showVoiceNotePasswordDialog = true }
+                    )
+                }
+            }
+
+            item {
                 SettingsSection(title = "ℹ️ Información") {
                     SettingsItem(
                         title = "Versión",
@@ -498,6 +513,27 @@ fun SettingsScreen(
                 securityManager.updateAutoLockDuration(duration)
                 snackbarMessage = "Tiempo de bloqueo actualizado"
                 showTimeoutPicker = false
+            }
+        )
+    }
+
+    if (showVoiceNotePasswordDialog) {
+        VoiceNotePasswordChangeDialog(
+            onDismiss = { showVoiceNotePasswordDialog = false },
+            onConfirm = { currentPassword, newPassword, newHint ->
+                scope.launch {
+                    try {
+                        val success = voiceNoteSecurityManager.changePassword(currentPassword, newPassword, newHint)
+                        if (success) {
+                            snackbarMessage = "Contraseña de notas actualizada"
+                            showVoiceNotePasswordDialog = false
+                        } else {
+                            snackbarMessage = "Contraseña actual incorrecta"
+                        }
+                    } catch (e: Exception) {
+                        snackbarMessage = e.localizedMessage ?: "Error al cambiar contraseña"
+                    }
+                }
             }
         )
     }
@@ -849,4 +885,112 @@ private fun shareFile(context: Context, file: File) {
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(shareIntent, "Compartir CSV"))
+}
+
+@Composable
+private fun VoiceNotePasswordChangeDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (currentPassword: String, newPassword: String, newHint: String?) -> Unit
+) {
+    var currentPassword by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var hint by remember { mutableStateOf("") }
+    var currentPasswordVisible by remember { mutableStateOf(false) }
+    var newPasswordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
+    
+    val isValid = currentPassword.isNotBlank() && 
+                  newPassword.isNotBlank() && 
+                  confirmPassword.isNotBlank() && 
+                  newPassword == confirmPassword
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Cambiar contraseña de notas") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = currentPassword,
+                    onValueChange = { currentPassword = it },
+                    label = { Text("Contraseña actual") },
+                    singleLine = true,
+                    visualTransformation = if (currentPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { currentPasswordVisible = !currentPasswordVisible }) {
+                            Icon(
+                                imageVector = if (currentPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = { newPassword = it },
+                    label = { Text("Nueva contraseña") },
+                    singleLine = true,
+                    visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { newPasswordVisible = !newPasswordVisible }) {
+                            Icon(
+                                imageVector = if (newPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { confirmPassword = it },
+                    label = { Text("Confirmar nueva contraseña") },
+                    singleLine = true,
+                    visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                            Icon(
+                                imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    isError = confirmPassword.isNotBlank() && newPassword != confirmPassword,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                OutlinedTextField(
+                    value = hint,
+                    onValueChange = { hint = it },
+                    label = { Text("Nueva pista (opcional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                if (confirmPassword.isNotBlank() && newPassword != confirmPassword) {
+                    Text(
+                        text = "Las contraseñas no coinciden",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(currentPassword, newPassword, hint.ifBlank { null }) },
+                enabled = isValid
+            ) {
+                Text("Cambiar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }

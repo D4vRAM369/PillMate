@@ -24,4 +24,7 @@ interface VoiceNoteDao {
 
     @Query("SELECT * FROM voice_notes WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): VoiceNoteEntity?
+    
+    @Query("SELECT * FROM voice_notes ORDER BY createdAtEpochMillis DESC")
+    suspend fun getAllNotes(): List<VoiceNoteEntity>
 }

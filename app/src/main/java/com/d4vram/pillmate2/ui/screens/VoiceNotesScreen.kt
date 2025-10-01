@@ -34,6 +34,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -133,6 +134,19 @@ fun VoiceNotesScreen(viewModel: VoiceNotesViewModel) {
                 title = { Text(text = "Notas de voz") },
                 navigationIcon = {
                     Icon(Icons.Default.Mic, contentDescription = null)
+                },
+                actions = {
+                    if (uiState.unlocked) {
+                        IconButton(
+                            onClick = { viewModel.exportAllNotes() },
+                            enabled = !uiState.isExporting
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FileDownload,
+                                contentDescription = "Exportar todas las notas"
+                            )
+                        }
+                    }
                 },
                 scrollBehavior = scrollBehavior
             )

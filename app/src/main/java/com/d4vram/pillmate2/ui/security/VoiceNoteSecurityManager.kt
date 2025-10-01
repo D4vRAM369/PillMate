@@ -79,6 +79,21 @@ class VoiceNoteSecurityManager(private val context: Context) {
         MessageDigest.isEqual(storedHashBytes, computedHashBytes)
     }
 
+    suspend fun changePassword(
+        currentPassword: String, 
+        newPassword: String, 
+        newHint: String? = null
+    ): Boolean = withContext(Dispatchers.IO) {
+        // Verificar contraseña actual
+        if (!verifyPassword(currentPassword)) {
+            return@withContext false
+        }
+        
+        // Configurar nueva contraseña
+        setPassword(newPassword, newHint)
+        return@withContext true
+    }
+
     suspend fun clearPassword() = withContext(Dispatchers.IO) {
         context.voiceNoteSecurityDataStore.edit { prefs ->
             prefs.remove(PASSWORD_HASH_KEY)
