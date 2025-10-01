@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.MicNone
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -169,7 +171,8 @@ fun VoiceNotesScreen(viewModel: VoiceNotesViewModel) {
                         onCancelRecording = { viewModel.cancelRecording() },
                         onPlay = { note -> viewModel.playOrToggle(note) },
                         onDelete = { note -> viewModel.deleteNote(note) },
-                        onRename = { note, title -> viewModel.renameNote(note, title) }
+                        onRename = { note, title -> viewModel.renameNote(note, title) },
+                        onShare = { note -> viewModel.shareNote(note) }
                     )
                 }
             }
@@ -307,7 +310,8 @@ private fun VoiceNotesContent(
     onCancelRecording: () -> Unit,
     onPlay: (VoiceNote) -> Unit,
     onDelete: (VoiceNote) -> Unit,
-    onRename: (VoiceNote, String) -> Unit
+    onRename: (VoiceNote, String) -> Unit,
+    onShare: (VoiceNote) -> Unit
 ) {
     var renameTarget by remember { mutableStateOf<VoiceNote?>(null) }
     var renameText by remember { mutableStateOf("") }
@@ -348,7 +352,8 @@ private fun VoiceNotesContent(
                                 renameTarget = note
                                 renameText = note.title
                             },
-                            onDelete = { deleteTarget = note }
+                            onDelete = { deleteTarget = note },
+                            onShare = { onShare(note) }
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                     }
@@ -418,7 +423,8 @@ private fun VoiceNoteRow(
     isPlaying: Boolean,
     onPlay: () -> Unit,
     onRename: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onShare: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
 
@@ -439,6 +445,7 @@ private fun VoiceNoteRow(
                         color = if (isPlaying) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary,
                         shape = CircleShape
                     )
+                    .clickable { onPlay() }
                     .padding(12.dp)
             ) {
                 Icon(
@@ -472,6 +479,14 @@ private fun VoiceNoteRow(
                         onClick = {
                             menuExpanded = false
                             onRename()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Compartir") },
+                        leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
+                        onClick = {
+                            menuExpanded = false
+                            onShare()
                         }
                     )
                     DropdownMenuItem(

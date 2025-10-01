@@ -1,7 +1,9 @@
 package com.d4vram.pillmate2.ui.voicenotes
 
 import android.app.Application
+import android.content.Intent
 import android.media.MediaPlayer
+import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -107,6 +109,10 @@ class VoiceNotesViewModel(
         sessionPassword = null
         stopPlayback()
         _uiState.update { it.copy(unlocked = false) }
+    }
+    
+    fun lockFromAppSecurity() {
+        lockSession()
     }
 
     fun startRecording() {
@@ -275,6 +281,50 @@ class VoiceNotesViewModel(
 
     fun consumeErrorMessage() {
         _uiState.update { it.copy(errorMessage = null) }
+    }
+    
+    fun shareNote(note: VoiceNote) {
+        if (!_uiState.value.unlocked) {
+            _uiState.update { it.copy(errorMessage = "Desbloquea las notas primero") }
+            return
+        }
+        val password = sessionPassword
+        if (password == null) {
+            _uiState.update { it.copy(errorMessage = "Desbloquea las notas primero") }
+            return
+        }
+        
+        viewModelScope.launch {
+            try {
+                val tempFile = repository.decryptNoteToTempFile(note, password)
+                val shareFile = File(getApplication<Application>().cacheDir, "shared_${note.title.replace("[^a-zA-Z0-9]".toRegex(), "_")}.m4a")
+                tempFile.copyTo(shareFile, overwrite = true)
+                tempFile.delete()
+                
+                val uri = FileProvider.getUriForFile(
+                    getApplication(),
+                    "${getApplication<Application>().packageName}.provider",
+                    shareFile
+                )
+                
+                val shareIntent = Intent().apply {
+                    action = Intent.ACTION_SEND
+                    putExtra(Intent.EXTRA_STREAM, uri)
+                    putExtra(Intent.EXTRA_SUBJECT, note.title)
+                    putExtra(Intent.EXTRA_TEXT, "Nota de voz: ${note.title}")
+                    type = "audio/*"
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                
+                val chooserIntent = Intent.createChooser(shareIntent, "Compartir nota de voz")
+                chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                getApplication<Application>().startActivity(chooserIntent)
+                
+                _uiState.update { it.copy(infoMessage = "Preparando para compartir...") }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "No se pudo compartir la nota") }
+            }
+        }
     }
 
     override fun onCleared() {
