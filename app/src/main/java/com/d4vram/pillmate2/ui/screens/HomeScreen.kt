@@ -74,7 +74,7 @@ fun HomeScreen(
                 // Título de medicamentos
                 SectionTitle(
                     title = "🏠 Mis Medicamentos",
-                    subtitle = "Presiona para registrar",
+                    // subtitle = "Presiona para registrar",
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
             }

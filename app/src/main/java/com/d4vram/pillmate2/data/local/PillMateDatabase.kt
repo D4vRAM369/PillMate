@@ -8,13 +8,14 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [MedicationEntity::class, HistoryEntryEntity::class],
-    version = 4,
+    entities = [MedicationEntity::class, HistoryEntryEntity::class, VoiceNoteEntity::class],
+    version = 5,
     exportSchema = false
 )
 abstract class PillMateDatabase : RoomDatabase() {
     abstract fun medicationDao(): MedicationDao
     abstract fun historyDao(): HistoryDao
+    abstract fun voiceNoteDao(): VoiceNoteDao
 
     companion object {
         @Volatile
@@ -26,7 +27,7 @@ abstract class PillMateDatabase : RoomDatabase() {
                     context.applicationContext,
                     PillMateDatabase::class.java,
                     "pillmate.db"
-                ).addMigrations(MIGRATION_2_3, MIGRATION_3_4).build().also { INSTANCE = it }
+                ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build().also { INSTANCE = it }
             }
         }
 
@@ -40,6 +41,24 @@ abstract class PillMateDatabase : RoomDatabase() {
         private val MIGRATION_3_4 = object : Migration(3, 4) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("ALTER TABLE history ADD COLUMN dose TEXT")
+            }
+        }
+
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "CREATE TABLE IF NOT EXISTS voice_notes (" +
+                        "id TEXT NOT NULL PRIMARY KEY, " +
+                        "title TEXT NOT NULL, " +
+                        "createdAtEpochMillis INTEGER NOT NULL, " +
+                        "updatedAtEpochMillis INTEGER NOT NULL, " +
+                        "durationMillis INTEGER NOT NULL, " +
+                        "encryptedFileName TEXT NOT NULL, " +
+                        "noteSaltBase64 TEXT NOT NULL, " +
+                        "noteIvBase64 TEXT NOT NULL, " +
+                        "fileSizeBytes INTEGER NOT NULL" +
+                        ")"
+                )
             }
         }
     }

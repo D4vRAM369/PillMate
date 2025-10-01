@@ -2,12 +2,14 @@ package com.d4vram.pillmate2.ui.navigation
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -16,13 +18,17 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.local.PillMateDatabase
+import com.d4vram.pillmate2.data.voice.VoiceNoteRepository
 import com.d4vram.pillmate2.ui.screens.AddEditMedicationScreen
 import com.d4vram.pillmate2.ui.screens.HistoryScreen
 import com.d4vram.pillmate2.ui.screens.HomeScreen
 import com.d4vram.pillmate2.ui.screens.MedicationsScreen
 import com.d4vram.pillmate2.ui.screens.SettingsScreen
+import com.d4vram.pillmate2.ui.screens.VoiceNotesScreen
 import com.d4vram.pillmate2.ui.theme.ThemeManager
 import com.d4vram.pillmate2.ui.security.SecurityManager
+import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
+import com.d4vram.pillmate2.ui.voicenotes.VoiceNotesViewModel
 
 /**
  * 🧭 Sistema de navegación principal
@@ -32,7 +38,7 @@ import com.d4vram.pillmate2.ui.security.SecurityManager
 @Composable
 fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityManager) {
     val navController = rememberNavController()
-    val context = LocalContext.current.applicationContext
+    val context = LocalContext.current
     val repository = remember {
         val database = PillMateDatabase.getInstance(context)
         MedicationRepository(
@@ -41,6 +47,23 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
             historyDao = database.historyDao()
         )
     }
+    
+    val voiceNoteRepository = remember {
+        val database = PillMateDatabase.getInstance(context)
+        VoiceNoteRepository(
+            context = context,
+            voiceNoteDao = database.voiceNoteDao()
+        )
+    }
+    
+    val voiceNoteSecurityManager = rememberVoiceNoteSecurityManager()
+    val voiceNotesViewModel: VoiceNotesViewModel = viewModel(
+        factory = VoiceNotesViewModel.provideFactory(
+            application = context.applicationContext as android.app.Application,
+            repository = voiceNoteRepository,
+            securityManager = voiceNoteSecurityManager
+        )
+    )
 
     Scaffold(
         bottomBar = {
@@ -116,6 +139,10 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
                 HistoryScreen(repository = repository)
             }
 
+            composable(Screen.VoiceNotes.route) {
+                VoiceNotesScreen(viewModel = voiceNotesViewModel)
+            }
+
             composable(Screen.Settings.route) {
                 SettingsScreen(
                     themeManager = themeManager,
@@ -155,7 +182,8 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
     object Home : Screen("home", "Inicio", Icons.Default.Home)
     object Medications : Screen("medications", "Medicamentos", Icons.Default.Add)
-    object History : Screen("history", "Historial", Icons.Default.List)
+    object History : Screen("history", "Historial", Icons.AutoMirrored.Filled.List)
+    object VoiceNotes : Screen("voice_notes", "Notas", Icons.Default.Mic)
     object Settings : Screen("settings", "Ajustes", Icons.Default.Settings)
 }
 
@@ -163,5 +191,6 @@ private val bottomNavItems = listOf(
     Screen.Home,
     Screen.Medications,
     Screen.History,
+    Screen.VoiceNotes,
     Screen.Settings
 )
