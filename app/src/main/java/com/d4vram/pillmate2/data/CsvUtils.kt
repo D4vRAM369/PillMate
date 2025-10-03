@@ -24,7 +24,7 @@ object CsvUtils {
         val builder = StringBuilder()
         builder.appendLine(HEADER)
         builder.appendLine(SECTION_MEDICATIONS)
-        builder.appendLine("id,name,dose,type,colorArgb,emoji,takenTotal,lastTaken,isPrn,sortOrder,scheduleTime,scheduleDays")
+        builder.appendLine("id,name,dose,type,colorArgb,emoji,takenToday,dailyGoal,lastTaken,isPrn,sortOrder,scheduleTime,scheduleDays")
         medications.forEach { medication ->
             builder.appendLine(
                 listOf(
@@ -53,14 +53,14 @@ object CsvUtils {
                 listOf(
                     entry.id,
                     entry.medicationName,
+                    entry.dose.orEmpty(),
                     entry.time,
                     entry.date,
                     entry.color.toArgb().toString(),
                     entry.emoji,
                     entry.quantity.toString(),
                     entry.notes.replace("\n", "\\n"),
-                    entry.timestamp.toString(),
-                    entry.dose.orEmpty()
+                    entry.timestamp.toString()
                 ).joinToCsv()
             )
         }
@@ -112,32 +112,46 @@ object CsvUtils {
         }
         index += 2
 
+        val historyHeaderLine = lines[index - 1]
+        val historyHeaderHasDose = historyHeaderLine.split(',')
+            .map { it.trim().lowercase() }
+            .contains("dose")
+
         val history = mutableListOf<HistoryEntry>()
         while (index < lines.size) {
             val tokens = parseCsvLine(lines[index])
-            if (tokens.size < 8) {
+            if (tokens.size < 9) {
                 throw IllegalArgumentException("Fila de historial incompleta")
             }
-            val quantityToken = tokens.getOrNull(6)
-            val parsedQuantity = quantityToken?.toIntOrNull()
-            val quantity = parsedQuantity ?: 1
-            val notesIndex = if (parsedQuantity != null) 7 else 6
-            val timestampIndex = if (parsedQuantity != null) 8 else 7
-            val doseIndex = timestampIndex + 1
+
+            val hasDoseColumn = historyHeaderHasDose && tokens.size >= 10
+            val doseIndex = if (hasDoseColumn) 2 else null
+            val timeIndex = if (hasDoseColumn) 3 else 2
+            val dateIndex = timeIndex + 1
+            val colorIndex = dateIndex + 1
+            val emojiIndex = colorIndex + 1
+            val quantityIndex = emojiIndex + 1
+            val notesIndex = quantityIndex + 1
+            val timestampIndex = notesIndex + 1
+
+            val quantity = tokens.getOrNull(quantityIndex)?.toIntOrNull() ?: 1
             val notesValue = tokens.getOrNull(notesIndex)?.replace("\\n", "\n") ?: ""
             val timestampString = tokens.getOrNull(timestampIndex)
             val parsedTimestamp = timestampString?.let { ts ->
                 runCatching { LocalDateTime.parse(ts) }.getOrNull()
             } ?: LocalDateTime.now()
-            val doseValue = tokens.getOrNull(doseIndex)?.ifBlank { null }
+            val doseValue = doseIndex?.let { idx -> tokens.getOrNull(idx)?.ifBlank { null } }
+                ?: tokens.getOrNull(timestampIndex + 1)?.ifBlank { null }
+            val colorValue = tokens.getOrNull(colorIndex)?.toIntOrNull() ?: 0
+
             history.add(
                 HistoryEntry(
                     id = tokens[0],
                     medicationName = tokens[1],
-                    time = tokens[2],
-                    date = tokens[3],
-                    color = Color(tokens[4].toInt()),
-                    emoji = tokens[5],
+                    time = tokens.getOrElse(timeIndex) { "" },
+                    date = tokens.getOrElse(dateIndex) { "" },
+                    color = Color(colorValue),
+                    emoji = tokens.getOrElse(emojiIndex) { "" },
                     quantity = quantity,
                     notes = notesValue,
                     timestamp = parsedTimestamp,
