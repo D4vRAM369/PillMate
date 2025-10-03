@@ -20,7 +20,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -38,8 +37,24 @@ class MedicationRepository(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
+    private val historyFlow = historyDao.observeHistory()
+
     private val medicationsFlow = medicationDao.observeMedications()
-        .map { entities -> entities.map { it.toDomain() } }
+        .combine(historyFlow) { medicationEntities, historyEntities ->
+            val latestTimestampByMedication = mutableMapOf<String, LocalDateTime>()
+            historyEntities.forEach { entry ->
+                val timestamp = parseTimestampOrNull(entry.timestampIso) ?: return@forEach
+                val current = latestTimestampByMedication[entry.medicationName]
+                if (current == null || timestamp.isAfter(current)) {
+                    latestTimestampByMedication[entry.medicationName] = timestamp
+                }
+            }
+
+            medicationEntities.map { entity ->
+                val lastTakenTimestamp = latestTimestampByMedication[entity.name]
+                entity.toDomain(lastTakenTimestamp)
+            }
+        }
 
     val medications: StateFlow<List<Medication>> = medicationsFlow.stateIn(
         scope,
@@ -47,7 +62,7 @@ class MedicationRepository(
         emptyList()
     )
 
-    private val historyWithMedicationsFlow = historyDao.observeHistory()
+    private val historyWithMedicationsFlow = historyFlow
         .combine(medicationDao.observeMedications()) { historyEntities, medicationEntities ->
             val doseFallback = medicationEntities.associateBy { it.name }
             historyEntities.map { it.toDomain(doseFallback) }
@@ -86,9 +101,10 @@ class MedicationRepository(
             val safeQuantity = quantity.coerceAtLeast(1)
             val now = LocalDateTime.now().withSecond(0).withNano(0)
             val formattedTime = formatTime(now)
+            val formattedLastTaken = formatDateTime(now)
             val updated = medication.copy(
                 takenToday = medication.takenToday + safeQuantity,
-                lastTaken = formattedTime
+                lastTaken = formattedLastTaken
             )
             medicationDao.upsertMedication(updated)
 
@@ -249,6 +265,10 @@ class MedicationRepository(
         )
     }
 
+    private fun formatDateTime(dateTime: LocalDateTime): String {
+        return "${formatDate(dateTime)} ${formatTime(dateTime)}"
+    }
+
     private fun formatDate(dateTime: LocalDateTime): String {
         val today = LocalDateTime.now()
         val yesterday = today.minusDays(1)
@@ -268,6 +288,9 @@ class MedicationRepository(
         return dateTime.format(formatter)
     }
 
+    private fun parseTimestampOrNull(timestampIso: String?): LocalDateTime? =
+        timestampIso?.let { iso -> runCatching { LocalDateTime.parse(iso) }.getOrNull() }
+
     private fun String.toScheduleDaysList(): List<String> =
         split(',')
             .map { it.trim() }
@@ -276,7 +299,9 @@ class MedicationRepository(
     private fun List<String>.toScheduleDaysString(): String =
         joinToString(separator = ",") { it.trim().uppercase() }
 
-    private fun MedicationEntity.toDomain(): Medication = Medication(
+    private fun MedicationEntity.toDomain(
+        lastTakenTimestamp: LocalDateTime? = null
+    ): Medication = Medication(
         id = id,
         name = name,
         dose = dose,
@@ -285,7 +310,10 @@ class MedicationRepository(
         emoji = emoji,
         takenToday = takenToday,
         dailyGoal = dailyGoal,
-        lastTaken = lastTaken,
+        lastTaken = lastTakenTimestamp?.let { formatDateTime(it) }
+            ?: lastTaken?.let { stored ->
+                parseTimestampOrNull(stored)?.let { parsed -> formatDateTime(parsed) } ?: stored
+            },
         isPrn = isPrn,
         sortOrder = sortOrder,
         scheduleTime = scheduleTime,

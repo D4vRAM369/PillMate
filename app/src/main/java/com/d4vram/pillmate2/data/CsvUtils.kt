@@ -24,7 +24,7 @@ object CsvUtils {
         val builder = StringBuilder()
         builder.appendLine(HEADER)
         builder.appendLine(SECTION_MEDICATIONS)
-        builder.appendLine("id,name,dose,type,colorArgb,emoji,takenToday,dailyGoal,lastTaken,isPrn,sortOrder,scheduleTime,scheduleDays")
+        builder.appendLine("id,name,dose,type,colorArgb,emoji,takenTotal,lastTaken,isPrn,sortOrder,scheduleTime,scheduleDays")
         medications.forEach { medication ->
             builder.appendLine(
                 listOf(
@@ -47,7 +47,7 @@ object CsvUtils {
 
         builder.appendLine()
         builder.appendLine(SECTION_HISTORY)
-        builder.appendLine("id,medicationName,time,date,colorArgb,emoji,quantity,notes,timestampIso,dose")
+        builder.appendLine("id,medicationName,dose,time,date,colorArgb,emoji,quantity,notes,timestampIso")
         history.forEach { entry ->
             builder.appendLine(
                 listOf(
