@@ -35,6 +35,8 @@ import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.Label
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -79,7 +81,20 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.d4vram.pillmate2.R
 import com.d4vram.pillmate2.model.VoiceNote
+import com.d4vram.pillmate2.model.VoiceNoteCategory
 import com.d4vram.pillmate2.ui.voicenotes.VoiceNotesViewModel
+import androidx.compose.ui.graphics.Color as ComposeColor
+import androidx.compose.foundation.border
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.InputChip
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.RadioButton
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.size
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -186,7 +201,9 @@ fun VoiceNotesScreen(viewModel: VoiceNotesViewModel) {
                         onPlay = { note -> viewModel.playOrToggle(note) },
                         onDelete = { note -> viewModel.deleteNote(note) },
                         onRename = { note, title -> viewModel.renameNote(note, title) },
-                        onShare = { note -> viewModel.shareNote(note) }
+                        onShare = { note -> viewModel.shareNote(note) },
+                        onCategoryChange = { note, category -> viewModel.updateNoteCategory(note, category) },
+                        onTagsChange = { note, tags -> viewModel.updateNoteTags(note, tags) }
                     )
                 }
             }
@@ -325,11 +342,16 @@ private fun VoiceNotesContent(
     onPlay: (VoiceNote) -> Unit,
     onDelete: (VoiceNote) -> Unit,
     onRename: (VoiceNote, String) -> Unit,
-    onShare: (VoiceNote) -> Unit
+    onShare: (VoiceNote) -> Unit,
+    onCategoryChange: (VoiceNote, VoiceNoteCategory) -> Unit,
+    onTagsChange: (VoiceNote, List<String>) -> Unit
 ) {
     var renameTarget by remember { mutableStateOf<VoiceNote?>(null) }
     var renameText by remember { mutableStateOf("") }
     var deleteTarget by remember { mutableStateOf<VoiceNote?>(null) }
+    var categoryTarget by remember { mutableStateOf<VoiceNote?>(null) }
+    var tagsTarget by remember { mutableStateOf<VoiceNote?>(null) }
+    var tagsText by remember { mutableStateOf("") }
     var pendingTitle by remember { mutableStateOf("") }
 
     val grouped = remember(uiState.voiceNotes) {
@@ -367,7 +389,9 @@ private fun VoiceNotesContent(
                                 renameText = note.title
                             },
                             onDelete = { deleteTarget = note },
-                            onShare = { onShare(note) }
+                            onShare = { onShare(note) },
+                            onCategoryChange = { category -> onCategoryChange(note, category) },
+                            onTagsChange = { tags -> onTagsChange(note, tags) }
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                     }
@@ -414,6 +438,33 @@ private fun VoiceNotesContent(
             }
         )
     }
+
+    categoryTarget?.let { note ->
+        CategorySelectorDialog(
+            currentCategory = note.category,
+            onDismiss = { categoryTarget = null },
+            onConfirm = { category ->
+                onCategoryChange(note, category)
+                categoryTarget = null
+            }
+        )
+    }
+
+    tagsTarget?.let { note ->
+        TagsEditorDialog(
+            initialTags = tagsText,
+            onDismiss = { 
+                tagsTarget = null
+                tagsText = ""
+            },
+            onConfirm = { tags ->
+                val tagsList = tags.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                onTagsChange(note, tagsList)
+                tagsTarget = null
+                tagsText = ""
+            }
+        )
+    }
 }
 
 @Composable
@@ -438,12 +489,22 @@ private fun VoiceNoteRow(
     onPlay: () -> Unit,
     onRename: () -> Unit,
     onDelete: () -> Unit,
-    onShare: () -> Unit
+    onShare: () -> Unit,
+    onCategoryChange: (VoiceNoteCategory) -> Unit,
+    onTagsChange: (List<String>) -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
+    var showCategoryDialog by remember { mutableStateOf(false) }
+    var showTagsDialog by remember { mutableStateOf(false) }
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 2.dp,
+                color = ComposeColor(android.graphics.Color.parseColor(note.category.colorHex)),
+                shape = RoundedCornerShape(18.dp)
+            ),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
@@ -470,12 +531,54 @@ private fun VoiceNoteRow(
             }
             Spacer(modifier = Modifier.padding(horizontal = 8.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(text = note.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = note.title, 
+                        style = MaterialTheme.typography.titleMedium, 
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    AssistChip(
+                        onClick = { /* Mostrar selector de categoría */ },
+                        label = { Text(note.category.displayName) },
+                        leadingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(12.dp)
+                                    .background(
+                                        ComposeColor(android.graphics.Color.parseColor(note.category.colorHex)),
+                                        CircleShape
+                                    )
+                            )
+                        }
+                    )
+                }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Duración ${formatDuration(note.durationMillis)} • ${formatTime(note.createdAtEpochMillis)}",
                     style = MaterialTheme.typography.bodySmall
                 )
+                if (note.tags.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        items(note.tags) { tag ->
+                            SuggestionChip(
+                                onClick = { /* Editar etiquetas */ },
+                                label = { 
+                                    Text(
+                                        text = tag,
+                                        style = MaterialTheme.typography.labelSmall
+                                    ) 
+                                }
+                            )
+                        }
+                    }
+                }
             }
             IconButton(onClick = onPlay) {
                 Icon(
@@ -493,6 +596,22 @@ private fun VoiceNoteRow(
                         onClick = {
                             menuExpanded = false
                             onRename()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Cambiar categoría") },
+                        leadingIcon = { Icon(Icons.Default.Category, contentDescription = null) },
+                        onClick = {
+                            menuExpanded = false
+                            showCategoryDialog = true
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Editar etiquetas") },
+                        leadingIcon = { Icon(Icons.Default.Label, contentDescription = null) },
+                        onClick = {
+                            menuExpanded = false
+                            showTagsDialog = true
                         }
                     )
                     DropdownMenuItem(
@@ -514,6 +633,29 @@ private fun VoiceNoteRow(
                 }
             }
         }
+    }
+
+    if (showCategoryDialog) {
+        CategorySelectorDialog(
+            currentCategory = note.category,
+            onDismiss = { showCategoryDialog = false },
+            onConfirm = { category ->
+                onCategoryChange(category)
+                showCategoryDialog = false
+            }
+        )
+    }
+
+    if (showTagsDialog) {
+        TagsEditorDialog(
+            initialTags = note.tags.joinToString(", "),
+            onDismiss = { showTagsDialog = false },
+            onConfirm = { tags ->
+                val tagsList = tags.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                onTagsChange(tagsList)
+                showTagsDialog = false
+            }
+        )
     }
 }
 
@@ -673,4 +815,97 @@ private fun formatRecordingTitle(elapsed: Long): String {
     val instant = Instant.now()
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.getDefault())
     return "Nota ${formatter.format(instant.atZone(ZoneId.systemDefault()))}"
+}
+
+@Composable
+private fun CategorySelectorDialog(
+    currentCategory: VoiceNoteCategory,
+    onDismiss: () -> Unit,
+    onConfirm: (VoiceNoteCategory) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Seleccionar categoría") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                VoiceNoteCategory.values().forEach { category ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onConfirm(category) }
+                            .padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        RadioButton(
+                            selected = category == currentCategory,
+                            onClick = { onConfirm(category) }
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(16.dp)
+                                .background(
+                                    ComposeColor(android.graphics.Color.parseColor(category.colorHex)),
+                                    CircleShape
+                                )
+                        )
+                        Text(
+                            text = category.displayName,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        }
+    )
+}
+
+@Composable
+private fun TagsEditorDialog(
+    initialTags: String,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var tagsText by remember { mutableStateOf(initialTags) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Editar etiquetas") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "Separa las etiquetas con comas",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                OutlinedTextField(
+                    value = tagsText,
+                    onValueChange = { tagsText = it },
+                    label = { Text("Etiquetas") },
+                    placeholder = { Text("urgente, importante, trabajo") },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 3
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(tagsText) }
+            ) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
 }

@@ -13,6 +13,7 @@ import com.d4vram.pillmate2.data.voice.VoiceNoteRepository
 import com.d4vram.pillmate2.data.voice.VoiceNoteExporter
 import com.d4vram.pillmate2.data.voice.ExportResult
 import com.d4vram.pillmate2.model.VoiceNote
+import com.d4vram.pillmate2.model.VoiceNoteCategory
 import com.d4vram.pillmate2.ui.security.VoiceNoteSecurityManager
 import java.io.File
 import java.text.SimpleDateFormat
@@ -276,6 +277,28 @@ class VoiceNotesViewModel(
                 _uiState.update { it.copy(infoMessage = "Nota actualizada") }
             } catch (e: Exception) {
                 _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "No se pudo renombrar la nota") }
+            }
+        }
+    }
+
+    fun updateNoteCategory(note: VoiceNote, category: VoiceNoteCategory) {
+        viewModelScope.launch {
+            try {
+                repository.updateVoiceNoteCategory(note.id, category)
+                _uiState.update { it.copy(infoMessage = "Categoría actualizada") }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "No se pudo actualizar la categoría") }
+            }
+        }
+    }
+
+    fun updateNoteTags(note: VoiceNote, tags: List<String>) {
+        viewModelScope.launch {
+            try {
+                repository.updateVoiceNoteTags(note.id, tags)
+                _uiState.update { it.copy(infoMessage = "Etiquetas actualizadas") }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "No se pudieron actualizar las etiquetas") }
             }
         }
     }

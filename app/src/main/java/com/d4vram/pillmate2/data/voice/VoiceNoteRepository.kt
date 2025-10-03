@@ -5,6 +5,7 @@ import android.util.Base64
 import com.d4vram.pillmate2.data.local.VoiceNoteDao
 import com.d4vram.pillmate2.data.local.VoiceNoteEntity
 import com.d4vram.pillmate2.model.VoiceNote
+import com.d4vram.pillmate2.model.VoiceNoteCategory
 import java.io.File
 import java.time.Instant
 import java.time.ZoneId
@@ -86,6 +87,24 @@ class VoiceNoteRepository(
         val entity = voiceNoteDao.getById(noteId) ?: return@withContext
         val updated = entity.copy(
             title = newTitle.ifBlank { entity.title },
+            updatedAtEpochMillis = Instant.now().toEpochMilli()
+        )
+        voiceNoteDao.update(updated)
+    }
+
+    suspend fun updateVoiceNoteCategory(noteId: String, category: VoiceNoteCategory) = withContext(Dispatchers.IO) {
+        val entity = voiceNoteDao.getById(noteId) ?: return@withContext
+        val updated = entity.copy(
+            category = category,
+            updatedAtEpochMillis = Instant.now().toEpochMilli()
+        )
+        voiceNoteDao.update(updated)
+    }
+
+    suspend fun updateVoiceNoteTags(noteId: String, tags: List<String>) = withContext(Dispatchers.IO) {
+        val entity = voiceNoteDao.getById(noteId) ?: return@withContext
+        val updated = entity.copy(
+            tags = tags,
             updatedAtEpochMillis = Instant.now().toEpochMilli()
         )
         voiceNoteDao.update(updated)

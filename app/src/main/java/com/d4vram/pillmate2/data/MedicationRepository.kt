@@ -310,18 +310,23 @@ class MedicationRepository(
 
     private fun HistoryEntryEntity.toDomain(
         doseFallback: Map<String, MedicationEntity> = emptyMap()
-    ): HistoryEntry = HistoryEntry(
-        id = id,
-        medicationName = medicationName,
-        time = time,
-        date = date,
-        color = Color(colorArgb),
-        emoji = emoji,
-        quantity = quantity,
-        notes = notes,
-        timestamp = runCatching { LocalDateTime.parse(timestampIso) }.getOrElse { LocalDateTime.now() },
-        dose = dose ?: doseFallback[medicationName]?.dose
-    )
+    ): HistoryEntry {
+        val parsedTimestamp = runCatching { LocalDateTime.parse(timestampIso) }
+            .getOrElse { LocalDateTime.now() }
+
+        return HistoryEntry(
+            id = id,
+            medicationName = medicationName,
+            time = formatTime(parsedTimestamp),
+            date = formatDate(parsedTimestamp),
+            color = Color(colorArgb),
+            emoji = emoji,
+            quantity = quantity,
+            notes = notes,
+            timestamp = parsedTimestamp,
+            dose = dose ?: doseFallback[medicationName]?.dose
+        )
+    }
 
     private fun HistoryEntry.toEntity(): HistoryEntryEntity = HistoryEntryEntity(
         id = id,
