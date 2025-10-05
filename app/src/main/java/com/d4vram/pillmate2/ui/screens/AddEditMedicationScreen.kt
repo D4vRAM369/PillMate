@@ -1,12 +1,7 @@
 package com.d4vram.pillmate2.ui.screens
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -23,7 +18,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -35,7 +29,7 @@ import com.d4vram.pillmate2.model.Medication
 import java.util.UUID
 import kotlin.math.roundToInt
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddEditMedicationScreen(
     repository: MedicationRepository,
@@ -45,7 +39,6 @@ fun AddEditMedicationScreen(
     val paletteColors = remember { mutableStateListOf<Color>().apply { addAll(defaultColorPalette) } }
     val quickEmojiOptions = remember { mutableStateListOf<String>().apply { addAll(featuredEmojis) } }
 
-    // Estados del formulario
     var name by remember { mutableStateOf("") }
     var dose by remember { mutableStateOf("") }
     var type by remember { mutableStateOf("Comprimido") }
@@ -62,8 +55,7 @@ fun AddEditMedicationScreen(
     var showCustomColorDialog by remember { mutableStateOf(false) }
     var customColorInput by remember { mutableStateOf("#") }
     var customColorError by remember { mutableStateOf<String?>(null) }
-    
-    // Cargar datos si estamos editando
+
     LaunchedEffect(medicationId) {
         medicationId?.let { id ->
             val medication = repository.getMedicationById(id)
@@ -86,9 +78,9 @@ fun AddEditMedicationScreen(
             }
         }
     }
-    
+
     val isEditing = medicationId != null
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -132,7 +124,7 @@ fun AddEditMedicationScreen(
                                     scheduleTime = baseMedication.scheduleTime,
                                     scheduleDays = baseMedication.scheduleDays
                                 )
-                                
+
                                 if (isEditing) {
                                     repository.updateMedication(medication)
                                 } else {
@@ -314,19 +306,6 @@ fun AddEditMedicationScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
-
-                /* PRN (según necesidad)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Switch(
-                        checked = isPrn,
-                        onCheckedChange = { isPrn = it }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Solo cuando sea necesario (PRN)")
-                }
-                */
             }
         }
 
@@ -361,7 +340,6 @@ fun AddEditMedicationScreen(
         }
     }
 }
-
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -480,9 +458,9 @@ private fun EmojiPickerDialog(
         } else {
             emojiLibrary.filter { option ->
                 option.symbol.contains(normalized) ||
-                    option.keywords.any { keyword ->
-                        keyword.contains(normalized, ignoreCase = true)
-                    }
+                        option.keywords.any { keyword ->
+                            keyword.contains(normalized, ignoreCase = true)
+                        }
             }
         }
     }
@@ -667,23 +645,22 @@ private fun parseHexColor(raw: String): Color? {
     }
 }
 
-// Paleta base (5x3) pensada para mostrarse en cuadrícula
 private val defaultColorPalette = listOf(
-    Color(0xFF2563EB), // Azul vivo
-    Color(0xFF38BDF8), // Celeste
-    Color(0xFF22D3EE), // Cian
-    Color(0xFF34D399), // Verde menta
-    Color(0xFF10B981), // Verde
-    Color(0xFF84CC16), // Lima
-    Color(0xFFFACC15), // Amarillo
-    Color(0xFFF97316), // Naranja
-    Color(0xFFFB7185), // Rosa coral
-    Color(0xFFEC4899), // Fucsia
-    Color(0xFF8B5CF6), // Violeta
-    Color(0xFF6366F1), // Índigo
-    Color(0xFF3B82F6), // Azul profundo
-    Color(0xFF64748B), // Gris pizarra
-    Color(0xFF94A3B8)  // Gris claro
+    Color(0xFF2563EB),
+    Color(0xFF38BDF8),
+    Color(0xFF22D3EE),
+    Color(0xFF34D399),
+    Color(0xFF10B981),
+    Color(0xFF84CC16),
+    Color(0xFFFACC15),
+    Color(0xFFF97316),
+    Color(0xFFFB7185),
+    Color(0xFFEC4899),
+    Color(0xFF8B5CF6),
+    Color(0xFF6366F1),
+    Color(0xFF3B82F6),
+    Color(0xFF64748B),
+    Color(0xFF94A3B8)
 )
 
 private const val QUICK_EMOJI_LIMIT = 40
@@ -736,10 +713,9 @@ private val emojiLibrary = listOf(
 
 private val featuredEmojis = emojiLibrary.map { it.symbol }.distinct().take(20)
 
-// Días de la semana
 private val daysOfWeek = mapOf(
     "L" to "Lun",
-    "M" to "Mar", 
+    "M" to "Mar",
     "X" to "Mié",
     "J" to "Jue",
     "V" to "Vie",
