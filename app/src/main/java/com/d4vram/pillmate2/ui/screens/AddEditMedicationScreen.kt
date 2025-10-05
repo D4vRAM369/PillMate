@@ -98,47 +98,54 @@ fun AddEditMedicationScreen(
                             contentDescription = "Volver"
                         )
                     }
-                },
-                actions = {
-                    TextButton(
-                        onClick = {
-                            if (name.isNotBlank() && dose.isNotBlank()) {
-                                val baseMedication = existingMedication ?: Medication(
-                                    id = medicationId ?: UUID.randomUUID().toString(),
-                                    name = name,
-                                    dose = dose,
-                                    type = type,
-                                    color = selectedColor,
-                                    emoji = selectedEmoji,
-                                    scheduleTime = null,
-                                    scheduleDays = emptyList()
-                                )
-                                val medication = baseMedication.copy(
-                                    name = name,
-                                    dose = dose,
-                                    type = type,
-                                    color = selectedColor,
-                                    emoji = selectedEmoji,
-                                    dailyGoal = dailyGoal.toIntOrNull() ?: baseMedication.dailyGoal,
-                                    isPrn = isPrn,
-                                    scheduleTime = baseMedication.scheduleTime,
-                                    scheduleDays = baseMedication.scheduleDays
-                                )
-
-                                if (isEditing) {
-                                    repository.updateMedication(medication)
-                                } else {
-                                    repository.addMedication(medication)
-                                }
-                                onNavigateBack()
-                            }
-                        }
-                    ) {
-                        Text(
-                            text = "GUARDAR",
-                            fontWeight = FontWeight.Bold
+                }
+            )
+        },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(
+                onClick = {
+                    if (name.isNotBlank() && dose.isNotBlank()) {
+                        val baseMedication = existingMedication ?: Medication(
+                            id = medicationId ?: UUID.randomUUID().toString(),
+                            name = name,
+                            dose = dose,
+                            type = type,
+                            color = selectedColor,
+                            emoji = selectedEmoji,
+                            scheduleTime = null,
+                            scheduleDays = emptyList()
                         )
+                        val medication = baseMedication.copy(
+                            name = name,
+                            dose = dose,
+                            type = type,
+                            color = selectedColor,
+                            emoji = selectedEmoji,
+                            dailyGoal = dailyGoal.toIntOrNull() ?: baseMedication.dailyGoal,
+                            isPrn = isPrn,
+                            scheduleTime = baseMedication.scheduleTime,
+                            scheduleDays = baseMedication.scheduleDays
+                        )
+
+                        if (isEditing) {
+                            repository.updateMedication(medication)
+                        } else {
+                            repository.addMedication(medication)
+                        }
+                        onNavigateBack()
                     }
+                },
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null
+                    )
+                },
+                text = {
+                    Text(
+                        text = if (isEditing) "Actualizar" else "Guardar",
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             )
         }
@@ -307,6 +314,8 @@ fun AddEditMedicationScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
             }
+
+            Spacer(modifier = Modifier.height(80.dp))
         }
 
         if (showCustomColorDialog) {
@@ -458,9 +467,9 @@ private fun EmojiPickerDialog(
         } else {
             emojiLibrary.filter { option ->
                 option.symbol.contains(normalized) ||
-                        option.keywords.any { keyword ->
-                            keyword.contains(normalized, ignoreCase = true)
-                        }
+                    option.keywords.any { keyword ->
+                        keyword.contains(normalized, ignoreCase = true)
+                    }
             }
         }
     }
