@@ -19,7 +19,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -33,7 +32,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.Medication
-import com.d4vram.pillmate2.ui.screens.EmojiOption
 import java.util.UUID
 import kotlin.math.roundToInt
 
@@ -179,181 +177,157 @@ fun AddEditMedicationScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(16.dp)
-                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Nombre del medicamento
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Nombre del medicamento") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Dosis
-            OutlinedTextField(
-                value = dose,
-                onValueChange = { dose = it },
-                label = { Text("Dosis (ej: 500mg, 1 comprimido)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Tipo de medicamento
-            OutlinedTextField(
-                value = type,
-                onValueChange = { type = it },
-                label = { Text("Tipo (ej: Comprimido, Cápsula, Jarabe, Gotas)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                placeholder = { Text("Comprimido") }
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Selector de color
-            Text(
-                text = "Color del medicamento",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            ColorPaletteSection(
-                colors = paletteColors,
-                selectedColor = selectedColor,
-                onColorSelected = { selectedColor = it },
-                onAddColor = { showCustomColorDialog = true }
-            )
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Selector de emoji
-            Text(
-                text = "Emoji (opcional)",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            EmojiQuickPickGrid(
-                emojis = quickEmojiOptions,
-                selectedEmoji = selectedEmoji,
-                onEmojiSelected = { selectedEmoji = it }
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Nombre del medicamento") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
 
-            Spacer(modifier = Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = dose,
+                    onValueChange = { dose = it },
+                    label = { Text("Dosis (ej: 500mg, 1 comprimido)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
 
-            FilledTonalButton(
-                onClick = { showEmojiPicker = true }
+                OutlinedTextField(
+                    value = type,
+                    onValueChange = { type = it },
+                    label = { Text("Tipo (ej: Comprimido, Cápsula, Jarabe, Gotas)") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    placeholder = { Text("Comprimido") }
+                )
+            }
+
+            SectionCard(
+                title = "Color del medicamento",
+                subtitle = "Elige uno de la paleta o agrega un tono personalizado"
             ) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = null
+                ColorPaletteSection(
+                    colors = paletteColors,
+                    selectedColor = selectedColor,
+                    onColorSelected = { selectedColor = it }
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Buscar más emojis")
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Horario
-            Text(
-                text = "Hora de toma",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Row {
-                OutlinedTextField(
-                    value = hour,
-                    onValueChange = { if (it.length <= 2) hour = it },
-                    label = { Text("Hora") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f)
-                )
-                
-                Spacer(modifier = Modifier.width(16.dp))
-                
-                OutlinedTextField(
-                    value = minute,
-                    onValueChange = { if (it.length <= 2) minute = it },
-                    label = { Text("Minuto") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f)
+
+                AssistChip(
+                    onClick = { showCustomColorDialog = true },
+                    label = { Text("Color personalizado") },
+                    leadingIcon = {
+                        Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                    }
                 )
             }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Días de la semana
+
+            SectionCard(
+                title = "Emoji (opcional)",
+                subtitle = "Te ayudará a identificar rápidamente el medicamento"
+            ) {
+                EmojiQuickPickGrid(
+                    emojis = quickEmojiOptions,
+                    selectedEmoji = selectedEmoji,
+                    onEmojiSelected = { selectedEmoji = it }
+                )
+
+                FilledTonalButton(
+                    onClick = { showEmojiPicker = true },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Buscar más emojis")
+                }
+            }
+
             Text(
-                text = "Días de toma",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "🚧 EN CONSTRUCCIÓN",
+                text = "🚧 EN CONSTRUCCIÓN ⬇️🚧",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(daysOfWeek.toList()) { day ->
-                    FilterChip(
-                        onClick = {
-                            selectedDays = if (selectedDays.contains(day.first)) {
-                                selectedDays - day.first
-                            } else {
-                                selectedDays + day.first
-                            }
-                        },
-                        label = { Text(day.second) },
-                        selected = selectedDays.contains(day.first)
+            SectionCard(
+                title = "Planificación",
+                subtitle = "Configura la hora de toma y la frecuencia"
+            )  {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    OutlinedTextField(
+                        value = hour,
+                        onValueChange = { if (it.length <= 2) hour = it },
+                        label = { Text("Hora") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    OutlinedTextField(
+                        value = minute,
+                        onValueChange = { if (it.length <= 2) minute = it },
+                        label = { Text("Minuto") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f)
                     )
                 }
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
-            // Dosis diaria
-            OutlinedTextField(
-                value = dailyGoal,
-                onValueChange = { dailyGoal = it },
-                label = { Text("Veces por día") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            /* PRN (según necesidad)
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Switch(
-                    checked = isPrn,
-                    onCheckedChange = { isPrn = it }
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = "Días de toma",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(daysOfWeek.toList()) { day ->
+                        FilterChip(
+                            onClick = {
+                                selectedDays = if (selectedDays.contains(day.first)) {
+                                    selectedDays - day.first
+                                } else {
+                                    selectedDays + day.first
+                                }
+                            },
+                            label = { Text(day.second) },
+                            selected = selectedDays.contains(day.first)
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    value = dailyGoal,
+                    onValueChange = { dailyGoal = it },
+                    label = { Text("Veces por día") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Solo cuando sea necesario (PRN)")
+
+                /* PRN (según necesidad)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Switch(
+                        checked = isPrn,
+                        onCheckedChange = { isPrn = it }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Solo cuando sea necesario (PRN)")
+                }
+                */
             }
-            */
-            
-            Spacer(modifier = Modifier.height(32.dp))
         }
 
         if (showCustomColorDialog) {
@@ -394,46 +368,20 @@ fun AddEditMedicationScreen(
 private fun ColorPaletteSection(
     colors: List<Color>,
     selectedColor: Color,
-    onColorSelected: (Color) -> Unit,
-    onAddColor: () -> Unit = {}
+    onColorSelected: (Color) -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxWidth()) {
-        FlowRow(
-            maxItemsInEachRow = 5,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(end = 56.dp, bottom = 8.dp)
-        ) {
-            colors.forEach { swatchColor ->
-                ColorSwatch(
-                    color = swatchColor,
-                    selected = swatchColor == selectedColor,
-                    onClick = { onColorSelected(swatchColor) }
-                )
-            }
-        }
-
-        Surface(
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
-            tonalElevation = 4.dp,
-            shadowElevation = 6.dp,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .size(40.dp)
-        ) {
-            IconButton(
-                onClick = onAddColor,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.AddCircle,
-                    contentDescription = "Añadir color",
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
+    FlowRow(
+        maxItemsInEachRow = 5,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        colors.forEach { swatchColor ->
+            ColorSwatch(
+                color = swatchColor,
+                selected = swatchColor == selectedColor,
+                onClick = { onColorSelected(swatchColor) }
+            )
         }
     }
 }
@@ -596,6 +544,46 @@ private fun EmojiPickerDialog(
             }
         }
     )
+}
+
+@Composable
+private fun SectionCard(
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        tonalElevation = 2.dp,
+        shadowElevation = 6.dp,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (subtitle != null) {
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            content()
+        }
+    }
 }
 
 @Composable
