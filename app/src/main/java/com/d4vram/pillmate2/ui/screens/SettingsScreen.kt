@@ -313,6 +313,8 @@ fun SettingsScreen(
 
             item {
                 SettingsSection(title = "🔔 Notificaciones") {
+                    Text(text = "🚧 EN CONSTRUCCIÓN", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold) //Con esto ponemos el texto en negrita, con el parámetro fontWeight = FontWeight.Bold dentro de style = MaterialTheme.typography.bodyLarge.copy
+                    )
                     SettingsItem(
                         title = "Recordatorios",
                         description = "Activar recordatorios automáticos",

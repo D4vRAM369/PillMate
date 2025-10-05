@@ -301,7 +301,12 @@ fun AddEditMedicationScreen(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            
+            Text(
+                text = "🚧 EN CONSTRUCCIÓN",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
             Spacer(modifier = Modifier.height(8.dp))
             
             LazyRow(
@@ -335,7 +340,7 @@ fun AddEditMedicationScreen(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // PRN (según necesidad)
+            /* PRN (según necesidad)
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -346,6 +351,7 @@ fun AddEditMedicationScreen(
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Solo cuando sea necesario (PRN)")
             }
+            */
             
             Spacer(modifier = Modifier.height(32.dp))
         }

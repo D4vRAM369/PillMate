@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
@@ -54,7 +55,7 @@ fun MedicationCard(
     // Determinar si ya se tomó hoy
     val isTakenToday = medication.takenToday > 0
 
-    val combinedModifier = dragModifier.then(modifier)
+    val combinedModifier = modifier
 
     Card(
         modifier = combinedModifier
@@ -95,35 +96,50 @@ fun MedicationCard(
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Contador y menú en la esquina superior derecha
-                Box(
-                    modifier = Modifier.fillMaxWidth()
+                // Contador + acciones superiores
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Contador
                     CountBadge(
                         current = medication.takenToday,
                         goal = medication.dailyGoal,
                         isPrn = medication.isPrn,
-                        isTaken = isTakenToday,
-                        modifier = Modifier.align(Alignment.TopStart)
+                        isTaken = isTakenToday
                     )
-                    
-                    // Menú de opciones
+
+                    Spacer(modifier = Modifier.weight(1f))
+
                     Box(
-                        modifier = Modifier.align(Alignment.TopEnd)
+                        modifier = dragModifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)),
+                        contentAlignment = Alignment.Center
                     ) {
+                        Icon(
+                            imageVector = Icons.Default.DragIndicator,
+                            contentDescription = "Reordenar",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Box {
                         IconButton(
                             onClick = { showMenu = !showMenu },
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(32.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
                                 contentDescription = "Opciones",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(18.dp)
                             )
                         }
-                        
+
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
