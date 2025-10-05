@@ -1,9 +1,12 @@
 package com.d4vram.pillmate2.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -16,18 +19,23 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.AddCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.Medication
+import com.d4vram.pillmate2.ui.screens.EmojiOption
 import java.util.UUID
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,18 +44,26 @@ fun AddEditMedicationScreen(
     medicationId: String? = null,
     onNavigateBack: () -> Unit
 ) {
+    val paletteColors = remember { mutableStateListOf<Color>().apply { addAll(defaultColorPalette) } }
+    val quickEmojiOptions = remember { mutableStateListOf<String>().apply { addAll(featuredEmojis) } }
+
     // Estados del formulario
     var name by remember { mutableStateOf("") }
     var dose by remember { mutableStateOf("") }
     var type by remember { mutableStateOf("Comprimido") }
-    var selectedColor by remember { mutableStateOf(predefinedColors[0]) }
-    var selectedEmoji by remember { mutableStateOf("💊") }
+    var selectedColor by remember { mutableStateOf(paletteColors.first()) }
+    var selectedEmoji by remember { mutableStateOf(quickEmojiOptions.first()) }
     var dailyGoal by remember { mutableStateOf("1") }
     var hour by remember { mutableStateOf("08") }
     var minute by remember { mutableStateOf("00") }
     var selectedDays by remember { mutableStateOf(setOf<String>()) }
     var isPrn by remember { mutableStateOf(false) }
     var existingMedication by remember { mutableStateOf<Medication?>(null) }
+    var showEmojiPicker by remember { mutableStateOf(false) }
+    var emojiSearchQuery by remember { mutableStateOf("") }
+    var showCustomColorDialog by remember { mutableStateOf(false) }
+    var customColorInput by remember { mutableStateOf("#") }
+    var customColorError by remember { mutableStateOf<String?>(null) }
     
     // Cargar datos si estamos editando
     LaunchedEffect(medicationId) {
@@ -58,7 +74,14 @@ fun AddEditMedicationScreen(
                 name = it.name
                 dose = it.dose
                 type = it.type
+                if (!paletteColors.contains(it.color)) {
+                    paletteColors.add(0, it.color)
+                }
                 selectedColor = it.color
+
+                if (!quickEmojiOptions.contains(it.emoji)) {
+                    quickEmojiOptions.add(0, it.emoji)
+                }
                 selectedEmoji = it.emoji
                 dailyGoal = it.dailyGoal.toString()
                 isPrn = it.isPrn
@@ -130,6 +153,28 @@ fun AddEditMedicationScreen(
             )
         }
     ) { paddingValues ->
+        if (showEmojiPicker) {
+            EmojiPickerDialog(
+                query = emojiSearchQuery,
+                onQueryChange = { emojiSearchQuery = it },
+                onEmojiSelected = { emoji ->
+                    selectedEmoji = emoji
+                    if (!quickEmojiOptions.contains(emoji)) {
+                        quickEmojiOptions.add(0, emoji)
+                        while (quickEmojiOptions.size > QUICK_EMOJI_LIMIT) {
+                            quickEmojiOptions.removeLast()
+                        }
+                    }
+                    showEmojiPicker = false
+                    emojiSearchQuery = ""
+                },
+                onDismiss = {
+                    showEmojiPicker = false
+                    emojiSearchQuery = ""
+                }
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -180,33 +225,12 @@ fun AddEditMedicationScreen(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(predefinedColors) { color ->
-                    Box(
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clip(CircleShape)
-                            .background(color)
-                            .border(
-                                width = if (color == selectedColor) 3.dp else 1.dp,
-                                color = if (color == selectedColor) MaterialTheme.colorScheme.primary else Color.Gray,
-                                shape = CircleShape
-                            )
-                            .clickable { selectedColor = color }
-                    ) {
-                        if (color == selectedColor) {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                        }
-                    }
-                }
-            }
+            ColorPaletteSection(
+                colors = paletteColors,
+                selectedColor = selectedColor,
+                onColorSelected = { selectedColor = it },
+                onAddColor = { showCustomColorDialog = true }
+            )
             
             Spacer(modifier = Modifier.height(24.dp))
             
@@ -219,40 +243,23 @@ fun AddEditMedicationScreen(
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(6),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.height(120.dp)
+            EmojiQuickPickGrid(
+                emojis = quickEmojiOptions,
+                selectedEmoji = selectedEmoji,
+                onEmojiSelected = { selectedEmoji = it }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            FilledTonalButton(
+                onClick = { showEmojiPicker = true }
             ) {
-                items(predefinedEmojis) { emoji ->
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(
-                                if (emoji == selectedEmoji) 
-                                    MaterialTheme.colorScheme.primaryContainer 
-                                else 
-                                    MaterialTheme.colorScheme.surface
-                            )
-                            .border(
-                                width = if (emoji == selectedEmoji) 2.dp else 1.dp,
-                                color = if (emoji == selectedEmoji) 
-                                    MaterialTheme.colorScheme.primary 
-                                else 
-                                    MaterialTheme.colorScheme.outline,
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .clickable { selectedEmoji = emoji },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = emoji,
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    }
-                }
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = null
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Buscar más emojis")
             }
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -342,28 +349,398 @@ fun AddEditMedicationScreen(
             
             Spacer(modifier = Modifier.height(32.dp))
         }
+
+        if (showCustomColorDialog) {
+            AddColorDialog(
+                value = customColorInput,
+                errorMessage = customColorError,
+                onValueChange = {
+                    customColorInput = it
+                    customColorError = null
+                },
+                onConfirm = {
+                    val parsedColor = parseHexColor(customColorInput)
+                    if (parsedColor == null) {
+                        customColorError = "Usa el formato #RRGGBB o #AARRGGBB"
+                    } else {
+                        if (!paletteColors.contains(parsedColor)) {
+                            paletteColors.add(parsedColor)
+                        }
+                        selectedColor = parsedColor
+                        customColorInput = "#"
+                        customColorError = null
+                        showCustomColorDialog = false
+                    }
+                },
+                onDismiss = {
+                    showCustomColorDialog = false
+                    customColorError = null
+                    customColorInput = "#"
+                }
+            )
+        }
     }
 }
 
-// Colores predefinidos
-private val predefinedColors = listOf(
-    Color(0xFF6366F1), // Índigo
-    Color(0xFFEC4899), // Rosa
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ColorPaletteSection(
+    colors: List<Color>,
+    selectedColor: Color,
+    onColorSelected: (Color) -> Unit,
+    onAddColor: () -> Unit = {}
+) {
+    Box(modifier = Modifier.fillMaxWidth()) {
+        FlowRow(
+            maxItemsInEachRow = 5,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(end = 56.dp, bottom = 8.dp)
+        ) {
+            colors.forEach { swatchColor ->
+                ColorSwatch(
+                    color = swatchColor,
+                    selected = swatchColor == selectedColor,
+                    onClick = { onColorSelected(swatchColor) }
+                )
+            }
+        }
+
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.95f),
+            tonalElevation = 4.dp,
+            shadowElevation = 6.dp,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .size(40.dp)
+        ) {
+            IconButton(
+                onClick = onAddColor,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.AddCircle,
+                    contentDescription = "Añadir color",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ColorSwatch(
+    color: Color,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val borderColor = if (selected) {
+        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+    } else {
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+    }
+
+    Surface(
+        color = color,
+        shape = CircleShape,
+        border = BorderStroke(width = if (selected) 3.dp else 1.dp, color = borderColor),
+        tonalElevation = if (selected) 4.dp else 0.dp,
+        shadowElevation = if (selected) 6.dp else 0.dp,
+        modifier = Modifier
+            .size(56.dp)
+            .semantics { contentDescription = "Color ${color.toHexLabel()}" },
+        onClick = onClick
+    ) {
+        if (selected) {
+            Box(Modifier.fillMaxSize()) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun EmojiQuickPickGrid(
+    emojis: List<String>,
+    selectedEmoji: String,
+    onEmojiSelected: (String) -> Unit
+) {
+    FlowRow(
+        maxItemsInEachRow = 5,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        emojis.forEach { emoji ->
+            val isSelected = emoji == selectedEmoji
+            val borderColor = if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
+            }
+
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (isSelected) {
+                    MaterialTheme.colorScheme.primaryContainer
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant
+                },
+                tonalElevation = if (isSelected) 4.dp else 0.dp,
+                border = BorderStroke(width = if (isSelected) 2.dp else 1.dp, color = borderColor),
+                modifier = Modifier.size(56.dp),
+                onClick = { onEmojiSelected(emoji) }
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = emoji,
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmojiPickerDialog(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onEmojiSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val filteredEmojis = remember(query) {
+        val normalized = query.trim().lowercase()
+        if (normalized.isEmpty()) {
+            emojiLibrary
+        } else {
+            emojiLibrary.filter { option ->
+                option.symbol.contains(normalized) ||
+                    option.keywords.any { keyword ->
+                        keyword.contains(normalized, ignoreCase = true)
+                    }
+            }
+        }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        },
+        title = { Text("Buscar emoji") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = onQueryChange,
+                    placeholder = { Text("Busca: pastilla, corazón, sol...") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (filteredEmojis.isEmpty()) {
+                    Text(
+                        text = "No encontramos emojis que coincidan con tu búsqueda.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                } else {
+                    LazyVerticalGrid(
+                        columns = GridCells.Adaptive(minSize = 52.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .heightIn(max = 320.dp)
+                            .fillMaxWidth()
+                    ) {
+                        items(filteredEmojis) { option ->
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+                                modifier = Modifier.size(56.dp),
+                                onClick = { onEmojiSelected(option.symbol) }
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = option.symbol,
+                                        style = MaterialTheme.typography.titleLarge
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun AddColorDialog(
+    value: String,
+    errorMessage: String?,
+    onValueChange: (String) -> Unit,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text("Añadir")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+        title = { Text("Nuevo color personalizado") },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "Introduce el color en formato hexadecimal (por ejemplo, #FF4081).",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                OutlinedTextField(
+                    value = value,
+                    onValueChange = { onValueChange(it.uppercase()) },
+                    label = { Text("Código de color") },
+                    singleLine = true,
+                    isError = errorMessage != null,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+                    supportingText = {
+                        if (errorMessage != null) {
+                            Text(
+                                text = errorMessage,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                )
+            }
+        }
+    )
+}
+
+private fun Color.toHexLabel(): String {
+    val r = (red * 255).roundToInt()
+    val g = (green * 255).roundToInt()
+    val b = (blue * 255).roundToInt()
+    return "#%02X%02X%02X".format(r, g, b)
+}
+
+private fun parseHexColor(raw: String): Color? {
+    val normalized = raw.trim().removePrefix("#")
+    if (normalized.length != 6 && normalized.length != 8) return null
+    return try {
+        val value = normalized.toLong(16)
+        if (normalized.length == 8) {
+            val a = ((value shr 24) and 0xFF).toInt()
+            val r = ((value shr 16) and 0xFF).toInt()
+            val g = ((value shr 8) and 0xFF).toInt()
+            val b = (value and 0xFF).toInt()
+            Color(r / 255f, g / 255f, b / 255f, a / 255f)
+        } else {
+            val r = ((value shr 16) and 0xFF).toInt()
+            val g = ((value shr 8) and 0xFF).toInt()
+            val b = (value and 0xFF).toInt()
+            Color(r / 255f, g / 255f, b / 255f)
+        }
+    } catch (ignored: NumberFormatException) {
+        null
+    }
+}
+
+// Paleta base (5x3) pensada para mostrarse en cuadrícula
+private val defaultColorPalette = listOf(
+    Color(0xFF2563EB), // Azul vivo
+    Color(0xFF38BDF8), // Celeste
+    Color(0xFF22D3EE), // Cian
+    Color(0xFF34D399), // Verde menta
     Color(0xFF10B981), // Verde
-    Color(0xFFF59E0B), // Amarillo
-    Color(0xFFEF4444), // Rojo
-    Color(0xFF8B5CF6), // Púrpura
-    Color(0xFF06B6D4), // Cian
-    Color(0xFF84CC16)  // Lima
+    Color(0xFF84CC16), // Lima
+    Color(0xFFFACC15), // Amarillo
+    Color(0xFFF97316), // Naranja
+    Color(0xFFFB7185), // Rosa coral
+    Color(0xFFEC4899), // Fucsia
+    Color(0xFF8B5CF6), // Violeta
+    Color(0xFF6366F1), // Índigo
+    Color(0xFF3B82F6), // Azul profundo
+    Color(0xFF64748B), // Gris pizarra
+    Color(0xFF94A3B8)  // Gris claro
 )
 
-// Emojis predefinidos
-private val predefinedEmojis = listOf(
-    "💊", "💉", "🧬", "⚕️", "🩹", "🫀",
-    "🧪", "🔬", "💯", "⭐", "🟢", "🔵",
-    "🟡", "🔴", "🟣", "🟠", "⚫", "⚪",
-    "➕", "❤️", "💚", "💙", "💜", "🧡"
+private const val QUICK_EMOJI_LIMIT = 40
+
+private data class EmojiOption(
+    val symbol: String,
+    val keywords: List<String>
 )
+
+private val emojiLibrary = listOf(
+    EmojiOption("💊", listOf("medicina", "pastilla", "pill", "remedio")),
+    EmojiOption("⚕️", listOf("médico", "salud", "cruz")),
+    EmojiOption("🩹", listOf("curita", "vendaje", "herida")),
+    EmojiOption("🫀", listOf("corazón", "órgano", "cardio")),
+    EmojiOption("🧠", listOf("cerebro", "mente")),
+    EmojiOption("🩸", listOf("sangre", "donación")),
+    EmojiOption("🧪", listOf("laboratorio", "prueba", "química")),
+    EmojiOption("🛌", listOf("descanso", "reposo", "cama")),
+    EmojiOption("🌡️", listOf("termómetro", "fiebre")),
+    EmojiOption("💤", listOf("descanso", "sueño")),
+    EmojiOption("💯", listOf("logro", "meta", "perfecto")),
+    EmojiOption("⭐", listOf("estrella", "destacado")),
+    EmojiOption("🟢", listOf("círculo", "verde")),
+    EmojiOption("🔵", listOf("círculo", "azul")),
+    EmojiOption("🟡", listOf("círculo", "amarillo")),
+    EmojiOption("🟣", listOf("círculo", "morado")),
+    EmojiOption("🟠", listOf("círculo", "naranja")),
+    EmojiOption("🟤", listOf("círculo", "marrón")),
+    EmojiOption("⚫", listOf("círculo", "negro")),
+    EmojiOption("⚪", listOf("círculo", "blanco")),
+    EmojiOption("🔺", listOf("triángulo", "alerta")),
+    EmojiOption("🔻", listOf("triángulo", "bajar")),
+    EmojiOption("🔸", listOf("rombo", "destacado")),
+    EmojiOption("🔹", listOf("rombo", "info")),
+    EmojiOption("☀️", listOf("sol", "día", "energía")),
+    EmojiOption("🌙", listOf("luna", "noche", "descanso")),
+    EmojiOption("⏰", listOf("alarma", "hora")),
+    EmojiOption("📅", listOf("calendario", "agenda")),
+    EmojiOption("✅", listOf("completado", "listo")),
+    EmojiOption("⚠️", listOf("alerta", "precaución")),
+    EmojiOption("🎯", listOf("objetivo", "meta")),
+    EmojiOption("🧘", listOf("relax", "meditación")),
+    EmojiOption("🚶", listOf("caminar", "actividad")),
+    EmojiOption("🏃", listOf("correr", "ejercicio")),
+    EmojiOption("💪", listOf("fuerza", "ánimo")),
+    EmojiOption("😴", listOf("dormir", "descanso")),
+    EmojiOption("🤧", listOf("alergia", "resfriado")),
+    EmojiOption("🧞", listOf("genio", "deseo")),
+)
+
+private val featuredEmojis = emojiLibrary.map { it.symbol }.distinct().take(20)
 
 // Días de la semana
 private val daysOfWeek = mapOf(
