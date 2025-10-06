@@ -1,35 +1,44 @@
 package com.d4vram.pillmate2.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -50,7 +59,9 @@ fun MedicationStatsScreen(
         val viewModel: MedicationStatsViewModel = viewModel(
             factory = MedicationStatsViewModel.provideFactory(repository, medicationId)
         )
-        val history by viewModel.history.collectAsStateWithLifecycle()
+        val filteredHistory by viewModel.filteredHistory.collectAsStateWithLifecycle()
+        val selectedPeriod by viewModel.selectedPeriod.collectAsState()
+        var selectedDayEntries by remember { mutableStateOf<List<HistoryEntry>?>(null) }
 
         Scaffold(
             topBar = {
@@ -79,14 +90,40 @@ fun MedicationStatsScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    StatsPeriod.values().forEach { period ->
+                        FilterChip(
+                            selected = selectedPeriod == period,
+                            onClick = { viewModel.setPeriod(period) },
+                            label = { Text(period.label) }
+                        )
+                    }
+                }
+
                 Text(
-                    text = "Número de tomas encontradas: ${history.size}",
+                    text = "Número de tomas encontradas: ${filteredHistory.size}",
                     style = MaterialTheme.typography.bodyMedium
                 )
 
-                CalendarView(history = history)
+                CalendarView(
+                    history = filteredHistory,
+                    onDayClick = { date ->
+                        selectedDayEntries = filteredHistory.filter { it.timestamp.toLocalDate() == date }
+                    }
+                )
             }
         }
+
+        selectedDayEntries?.let { entries ->
+            DayDetailsModal(
+                entries = entries,
+                onDismiss = { selectedDayEntries = null }
+            )
+        }
+
     } else {
         Scaffold {
             Box(modifier = Modifier.fillMaxSize().padding(it), contentAlignment = Alignment.Center) {
@@ -97,7 +134,10 @@ fun MedicationStatsScreen(
 }
 
 @Composable
-private fun CalendarView(history: List<HistoryEntry>) {
+private fun CalendarView(
+    history: List<HistoryEntry>,
+    onDayClick: (LocalDate) -> Unit
+) {
     val daysOfWeek = listOf("L", "M", "X", "J", "V", "S", "D")
 
     val currentDateTime = LocalDateTime.now()
@@ -150,6 +190,9 @@ private fun CalendarView(history: List<HistoryEntry>) {
                     .background(
                         if (isTaken) medicationColor.copy(alpha = 0.8f) else Color.Transparent
                     )
+                    .clickable(enabled = isTaken) {
+                        onDayClick(date)
+                    }
             ) {
                 Text(
                     text = day.toString(),
@@ -159,4 +202,50 @@ private fun CalendarView(history: List<HistoryEntry>) {
             }
         }
     }
+}
+
+@Composable
+private fun DayDetailsModal(
+    entries: List<HistoryEntry>,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            val medicationName = entries.firstOrNull()?.medicationName ?: "Medicamento"
+            Text(
+                text = "$medicationName - ${entries.firstOrNull()?.date}",
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        text = {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                items(entries) { entry ->
+                    Column {
+                        Text(
+                            text = "Hora: ${entry.time}",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Dosis: ${entry.dose}",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        if (entry.notes.isNotEmpty()) {
+                            Text(
+                                text = "Notas: ${entry.notes}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontStyle = FontStyle.Italic
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        }
+    )
 }
