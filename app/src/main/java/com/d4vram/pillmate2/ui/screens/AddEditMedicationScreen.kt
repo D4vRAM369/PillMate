@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.d4vram.pillmate2.ui.screens
 
 import androidx.compose.foundation.BorderStroke
@@ -13,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,6 +29,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.Medication
+import com.github.skydoves.colorpicker.compose.HsvColorPicker
+import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import java.util.UUID
 import kotlin.math.roundToInt
 
@@ -53,8 +58,7 @@ fun AddEditMedicationScreen(
     var showEmojiPicker by remember { mutableStateOf(false) }
     var emojiSearchQuery by remember { mutableStateOf("") }
     var showCustomColorDialog by remember { mutableStateOf(false) }
-    var customColorInput by remember { mutableStateOf("#") }
-    var customColorError by remember { mutableStateOf<String?>(null) }
+
 
     LaunchedEffect(medicationId) {
         medicationId?.let { id ->
@@ -94,7 +98,7 @@ fun AddEditMedicationScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver"
                         )
                     }
@@ -180,7 +184,7 @@ fun AddEditMedicationScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            FormSection {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
@@ -192,7 +196,7 @@ fun AddEditMedicationScreen(
                 OutlinedTextField(
                     value = dose,
                     onValueChange = { dose = it },
-                    label = { Text("Dosis (ej: 500mg, 1 comprimido)") },
+                    label = { Text("Dosis") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -249,16 +253,12 @@ fun AddEditMedicationScreen(
                 }
             }
 
-            Text(
-                text = "🚧 EN CONSTRUCCIÓN ⬇️🚧",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            ConstructionPlaceholder()
 
             SectionCard(
                 title = "Planificación",
                 subtitle = "Configura la hora de toma y la frecuencia"
-            )  {
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -319,34 +319,37 @@ fun AddEditMedicationScreen(
         }
 
         if (showCustomColorDialog) {
-            AddColorDialog(
-                value = customColorInput,
-                errorMessage = customColorError,
-                onValueChange = {
-                    customColorInput = it
-                    customColorError = null
-                },
-                onConfirm = {
-                    val parsedColor = parseHexColor(customColorInput)
-                    if (parsedColor == null) {
-                        customColorError = "Usa el formato #RRGGBB o #AARRGGBB"
-                    } else {
-                        if (!paletteColors.contains(parsedColor)) {
-                            paletteColors.add(parsedColor)
-                        }
-                        selectedColor = parsedColor
-                        customColorInput = "#"
-                        customColorError = null
-                        showCustomColorDialog = false
+            CustomColorPickerDialog(
+                onDismiss = { showCustomColorDialog = false },
+                onConfirm = { color ->
+                    if (!paletteColors.contains(color)) {
+                        paletteColors.add(0, color)
                     }
-                },
-                onDismiss = {
+                    selectedColor = color
                     showCustomColorDialog = false
-                    customColorError = null
-                    customColorInput = "#"
                 }
             )
         }
+    }
+}
+
+@Composable
+private fun FormSection(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            content = content
+        )
     }
 }
 
@@ -380,7 +383,7 @@ private fun ColorSwatch(
     onClick: () -> Unit
 ) {
     val borderColor = if (selected) {
-        MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+        MaterialTheme.colorScheme.primary
     } else {
         MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
     }
@@ -388,21 +391,20 @@ private fun ColorSwatch(
     Surface(
         color = color,
         shape = CircleShape,
-        border = BorderStroke(width = if (selected) 3.dp else 1.dp, color = borderColor),
+        border = BorderStroke(width = if (selected) 3.dp else 1.5.dp, color = borderColor),
         tonalElevation = if (selected) 4.dp else 0.dp,
-        shadowElevation = if (selected) 6.dp else 0.dp,
+        shadowElevation = if (selected) 8.dp else 0.dp,
         modifier = Modifier
             .size(56.dp)
             .semantics { contentDescription = "Color ${color.toHexLabel()}" },
         onClick = onClick
     ) {
         if (selected) {
-            Box(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = Icons.Default.Check,
                     contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.align(Alignment.Center)
+                    tint = MaterialTheme.colorScheme.onPrimary
                 )
             }
         }
@@ -431,11 +433,11 @@ private fun EmojiQuickPickGrid(
             }
 
             Surface(
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = if (isSelected) {
                     MaterialTheme.colorScheme.primaryContainer
                 } else {
-                    MaterialTheme.colorScheme.surfaceVariant
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
                 },
                 tonalElevation = if (isSelected) 4.dp else 0.dp,
                 border = BorderStroke(width = if (isSelected) 2.dp else 1.dp, color = borderColor),
@@ -540,12 +542,13 @@ private fun SectionCard(
     subtitle: String? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Surface(
+    Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        tonalElevation = 2.dp,
-        shadowElevation = 6.dp,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier
@@ -574,17 +577,59 @@ private fun SectionCard(
 }
 
 @Composable
-private fun AddColorDialog(
-    value: String,
-    errorMessage: String?,
-    onValueChange: (String) -> Unit,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+private fun ConstructionPlaceholder() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondaryContainer)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Build,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Column {
+                Text(
+                    text = "Funcionalidad en desarrollo",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
+                Text(
+                    text = "La planificación de horarios estará disponible pronto.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CustomColorPickerDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (Color) -> Unit
 ) {
+    val controller = rememberColorPickerController()
+
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = onConfirm) {
+            TextButton(
+                onClick = {
+                    onConfirm(controller.selectedColor.value)
+                }
+            ) {
                 Text("Añadir")
             }
         },
@@ -595,32 +640,12 @@ private fun AddColorDialog(
         },
         title = { Text("Nuevo color personalizado") },
         text = {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(
-                    text = "Introduce el color en formato hexadecimal (por ejemplo, #FF4081).",
-                    style = MaterialTheme.typography.bodySmall
-                )
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = { onValueChange(it.uppercase()) },
-                    label = { Text("Código de color") },
-                    singleLine = true,
-                    isError = errorMessage != null,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-                    supportingText = {
-                        if (errorMessage != null) {
-                            Text(
-                                text = errorMessage,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                )
-            }
+            HsvColorPicker(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(300.dp),
+                controller = controller
+            )
         }
     )
 }
@@ -630,28 +655,6 @@ private fun Color.toHexLabel(): String {
     val g = (green * 255).roundToInt()
     val b = (blue * 255).roundToInt()
     return "#%02X%02X%02X".format(r, g, b)
-}
-
-private fun parseHexColor(raw: String): Color? {
-    val normalized = raw.trim().removePrefix("#")
-    if (normalized.length != 6 && normalized.length != 8) return null
-    return try {
-        val value = normalized.toLong(16)
-        if (normalized.length == 8) {
-            val a = ((value shr 24) and 0xFF).toInt()
-            val r = ((value shr 16) and 0xFF).toInt()
-            val g = ((value shr 8) and 0xFF).toInt()
-            val b = (value and 0xFF).toInt()
-            Color(r / 255f, g / 255f, b / 255f, a / 255f)
-        } else {
-            val r = ((value shr 16) and 0xFF).toInt()
-            val g = ((value shr 8) and 0xFF).toInt()
-            val b = (value and 0xFF).toInt()
-            Color(r / 255f, g / 255f, b / 255f)
-        }
-    } catch (ignored: NumberFormatException) {
-        null
-    }
 }
 
 private val defaultColorPalette = listOf(
@@ -705,6 +708,7 @@ private val emojiLibrary = listOf(
     EmojiOption("🔸", listOf("rombo", "destacado")),
     EmojiOption("🔹", listOf("rombo", "info")),
     EmojiOption("☀️", listOf("sol", "día", "energía")),
+    EmojiOption("🌀", listOf("disperso", "viento", "high")),
     EmojiOption("🌙", listOf("luna", "noche", "descanso")),
     EmojiOption("⏰", listOf("alarma", "hora")),
     EmojiOption("📅", listOf("calendario", "agenda")),
