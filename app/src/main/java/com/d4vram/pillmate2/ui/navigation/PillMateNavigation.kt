@@ -10,6 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -19,12 +20,7 @@ import androidx.navigation.compose.rememberNavController
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.local.PillMateDatabase
 import com.d4vram.pillmate2.data.voice.VoiceNoteRepository
-import com.d4vram.pillmate2.ui.screens.AddEditMedicationScreen
-import com.d4vram.pillmate2.ui.screens.HistoryScreen
-import com.d4vram.pillmate2.ui.screens.HomeScreen
-import com.d4vram.pillmate2.ui.screens.MedicationsScreen
-import com.d4vram.pillmate2.ui.screens.SettingsScreen
-import com.d4vram.pillmate2.ui.screens.VoiceNotesScreen
+import com.d4vram.pillmate2.ui.screens.*
 import com.d4vram.pillmate2.ui.theme.ThemeManager
 import com.d4vram.pillmate2.ui.security.SecurityManager
 import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
@@ -74,16 +70,20 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
                 bottomNavItems.forEach { screen ->
                     NavigationBarItem(
                         icon = {
-                            Icon(
-                                imageVector = screen.icon,
-                                contentDescription = screen.label
-                            )
+                            screen.icon?.let {
+                                Icon(
+                                    imageVector = it,
+                                    contentDescription = screen.label
+                                )
+                            }
                         },
                         label = {
-                            Text(
-                                text = screen.label,
-                                style = MaterialTheme.typography.labelMedium
-                            )
+                            screen.label?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
                         },
                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                         onClick = {
@@ -108,6 +108,7 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
             composable(Screen.Home.route) {
                 HomeScreen(
                     repository = repository,
+                    navController = navController,
                     onAddMedication = {
                         navController.navigate("add_medication")
                     },
@@ -136,7 +137,7 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
             }
 
             composable(Screen.History.route) {
-                HistoryScreen(repository = repository)
+                HistoryScreen(repository = repository, navController = navController)
             }
 
             composable(Screen.VoiceNotes.route) {
@@ -172,6 +173,18 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
                     }
                 )
             }
+
+            // Pantalla para ver estadísticas de un medicamento
+            composable(Screen.MedicationStats.route) { backStackEntry ->
+                val medicationId = backStackEntry.arguments?.getString("medicationId")
+                MedicationStatsScreen(
+                    medicationId = medicationId,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    repository = repository
+                )
+            }
         }
     }
 }
@@ -179,12 +192,13 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
 /**
  * 📱 Definición de las pantallas de navegación
  */
-sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
+sealed class Screen(val route: String, val label: String? = null, val icon: ImageVector? = null) {
     object Home : Screen("home", "Home", Icons.Default.Home)
     object Medications : Screen("medications", "Meds", Icons.Default.Add)
     object History : Screen("history", "History", Icons.AutoMirrored.Filled.List)
     object VoiceNotes : Screen("voice_notes", "Notes", Icons.Default.Mic)
-    object Settings : Screen("settings", "Settings", Icons.Default.Settings)
+    object Settings : Screen("settings", "Ajustes", Icons.Default.Settings)
+    object MedicationStats : Screen("medication_stats/{medicationId}")
 }
 
 private val bottomNavItems = listOf(

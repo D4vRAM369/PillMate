@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,6 +24,7 @@ import com.d4vram.pillmate2.model.HistoryEntry
 fun HistoryItem(
     historyEntry: HistoryEntry,
     showNotesIndicator: Boolean = false,
+    onShowStats: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -105,6 +108,19 @@ fun HistoryItem(
                 }
                 Spacer(modifier = Modifier.width(4.dp))
             }
+
+            // --- NUEVO BOTÓN DE ESTADÍSTICAS ---
+            IconButton(
+                onClick = { onShowStats(historyEntry.medicationId) },
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.BarChart,
+                    contentDescription = "Ver estadísticas",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            Spacer(modifier = Modifier.width(8.dp))
             
             // Badge de "Tomada"
             Surface(

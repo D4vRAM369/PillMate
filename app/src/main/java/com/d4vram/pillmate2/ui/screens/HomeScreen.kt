@@ -17,20 +17,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.ui.components.HistoryItem
 import com.d4vram.pillmate2.ui.components.MedicationCard
-import com.d4vram.pillmate2.ui.components.NotesModal
 import com.d4vram.pillmate2.ui.components.ReorderableMedicationGrid
 import com.d4vram.pillmate2.ui.components.StatCard
 import com.d4vram.pillmate2.ui.theme.HeaderGradientEnd
 import com.d4vram.pillmate2.ui.theme.HeaderGradientStart
 import com.d4vram.pillmate2.ui.theme.AppUiStyle
 import com.d4vram.pillmate2.ui.theme.LocalUiStyle
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.material3.SwipeToDismissBoxValue
 
 /**
  * 🏠 Pantalla principal de la app
@@ -39,6 +36,7 @@ import androidx.compose.material3.SwipeToDismissBoxValue
 @Composable
 fun HomeScreen(
     repository: MedicationRepository,
+    navController: NavController,
     onAddMedication: () -> Unit,
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {}
@@ -74,7 +72,6 @@ fun HomeScreen(
                 // Título de medicamentos
                 SectionTitle(
                     title = "🏠 Mis Medicamentos",
-                    // subtitle = "Presiona para registrar",
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
             }
@@ -112,8 +109,8 @@ fun HomeScreen(
                 // Lista del historial
                 HistorySection(
                     historyEntries = historyEntries,
+                    navController = navController,
                     onEntryClick = { entry -> selectedHistoryEntry = entry },
-                    repository = repository,
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
             }
@@ -124,10 +121,6 @@ fun HomeScreen(
             }
         }
 
-        // ===== Diálogo simple para mostrar notas (opcional) =====
-        // Si ya tienes un NotesModal propio, puedes reemplazar este bloque
-        // por tu componente:
-        // NotesModal(historyEntry = selectedHistoryEntry, onDismiss = { selectedHistoryEntry = null }, onSave = { ... })
         selectedHistoryEntry?.let { entry ->
             AlertDialog(
                 onDismissRequest = { selectedHistoryEntry = null },
@@ -143,7 +136,6 @@ fun HomeScreen(
                 }
             )
         }
-        // ========================================================
     }
 }
 
@@ -196,7 +188,6 @@ private fun HeaderSection(
             )
         }
 
-        // Botón de agregar medicamento
         FloatingActionButton(
             onClick = onAddMedication,
             modifier = Modifier.align(Alignment.CenterEnd),
@@ -286,93 +277,13 @@ private fun SectionTitle(
 }
 
 /**
- * 🔲 Grid de medicamentos (2 columnas)
- */
-@Composable
-private fun MedicationGrid(
-    medications: List<com.d4vram.pillmate2.model.Medication>,
-    onTakeMedication: (String, Int) -> Unit,
-    onAddMedication: () -> Unit,
-    onEditMedication: (String) -> Unit = {},
-    onDeleteMedication: (String) -> Unit = {},
-    modifier: Modifier = Modifier
-) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier.height((((medications.size + 1) / 2 + 1) * 180).dp),
-        userScrollEnabled = false
-    ) {
-        // Cards de medicamentos
-        items(medications) { medication ->
-            MedicationCard(
-                medication = medication,
-                onTakeMedication = onTakeMedication,
-                onEditMedication = onEditMedication,
-                onDeleteMedication = onDeleteMedication
-            )
-        }
-
-        // Card de "Agregar medicamento"
-        item {
-            AddMedicationCard(
-                onClick = onAddMedication
-            )
-        }
-    }
-}
-
-/**
- * ➕ Card para agregar nuevo medicamento
- */
-@Composable
-private fun AddMedicationCard(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Card(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF3F4F6)
-        ),
-        border = CardDefaults.outlinedCardBorder()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "+",
-                style = MaterialTheme.typography.headlineLarge,
-                color = Color(0xFF6B7280)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Agregar\nMedicamento",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.SemiBold
-                ),
-                color = Color(0xFF6B7280)
-            )
-        }
-    }
-}
-
-/**
  * 📜 Sección del historial
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HistorySection(
     historyEntries: List<HistoryEntry>,
+    navController: NavController,
     onEntryClick: (HistoryEntry) -> Unit,
-    repository: MedicationRepository,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -384,52 +295,18 @@ private fun HistorySection(
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
-            historyEntries.forEachIndexed { index, entry ->
-                SwipeToDismissBox(
-                    state = rememberSwipeToDismissBoxState(
-                        confirmValueChange = { value ->
-                            value == SwipeToDismissBoxValue.Settled // No permitir dismiss
-                        }
-                    ),
-                    backgroundContent = {
-                        val isSwiped = rememberSwipeToDismissBoxState().targetValue != SwipeToDismissBoxValue.Settled
-                        if (isSwiped) {
-                            Box(Modifier.fillMaxSize().background(Color.Red.copy(alpha = 0.2f))) {
-                                Row(
-                                    modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp),
-                                    horizontalArrangement = Arrangement.End
-                                ) {
-                                    Surface(
-                                        color = Color.Green,
-                                        shape = RoundedCornerShape(4.dp),
-                                        modifier = Modifier.clickable { onEntryClick(entry) }
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(8.dp)) {
-                                            Text("✏️", fontSize = 16.sp)
-                                        }
-                                    }
-                                    Spacer(Modifier.width(8.dp))
-                                    Surface(
-                                        color = Color.Red,
-                                        shape = RoundedCornerShape(4.dp),
-                                        modifier = Modifier.clickable { repository.deleteHistoryEntry(entry.id) }
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(8.dp)) {
-                                            Text("🗑️", fontSize = 16.sp)
-                                        }
-                                    }
-                                }
-                            }
+            historyEntries.take(5).forEachIndexed { index, entry ->
+                HistoryItem(
+                    historyEntry = entry,
+                    showNotesIndicator = entry.notes.isNotEmpty(),
+                    modifier = Modifier.clickable { onEntryClick(entry) },
+                    onShowStats = { medicationId ->
+                        if (medicationId.isNotEmpty()) {
+                            navController.navigate("medication_stats/$medicationId")
                         }
                     }
-                ) {
-                    HistoryItem(
-                        historyEntry = entry,
-                        showNotesIndicator = entry.notes.isNotEmpty(),
-                        modifier = Modifier.clickable { onEntryClick(entry) }
-                    )
-                }
-                if (index < historyEntries.size - 1) {
+                )
+                if (index < historyEntries.size - 1 && index < 4) {
                     HorizontalDivider(
                         modifier = Modifier.padding(horizontal = 16.dp),
                         color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)

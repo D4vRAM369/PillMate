@@ -8,6 +8,7 @@ import java.time.LocalDateTime
  */
 data class HistoryEntry(
     val id: String,
+    val medicationId: String,
     val medicationName: String,
     val time: String,
     val date: String,

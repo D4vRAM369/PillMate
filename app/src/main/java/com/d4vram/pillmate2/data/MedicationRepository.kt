@@ -10,6 +10,7 @@ import com.d4vram.pillmate2.data.local.PillMateDatabase
 import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.model.Medication
 import androidx.room.withTransaction
+import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -71,6 +72,14 @@ class MedicationRepository(
     val historyEntries: StateFlow<List<HistoryEntry>> = historyWithMedicationsFlow
         .stateIn(scope, SharingStarted.Eagerly, emptyList())
 
+    fun getHistoryForMedication(medicationId: String): Flow<List<HistoryEntry>> {
+        return historyDao.observeHistoryForMedication(medicationId)
+            .combine(medicationDao.observeMedications()) { historyEntities, medicationEntities ->
+                val doseFallback = medicationEntities.associateBy { it.name }
+                historyEntities.map { it.toDomain(doseFallback) }
+            }
+    }
+
     val stats: StateFlow<Stats> = combine(historyEntries, medicationsFlow) { history, medications ->
         calculateStats(history, medications)
     }.stateIn(scope, SharingStarted.Eagerly, Stats(0, 0, 0))
@@ -110,6 +119,7 @@ class MedicationRepository(
 
             val historyEntry = HistoryEntryEntity(
                 id = UUID.randomUUID().toString(),
+                medicationId = medication.id,
                 medicationName = updated.name,
                 time = formattedTime,
                 date = formatDate(now),
@@ -344,6 +354,7 @@ class MedicationRepository(
 
         return HistoryEntry(
             id = id,
+            medicationId = medicationId,
             medicationName = medicationName,
             time = formatTime(parsedTimestamp),
             date = formatDate(parsedTimestamp),
@@ -358,6 +369,7 @@ class MedicationRepository(
 
     private fun HistoryEntry.toEntity(): HistoryEntryEntity = HistoryEntryEntity(
         id = id,
+        medicationId = medicationId,
         medicationName = medicationName,
         time = time,
         date = date,
@@ -455,45 +467,45 @@ class MedicationRepository(
     private fun getSampleHistory(): List<HistoryEntry> {
         val now = LocalDateTime.now()
         return listOf(
-            HistoryEntry("h1", "Vitamina D", "12:45", "Hoy", Color(0xFF10B981), "💧",
+            HistoryEntry(id = "h1", medicationId = "3", medicationName = "Vitamina D", time = "12:45", date = "Hoy", color = Color(0xFF10B981), emoji = "💧",
                 notes = "Tomado con el almuerzo", timestamp = now.minusHours(2), dose = "1000 IU"),
-            HistoryEntry("h2", "Omeprazol", "08:15", "Hoy", Color(0xFF8B5CF6), "💊",
+            HistoryEntry(id = "h2", medicationId = "1", medicationName = "Omeprazol", time = "08:15", date = "Hoy", color = Color(0xFF8B5CF6), emoji = "💊",
                 timestamp = now.minusHours(6), dose = "20mg"),
 
-            HistoryEntry("h3", "Melatonina", "21:00", "Ayer", Color(0xFF6366F1), "🌙",
+            HistoryEntry(id = "h3", medicationId = "4", medicationName = "Melatonina", time = "21:00", date = "Ayer", color = Color(0xFF6366F1), emoji = "🌙",
                 notes = "Antes de dormir", timestamp = now.minusDays(1).minusHours(3), dose = "3mg"),
-            HistoryEntry("h4", "Aspirina", "19:30", "Ayer", Color(0xFFF59E0B), "💊",
+            HistoryEntry(id = "h4", medicationId = "2", medicationName = "Aspirina", time = "19:30", date = "Ayer", color = Color(0xFFF59E0B), emoji = "💊",
                 timestamp = now.minusDays(1).minusHours(5), dose = "100mg"),
-            HistoryEntry("h5", "Vitamina D", "12:30", "Ayer", Color(0xFF10B981), "💧",
+            HistoryEntry(id = "h5", medicationId = "3", medicationName = "Vitamina D", time = "12:30", date = "Ayer", color = Color(0xFF10B981), emoji = "💧",
                 timestamp = now.minusDays(1).minusHours(12), dose = "1000 IU"),
-            HistoryEntry("h6", "Omeprazol", "08:00", "Ayer", Color(0xFF8B5CF6), "💊",
+            HistoryEntry(id = "h6", medicationId = "1", medicationName = "Omeprazol", time = "08:00", date = "Ayer", color = Color(0xFF8B5CF6), emoji = "💊",
                 timestamp = now.minusDays(1).minusHours(16), dose = "20mg"),
 
-            HistoryEntry("h7", "Ibuprofeno", "22:15", "02/03/2025", Color(0xFF6366F1), "💊",
-                timestamp = now.minusDays(2).minusHours(2), dose = "5mg"),
-            HistoryEntry("h8", "Aspirina", "18:00", "02/03/2025", Color(0xFFF59E0B), "💊",
+            HistoryEntry(id = "h7", medicationId = "5", medicationName = "Ibuprofeno", time = "22:15", date = "02/03/2025", color = Color(0xFFEF4444), emoji = "💊",
+                timestamp = now.minusDays(2).minusHours(2), dose = "400mg"),
+            HistoryEntry(id = "h8", medicationId = "2", medicationName = "Aspirina", time = "18:00", date = "02/03/2025", color = Color(0xFFF59E0B), emoji = "💊",
                 timestamp = now.minusDays(2).minusHours(6), dose = "100mg"),
-            HistoryEntry("h9", "Vitamina D", "13:15", "01/03/2025", Color(0xFF10B981), "💧",
+            HistoryEntry(id = "h9", medicationId = "3", medicationName = "Vitamina D", time = "13:15", date = "01/03/2025", color = Color(0xFF10B981), emoji = "💧",
                 notes = "Con la comida principal", timestamp = now.minusDays(3).minusHours(1), dose = "1000 IU"),
-            HistoryEntry("h10", "Omeprazol", "09:00", "01/03/2025", Color(0xFF8B5CF6), "💊",
+            HistoryEntry(id = "h10", medicationId = "1", medicationName = "Omeprazol", time = "09:00", date = "01/03/2025", color = Color(0xFF8B5CF6), emoji = "💊",
                 timestamp = now.minusDays(3).minusHours(7), dose = "20mg"),
 
-            HistoryEntry("h11", "Melatonina", "21:30", "28/02/2025", Color(0xFF6366F1), "🌙",
+            HistoryEntry(id = "h11", medicationId = "4", medicationName = "Melatonina", time = "21:30", date = "28/02/2025", color = Color(0xFF6366F1), emoji = "🌙",
                 timestamp = now.minusDays(6).minusHours(3), dose = "3mg"),
-            HistoryEntry("h12", "Aspirina", "17:45", "27/02/2025", Color(0xFFF59E0B), "💊",
+            HistoryEntry(id = "h12", medicationId = "2", medicationName = "Aspirina", time = "17:45", date = "27/02/2025", color = Color(0xFFF59E0B), emoji = "💊",
                 notes = "Por dolor de cabeza", timestamp = now.minusDays(7).minusHours(5), dose = "100mg"),
-            HistoryEntry("h13", "Vitamina D", "12:00", "26/02/2025", Color(0xFF10B981), "💧",
+            HistoryEntry(id = "h13", medicationId = "3", medicationName = "Vitamina D", time = "12:00", date = "26/02/2025", color = Color(0xFF10B981), emoji = "💧",
                 timestamp = now.minusDays(8).minusHours(0), dose = "1000 IU"),
-            HistoryEntry("h14", "Omeprazol", "08:30", "25/02/2025", Color(0xFF8B5CF6), "💊",
+            HistoryEntry(id = "h14", medicationId = "1", medicationName = "Omeprazol", time = "08:30", date = "25/02/2025", color = Color(0xFF8B5CF6), emoji = "💊",
                 timestamp = now.minusDays(9).minusHours(6), dose = "20mg"),
 
-            HistoryEntry("h15", "Ibuprofeno", "20:00", "20/02/2025", Color(0xFF6366F1), "💊",
-                notes = "Dosis de la noche", timestamp = now.minusDays(14).minusHours(4), dose = "5mg"),
-            HistoryEntry("h16", "Aspirina", "16:30", "15/02/2025", Color(0xFFF59E0B), "💊",
+            HistoryEntry(id = "h15", medicationId = "5", medicationName = "Ibuprofeno", time = "20:00", date = "20/02/2025", color = Color(0xFFEF4444), emoji = "💊",
+                notes = "Dosis de la noche", timestamp = now.minusDays(14).minusHours(4), dose = "400mg"),
+            HistoryEntry(id = "h16", medicationId = "2", medicationName = "Aspirina", time = "16:30", date = "15/02/2025", color = Color(0xFFF59E0B), emoji = "💊",
                 timestamp = now.minusDays(19).minusHours(2), dose = "100mg"),
-            HistoryEntry("h17", "Vitamina D", "11:45", "10/02/2025", Color(0xFF10B981), "💧",
+            HistoryEntry(id = "h17", medicationId = "3", medicationName = "Vitamina D", time = "11:45", date = "10/02/2025", color = Color(0xFF10B981), emoji = "💧",
                 notes = "", timestamp = now.minusDays(24).minusHours(1), dose = "1000 IU"),
-            HistoryEntry("h18", "Omeprazol", "07:15", "05/02/2025", Color(0xFF8B5CF6), "💊",
+            HistoryEntry(id = "h18", medicationId = "1", medicationName = "Omeprazol", time = "07:15", date = "05/02/2025", color = Color(0xFF8B5CF6), emoji = "💊",
                 notes = "En ayunas como siempre", timestamp = now.minusDays(29).minusHours(9), dose = "20mg")
         )
     }
