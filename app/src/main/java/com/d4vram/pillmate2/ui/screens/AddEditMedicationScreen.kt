@@ -640,12 +640,34 @@ private fun CustomColorPickerDialog(
         },
         title = { Text("Nuevo color personalizado") },
         text = {
-            HsvColorPicker(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(300.dp),
-                controller = controller
-            )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                HsvColorPicker(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(300.dp),
+                    controller = controller
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Surface(
+                        modifier = Modifier.size(40.dp),
+                        shape = CircleShape,
+                        color = controller.selectedColor.value,
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                    ) {}
+                    Text(
+                        text = controller.selectedColor.value.toHexLabel(),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
         }
     )
 }
