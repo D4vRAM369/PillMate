@@ -180,11 +180,11 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
  * 📱 Definición de las pantallas de navegación
  */
 sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
-    object Home : Screen("home", "Inicio", Icons.Default.Home)
-    object Medications : Screen("medications", "Medicamentos", Icons.Default.Add)
-    object History : Screen("history", "Historial", Icons.AutoMirrored.Filled.List)
-    object VoiceNotes : Screen("voice_notes", "Notas", Icons.Default.Mic)
-    object Settings : Screen("settings", "Ajustes", Icons.Default.Settings)
+    object Home : Screen("home", "Home", Icons.Default.Home)
+    object Medications : Screen("medications", "Meds", Icons.Default.Add)
+    object History : Screen("history", "History", Icons.AutoMirrored.Filled.List)
+    object VoiceNotes : Screen("voice_notes", "Notes", Icons.Default.Mic)
+    object Settings : Screen("settings", "Settings", Icons.Default.Settings)
 }
 
 private val bottomNavItems = listOf(

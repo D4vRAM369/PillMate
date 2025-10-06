@@ -2,10 +2,10 @@
     <string name="app_name">PillMate</string>
 
     <!-- Navigation -->
-    <string name="nav_home">Inicio</string>
-    <string name="nav_medications">Medicamentos</string>
-    <string name="nav_history">Historial</string>
-    <string name="nav_settings">Ajustes</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_medications">Meds</string>
+    <string name="nav_history">History</string>
+    <string name="nav_settings">Settings</string>
 
     <!-- Home Screen -->
     <string name="home_title">💊 PillMate</string>
