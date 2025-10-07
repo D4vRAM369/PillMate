@@ -1,8 +1,8 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.21"
+    alias(libs.plugins.compose.compiler)
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
     id("org.jetbrains.kotlin.kapt")
 }
 
@@ -46,10 +46,6 @@ android {
         compose = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
-    }
-
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
@@ -63,6 +59,7 @@ dependencies {
 
     // Core de Android
     implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.core:core-splashscreen:1.0.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
     implementation("androidx.activity:activity-compose:1.8.2")

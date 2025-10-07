@@ -77,7 +77,12 @@ abstract class PillMateDatabase : RoomDatabase() {
 
         private val MIGRATION_7_8 = object : Migration(7, 8) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("UPDATE history SET medicationId = (SELECT id FROM medications WHERE name = history.medicationName)")
+                database.execSQL(
+                    "UPDATE history " +
+                        "SET medicationId = COALESCE(" +
+                        "(SELECT id FROM medications WHERE name = history.medicationName LIMIT 1), " +
+                        "medicationId)"
+                )
             }
         }
     }

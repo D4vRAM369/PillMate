@@ -163,7 +163,7 @@ fun AddEditMedicationScreen(
                     if (!quickEmojiOptions.contains(emoji)) {
                         quickEmojiOptions.add(0, emoji)
                         while (quickEmojiOptions.size > QUICK_EMOJI_LIMIT) {
-                            quickEmojiOptions.removeLast()
+                            quickEmojiOptions.removeAt(quickEmojiOptions.lastIndex)
                         }
                     }
                     showEmojiPicker = false
