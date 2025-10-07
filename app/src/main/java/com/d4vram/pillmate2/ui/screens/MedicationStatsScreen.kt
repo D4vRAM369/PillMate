@@ -49,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.HistoryEntry
+import com.d4vram.pillmate2.ui.components.NotesModal
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -69,6 +70,7 @@ fun MedicationStatsScreen(
         val selectedPeriod by viewModel.selectedPeriod.collectAsState()
         val displayedMonth by viewModel.displayedMonth.collectAsStateWithLifecycle()
         var selectedDayEntries by remember { mutableStateOf<List<HistoryEntry>?>(null) }
+        var entryToEdit by remember { mutableStateOf<HistoryEntry?>(null) }
 
         Scaffold(
             topBar = {
@@ -135,7 +137,32 @@ fun MedicationStatsScreen(
         selectedDayEntries?.let { entries ->
             DayDetailsModal(
                 entries = entries,
-                onDismiss = { selectedDayEntries = null }
+                onDismiss = { selectedDayEntries = null },
+                onEditEntry = { entry ->
+                    selectedDayEntries = null
+                    entryToEdit = entry
+                }
+            )
+        }
+
+        entryToEdit?.let { entry ->
+            NotesModal(
+                historyEntry = entry,
+                onDismiss = { entryToEdit = null },
+                onSaveChanges = { entryId, notes, newTimestamp ->
+                    if (notes != entry.notes) {
+                        repository.updateHistoryNotes(entryId, notes)
+                    }
+                    val sanitizedOriginal = entry.timestamp.withSecond(0).withNano(0)
+                    if (newTimestamp != sanitizedOriginal) {
+                        repository.updateHistoryTimestamp(entryId, newTimestamp)
+                    }
+                    entryToEdit = null
+                },
+                onDeleteNotes = { entryId ->
+                    repository.deleteHistoryNotes(entryId)
+                    entryToEdit = null
+                }
             )
         }
 
@@ -261,7 +288,8 @@ private fun MonthNavigator(
 @Composable
 private fun DayDetailsModal(
     entries: List<HistoryEntry>,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onEditEntry: (HistoryEntry) -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -285,6 +313,15 @@ private fun DayDetailsModal(
                             text = "Dosis: ${entry.dose}",
                             style = MaterialTheme.typography.bodyMedium
                         )
+                        TextButton(
+                            onClick = { onEditEntry(entry) }
+                        ) {
+                            Text(
+                                text = "✏️ Editar notas",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                         if (entry.notes.isNotEmpty()) {
                             Text(
                                 text = "Notas: ${entry.notes}",
