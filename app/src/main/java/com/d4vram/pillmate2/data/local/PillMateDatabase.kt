@@ -6,10 +6,11 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import java.util.Locale
 
 @Database(
     entities = [MedicationEntity::class, HistoryEntryEntity::class, VoiceNoteEntity::class],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 abstract class PillMateDatabase : RoomDatabase() {
@@ -27,7 +28,15 @@ abstract class PillMateDatabase : RoomDatabase() {
                     context.applicationContext,
                     PillMateDatabase::class.java,
                     "pillmate.db"
-                ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8).build().also { INSTANCE = it }
+                ).addMigrations(
+                    MIGRATION_2_3,
+                    MIGRATION_3_4,
+                    MIGRATION_4_5,
+                    MIGRATION_5_6,
+                    MIGRATION_6_7,
+                    MIGRATION_7_8,
+                    MIGRATION_8_9
+                ).build().also { INSTANCE = it }
             }
         }
 
@@ -77,13 +86,100 @@ abstract class PillMateDatabase : RoomDatabase() {
 
         private val MIGRATION_7_8 = object : Migration(7, 8) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL(
-                    "UPDATE history " +
-                        "SET medicationId = COALESCE(" +
-                        "(SELECT id FROM medications WHERE name = history.medicationName LIMIT 1), " +
-                        "medicationId)"
-                )
+                updateHistoryMedicationIds(database)
             }
         }
+
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                updateHistoryMedicationIds(database)
+            }
+        }
+
+        private fun updateHistoryMedicationIds(database: SupportSQLiteDatabase) {
+            data class MedicationRow(
+                val id: String,
+                val nameKey: String,
+                val dose: String?,
+                val emoji: String,
+                val colorArgb: Int
+            )
+
+            val medicationsByName = mutableMapOf<String, MutableList<MedicationRow>>()
+            database.query(
+                "SELECT id, name, dose, emoji, colorArgb FROM medications"
+            ).use { cursor ->
+                val idIndex = cursor.getColumnIndexOrThrow("id")
+                val nameIndex = cursor.getColumnIndexOrThrow("name")
+                val doseIndex = cursor.getColumnIndexOrThrow("dose")
+                val emojiIndex = cursor.getColumnIndexOrThrow("emoji")
+                val colorIndex = cursor.getColumnIndexOrThrow("colorArgb")
+
+                while (cursor.moveToNext()) {
+                    val id = cursor.getString(idIndex)
+                    val name = cursor.getString(nameIndex)
+                    val dose = if (cursor.isNull(doseIndex)) null else cursor.getString(doseIndex)
+                    val emoji = cursor.getString(emojiIndex)
+                    val colorArgb = cursor.getInt(colorIndex)
+                    val key = name.normalizeKey()
+                    val row = MedicationRow(id, key, dose?.takeIf { it.isNotBlank() }, emoji, colorArgb)
+                    medicationsByName.getOrPut(key) { mutableListOf() }.add(row)
+                }
+            }
+
+            if (medicationsByName.isEmpty()) {
+                return
+            }
+
+            database.compileStatement(
+                "UPDATE history SET medicationId = ? WHERE id = ?"
+            ).use { updateStatement ->
+                database.query(
+                    "SELECT id, medicationId, medicationName, dose, emoji, colorArgb FROM history"
+                ).use { cursor ->
+                    val idIndex = cursor.getColumnIndexOrThrow("id")
+                    val medicationIdIndex = cursor.getColumnIndexOrThrow("medicationId")
+                    val nameIndex = cursor.getColumnIndexOrThrow("medicationName")
+                    val doseIndex = cursor.getColumnIndexOrThrow("dose")
+                    val emojiIndex = cursor.getColumnIndexOrThrow("emoji")
+                    val colorIndex = cursor.getColumnIndexOrThrow("colorArgb")
+
+                    while (cursor.moveToNext()) {
+                        val historyId = cursor.getString(idIndex)
+                        val currentMedicationId = cursor.getString(medicationIdIndex) ?: ""
+                        val medicationName = cursor.getString(nameIndex)
+                        val historyDose = if (cursor.isNull(doseIndex)) null else cursor.getString(doseIndex)
+                        val historyEmoji = cursor.getString(emojiIndex)
+                        val historyColor = cursor.getInt(colorIndex)
+                        val key = medicationName.normalizeKey()
+
+                        val candidates = medicationsByName[key] ?: continue
+
+                        val trimmedDose = historyDose?.takeIf { it.isNotBlank() }
+                        val exactDoseMatch = trimmedDose?.let { doseValue ->
+                            candidates.firstOrNull { it.dose.equals(doseValue, ignoreCase = false) }
+                        }
+                        val emojiMatch = candidates.firstOrNull { it.emoji == historyEmoji }
+                        val colorMatch = candidates.firstOrNull { it.colorArgb == historyColor }
+                        val fallbackMatch = candidates.firstOrNull()
+
+                        val matchedMedicationId = exactDoseMatch?.id
+                            ?: emojiMatch?.id
+                            ?: colorMatch?.id
+                            ?: fallbackMatch?.id
+
+                        if (!matchedMedicationId.isNullOrEmpty() && matchedMedicationId != currentMedicationId) {
+                            updateStatement.bindString(1, matchedMedicationId)
+                            updateStatement.bindString(2, historyId)
+                            updateStatement.executeUpdateDelete()
+                            updateStatement.clearBindings()
+                        }
+                    }
+                }
+            }
+        }
+
+        private fun String.normalizeKey(): String =
+            trim().lowercase(Locale.ROOT)
     }
 }
