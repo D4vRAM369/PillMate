@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.temporal.ChronoUnit
 
 // Enum para los períodos de filtro
@@ -27,6 +28,9 @@ class MedicationStatsViewModel(
 
     private val _selectedPeriod = MutableStateFlow(StatsPeriod.MONTH)
     val selectedPeriod: StateFlow<StatsPeriod> = _selectedPeriod
+
+    private val _displayedMonth = MutableStateFlow(YearMonth.now())
+    val displayedMonth: StateFlow<YearMonth> = _displayedMonth
 
     private val fullHistory: StateFlow<List<HistoryEntry>> = repository.getHistoryForMedication(medicationId)
         .stateIn(
@@ -55,6 +59,17 @@ class MedicationStatsViewModel(
 
     fun setPeriod(period: StatsPeriod) {
         _selectedPeriod.value = period
+        if (period != StatsPeriod.ALL) {
+            _displayedMonth.value = YearMonth.now()
+        }
+    }
+
+    fun goToPreviousMonth() {
+        _displayedMonth.value = _displayedMonth.value.minusMonths(1)
+    }
+
+    fun goToNextMonth() {
+        _displayedMonth.value = _displayedMonth.value.plusMonths(1)
     }
 
     companion object {

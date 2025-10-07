@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +20,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -47,7 +50,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.HistoryEntry
 import java.time.LocalDate
-import java.time.LocalDateTime
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -62,6 +67,7 @@ fun MedicationStatsScreen(
         )
         val filteredHistory by viewModel.filteredHistory.collectAsStateWithLifecycle()
         val selectedPeriod by viewModel.selectedPeriod.collectAsState()
+        val displayedMonth by viewModel.displayedMonth.collectAsStateWithLifecycle()
         var selectedDayEntries by remember { mutableStateOf<List<HistoryEntry>?>(null) }
 
         Scaffold(
@@ -110,7 +116,14 @@ fun MedicationStatsScreen(
                     style = MaterialTheme.typography.bodyMedium
                 )
 
+                MonthNavigator(
+                    month = displayedMonth,
+                    onPrevious = viewModel::goToPreviousMonth,
+                    onNext = viewModel::goToNextMonth
+                )
+
                 CalendarView(
+                    month = displayedMonth,
                     history = filteredHistory,
                     onDayClick = { date ->
                         selectedDayEntries = filteredHistory.filter { it.timestamp.toLocalDate() == date }
@@ -137,25 +150,25 @@ fun MedicationStatsScreen(
 
 @Composable
 private fun CalendarView(
+    month: YearMonth,
     history: List<HistoryEntry>,
     onDayClick: (LocalDate) -> Unit
 ) {
     val daysOfWeek = listOf("L", "M", "X", "J", "V", "S", "D")
 
-    val currentDateTime = LocalDateTime.now()
-    val year = currentDateTime.year
-    val month = currentDateTime.month
-
-    val firstDayOfMonth = LocalDate.of(year, month, 1)
-    val daysInMonth = month.length(firstDayOfMonth.isLeapYear)
+    val firstDayOfMonth = month.atDay(1)
+    val daysInMonth = month.lengthOfMonth()
 
     val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value
     val emptyCells = (firstDayOfWeek - 1)
 
     val calendarDays = (1..daysInMonth).toList()
 
-    val historyDates = remember(history) {
-        history.map { it.timestamp.toLocalDate() }.toSet()
+    val historyDates = remember(history, month) {
+        history
+            .filter { YearMonth.from(it.timestamp) == month }
+            .map { it.timestamp.toLocalDate() }
+            .toSet()
     }
     val medicationColor = history.firstOrNull()?.color ?: MaterialTheme.colorScheme.secondaryContainer
 
@@ -181,7 +194,7 @@ private fun CalendarView(
         }
 
         items(calendarDays) { day ->
-            val date = LocalDate.of(year, month, day)
+            val date = month.atDay(day)
             val isTaken = date in historyDates
 
             Box(
@@ -202,6 +215,45 @@ private fun CalendarView(
                     color = if (isTaken) Color.White else MaterialTheme.colorScheme.onSurface
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun MonthNavigator(
+    month: YearMonth,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit
+) {
+    val formatter = remember { DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault()) }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onPrevious) {
+            Icon(
+                imageVector = Icons.Filled.KeyboardArrowLeft,
+                contentDescription = "Mes anterior"
+            )
+        }
+
+        val monthLabel = remember(month) {
+            formatter.format(month).replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+        }
+        Text(
+            text = monthLabel,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        IconButton(onClick = onNext) {
+            Icon(
+                imageVector = Icons.Filled.KeyboardArrowRight,
+                contentDescription = "Mes siguiente"
+            )
         }
     }
 }
