@@ -141,6 +141,22 @@ fun ReorderableMedicationGrid(
                 }
             }
 
+            val cardModifier = Modifier
+                .animateItemPlacement()
+                .then(dragModifier)
+                .zIndex(if (isBeingDragged) 1f else 0f)
+                .graphicsLayer {
+                    alpha = if (isBeingDragged) 0.8f else 1f
+                    scaleX = if (isBeingDragged) 1.05f else 1f
+                    scaleY = if (isBeingDragged) 1.05f else 1f
+                    translationX = translation.x
+                    translationY = translation.y
+                }
+                .shadow(
+                    elevation = if (isBeingDragged) 8.dp else 0.dp,
+                    shape = RoundedCornerShape(16.dp)
+                )
+
             MedicationCard(
                 medication = medication,
                 onTakeMedication = if (isDragging) { { _, _ -> } } else { onTakeMedication },
@@ -148,20 +164,7 @@ fun ReorderableMedicationGrid(
                 onDeleteMedication = if (isDragging) { {} } else { onDeleteMedication },
                 enabled = !isDragging,
                 dragModifier = dragModifier,
-                modifier = Modifier
-                    .animateItemPlacement()
-                    .zIndex(if (isBeingDragged) 1f else 0f)
-                    .graphicsLayer {
-                        alpha = if (isBeingDragged) 0.8f else 1f
-                        scaleX = if (isBeingDragged) 1.05f else 1f
-                        scaleY = if (isBeingDragged) 1.05f else 1f
-                        translationX = translation.x
-                        translationY = translation.y
-                    }
-                    .shadow(
-                        elevation = if (isBeingDragged) 8.dp else 0.dp,
-                        shape = RoundedCornerShape(16.dp)
-                    )
+                modifier = cardModifier
             )
         }
         
