@@ -18,7 +18,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -29,7 +28,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -46,14 +44,21 @@ fun AppLockScreen(
     var pin by remember { mutableStateOf("") }
     val focusRequester = remember { FocusRequester() }
 
+    // Efecto que se lanza una sola vez cuando la pantalla aparece.
+    // 1. Pone el foco en el campo del PIN (como respaldo).
+    // 2. Si la biometría está activada, lanza el diálogo de autenticación automáticamente.
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
+        if (isBiometricEnabled) {
+            onUseBiometric()
+        }
     }
 
+    // Efecto que se lanza si hay un error (ej: PIN incorrecto)
     LaunchedEffect(errorMessage) {
         if (!errorMessage.isNullOrBlank()) {
-            pin = ""
-            focusRequester.requestFocus()
+            pin = "" // Limpia el campo del PIN
+            focusRequester.requestFocus() // Vuelve a poner el foco para un nuevo intento
         }
     }
 
@@ -124,12 +129,9 @@ fun AppLockScreen(
                     Text("Desbloquear")
                 }
 
-                if (isBiometricEnabled) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    TextButton(onClick = onUseBiometric) {
-                        Text("Usar huella")
-                    }
-                }
+                // Ya no necesitamos el botón "Usar huella", porque la petición de
+                // biometría ahora es automática. La pantalla del PIN sirve como
+                // el método de respaldo si el usuario cancela la biometría.
             }
         }
     }
