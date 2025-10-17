@@ -747,6 +747,15 @@ private val emojiLibrary = listOf(
     EmojiOption("😴", listOf("dormir", "descanso")),
     EmojiOption("🤧", listOf("alergia", "resfriado")),
     EmojiOption("🧞", listOf("genio", "deseo")),
+    EmojiOption("⍉", listOf("null", "symbol")),
+    EmojiOption("◕", listOf("3/4", "tres cuartos")),
+    EmojiOption("◒", listOf("1/2", "media")),
+    EmojiOption("◔", listOf("1/4", "un cuarto")),
+    EmojiOption("𝧤", listOf("retroceso", "vuelta")),
+    EmojiOption("◔", listOf("1/4", "un cuarto")),
+    EmojiOption("◔", listOf("1/4", "un cuarto")),
+    EmojiOption("𓀚", listOf("viajero", "caminante")),
+    EmojiOption("☢", listOf("nuke", "bomb")), ///⌬ ⚛ ︎⚕  ☢
 )
 
 private val featuredEmojis = emojiLibrary.map { it.symbol }.distinct().take(20)
