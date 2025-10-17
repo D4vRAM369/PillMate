@@ -45,14 +45,16 @@ class MedicationRepository(
             val latestTimestampByMedication = mutableMapOf<String, LocalDateTime>()
             historyEntities.forEach { entry ->
                 val timestamp = parseTimestampOrNull(entry.timestampIso) ?: return@forEach
-                val current = latestTimestampByMedication[entry.medicationName]
+                val key = entry.medicationId.takeIf { it.isNotBlank() } ?: entry.medicationName
+                val current = latestTimestampByMedication[key]
                 if (current == null || timestamp.isAfter(current)) {
-                    latestTimestampByMedication[entry.medicationName] = timestamp
+                    latestTimestampByMedication[key] = timestamp
                 }
             }
 
             medicationEntities.map { entity ->
-                val lastTakenTimestamp = latestTimestampByMedication[entity.name]
+                val lastTakenTimestamp = latestTimestampByMedication[entity.id]
+                    ?: latestTimestampByMedication[entity.name]
                 entity.toDomain(lastTakenTimestamp)
             }
         }
