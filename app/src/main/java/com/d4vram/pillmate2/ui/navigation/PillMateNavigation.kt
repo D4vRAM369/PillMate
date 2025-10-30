@@ -109,6 +109,7 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
                 HomeScreen(
                     repository = repository,
                     navController = navController,
+                    themeManager = themeManager,
                     onAddMedication = {
                         navController.navigate("add_medication")
                     },
@@ -124,6 +125,7 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
             composable(Screen.Medications.route) {
                 MedicationsScreen(
                     repository = repository,
+                    themeManager = themeManager,
                     onAddMedication = {
                         navController.navigate("add_medication")
                     },

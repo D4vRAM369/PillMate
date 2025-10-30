@@ -56,9 +56,11 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     val isDarkMode by themeManager.isDarkMode.collectAsState(initial = false)
     val uiStyle by themeManager.uiStyle.collectAsState(initial = AppUiStyle.Default)
+    val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)
     val snackbarHostState = remember { SnackbarHostState() }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var showUiDialog by remember { mutableStateOf(false) }
+    var showChipPeriodDialog by remember { mutableStateOf(false) }
     val securitySettings by securityManager.settings.collectAsState(initial = SecuritySettings())
     var showPinSetupDialog by remember { mutableStateOf(false) }
     var showPinChangeDialog by remember { mutableStateOf(false) }
@@ -193,6 +195,15 @@ fun SettingsScreen(
                         description = "Actual: ${uiStyle.title}",
                         icon = Icons.Default.Palette,
                         onClick = { showUiDialog = true }
+                    )
+
+                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    SettingsItem(
+                        title = "Chips de recuento",
+                        description = "Período: ${chipCountPeriod.title}",
+                        icon = Icons.Default.Tag,
+                        onClick = { showChipPeriodDialog = true }
                     )
                 }
             }
@@ -456,6 +467,55 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showUiDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+
+    if (showChipPeriodDialog) {
+        AlertDialog(
+            onDismissRequest = { showChipPeriodDialog = false },
+            title = { Text("Chips de recuento") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    com.d4vram.pillmate2.ui.theme.ChipCountPeriod.entries.forEach { period ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    showChipPeriodDialog = false
+                                    scope.launch { themeManager.setChipCountPeriod(period) }
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = period == chipCountPeriod,
+                                onClick = {
+                                    showChipPeriodDialog = false
+                                    scope.launch { themeManager.setChipCountPeriod(period) }
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = period.title,
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                                )
+                                Text(
+                                    text = period.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showChipPeriodDialog = false }) {
                     Text("Cerrar")
                 }
             }

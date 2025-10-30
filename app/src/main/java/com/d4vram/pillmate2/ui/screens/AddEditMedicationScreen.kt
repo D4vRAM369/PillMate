@@ -465,17 +465,29 @@ private fun EmojiPickerDialog(
     onEmojiSelected: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    val filteredEmojis = remember(query) {
+    // Combinar emojis del sistema con la biblioteca personalizada
+    val allSystemEmojis = remember {
+        getAllSystemEmojis()
+    }
+
+    val filteredEmojis = remember(query, allSystemEmojis) {
         val normalized = query.trim().lowercase()
         if (normalized.isEmpty()) {
-            emojiLibrary
+            // Mostrar primero la biblioteca curada, luego todos los del sistema
+            emojiLibrary + allSystemEmojis
         } else {
-            emojiLibrary.filter { option ->
+            // Buscar en la biblioteca curada (con keywords)
+            val fromLibrary = emojiLibrary.filter { option ->
                 option.symbol.contains(normalized) ||
                     option.keywords.any { keyword ->
                         keyword.contains(normalized, ignoreCase = true)
                     }
             }
+            // Buscar en emojis del sistema (solo por símbolo)
+            val fromSystem = allSystemEmojis.filter { option ->
+                option.symbol.contains(normalized)
+            }
+            (fromLibrary + fromSystem).distinctBy { it.symbol }
         }
     }
 
@@ -706,6 +718,49 @@ private data class EmojiOption(
     val symbol: String,
     val keywords: List<String>
 )
+
+/**
+ * Obtiene todos los emojis disponibles en el sistema Android
+ * Rangos Unicode de emojis:
+ * - Emoticons: U+1F600 - U+1F64F
+ * - Símbolos Misceláneos: U+1F300 - U+1F5FF
+ * - Transporte y Mapas: U+1F680 - U+1F6FF
+ * - Símbolos Suplementarios: U+1F900 - U+1F9FF
+ * - Emojis Extendidos: U+1FA70 - U+1FAFF
+ * - Símbolos y Pictográficos: U+2600 - U+26FF
+ * - Dingbats: U+2700 - U+27BF
+ */
+private fun getAllSystemEmojis(): List<EmojiOption> {
+    val emojis = mutableListOf<EmojiOption>()
+
+    // Rangos de emojis Unicode
+    val emojiRanges = listOf(
+        0x1F600..0x1F64F,  // Emoticons
+        0x1F300..0x1F5FF,  // Símbolos Misceláneos
+        0x1F680..0x1F6FF,  // Transporte y Mapas
+        0x1F900..0x1F9FF,  // Símbolos Suplementarios
+        0x1FA70..0x1FAFF,  // Emojis Extendidos
+        0x2600..0x26FF,    // Símbolos y Pictográficos
+        0x2700..0x27BF,    // Dingbats
+        0x1F1E6..0x1F1FF   // Banderas (Regional Indicators)
+    )
+
+    for (range in emojiRanges) {
+        for (codePoint in range) {
+            try {
+                val emoji = String(Character.toChars(codePoint))
+                // Verificar que el carácter sea válido y no sea un carácter de control
+                if (emoji.isNotEmpty() && !Character.isISOControl(codePoint)) {
+                    emojis.add(EmojiOption(emoji, emptyList()))
+                }
+            } catch (e: Exception) {
+                // Ignorar code points inválidos
+            }
+        }
+    }
+
+    return emojis
+}
 
 private val emojiLibrary = listOf(
     EmojiOption("💊", listOf("medicina", "pastilla", "pill", "remedio")),

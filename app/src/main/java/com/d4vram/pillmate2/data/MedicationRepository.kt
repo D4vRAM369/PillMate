@@ -59,6 +59,47 @@ class MedicationRepository(
             }
         }
 
+    /**
+     * Calcula el número de tomas de un medicamento según el período especificado
+     */
+    fun calculateTakenCount(medicationId: String, medicationName: String, period: com.d4vram.pillmate2.ui.theme.ChipCountPeriod): Int {
+        val history = historyEntries.value
+        val today = LocalDate.now()
+
+        return when (period) {
+            com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Daily -> {
+                history
+                    .filter { (it.medicationId == medicationId || it.medicationName == medicationName) &&
+                              it.timestamp.toLocalDate() == today }
+                    .sumOf { it.quantity }
+            }
+            com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Weekly -> {
+                history
+                    .filter {
+                        val daysDiff = ChronoUnit.DAYS.between(it.timestamp.toLocalDate(), today)
+                        (it.medicationId == medicationId || it.medicationName == medicationName) &&
+                        daysDiff in 0..6
+                    }
+                    .sumOf { it.quantity }
+            }
+            com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Monthly -> {
+                val firstDayOfMonth = today.withDayOfMonth(1)
+                history
+                    .filter {
+                        (it.medicationId == medicationId || it.medicationName == medicationName) &&
+                        !it.timestamp.toLocalDate().isBefore(firstDayOfMonth)
+                    }
+                    .sumOf { it.quantity }
+            }
+            com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total -> {
+                history
+                    .filter { it.medicationId == medicationId || it.medicationName == medicationName }
+                    .sumOf { it.quantity }
+            }
+            com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Hidden -> 0
+        }
+    }
+
     val medications: StateFlow<List<Medication>> = medicationsFlow.stateIn(
         scope,
         SharingStarted.Eagerly,

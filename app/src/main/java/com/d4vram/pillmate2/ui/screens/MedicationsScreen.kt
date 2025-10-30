@@ -17,11 +17,13 @@ import com.d4vram.pillmate2.ui.components.ReorderableMedicationGrid
 @Composable
 fun MedicationsScreen(
     repository: MedicationRepository,
+    themeManager: com.d4vram.pillmate2.ui.theme.ThemeManager,
     onAddMedication: () -> Unit,
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {}
 ) {
     val medications by repository.medications.collectAsState()
+    val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)
 
     Scaffold(
         topBar = {
@@ -64,6 +66,8 @@ fun MedicationsScreen(
             item {
                 ReorderableMedicationGrid(
                     medications = medications,
+                    repository = repository,
+                    chipCountPeriod = chipCountPeriod,
                     onTakeMedication = { medicationId, quantity ->
                         repository.takeMedication(medicationId, quantity)
                     },
