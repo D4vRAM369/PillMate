@@ -2,6 +2,7 @@ package com.d4vram.pillmate2.ui.components
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -81,7 +82,13 @@ fun MedicationCard(
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (isTakenToday) 8.dp else 4.dp
-        )
+        ),
+        border = if (isTakenToday) {
+            BorderStroke(
+                width = 1.dp,
+                color = medication.color.copy(alpha = 0.4f)
+            )
+        } else null
     ) {
         // Efecto de reset de animación
         LaunchedEffect(isPressed) {
