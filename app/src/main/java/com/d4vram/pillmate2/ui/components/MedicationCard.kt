@@ -32,6 +32,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun MedicationCard(
     medication: Medication,
+    repository: com.d4vram.pillmate2.data.MedicationRepository,
+    chipCountPeriod: com.d4vram.pillmate2.ui.theme.ChipCountPeriod,
     onTakeMedication: (String, Int) -> Unit,
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {},
@@ -52,8 +54,13 @@ fun MedicationCard(
         label = "card_scale"
     )
 
-    // Determinar si ya se tomó hoy
-    val isTakenToday = medication.takenToday > 0
+    // Calcular el contador según el período configurado
+    val takenCount = remember(medication.id, medication.name, chipCountPeriod) {
+        repository.calculateTakenCount(medication.id, medication.name, chipCountPeriod)
+    }
+
+    // Determinar si ya se tomó (según el período)
+    val isTakenToday = takenCount > 0
 
     val combinedModifier = modifier
 
@@ -102,10 +109,11 @@ fun MedicationCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     CountBadge(
-                        current = medication.takenToday,
+                        current = takenCount,
                         goal = medication.dailyGoal,
                         isPrn = medication.isPrn,
-                        isTaken = isTakenToday
+                        isTaken = isTakenToday,
+                        chipCountPeriod = chipCountPeriod
                     )
 
                     Spacer(modifier = Modifier.weight(1f))
@@ -242,8 +250,14 @@ private fun CountBadge(
     goal: Int,
     isPrn: Boolean,
     isTaken: Boolean,
+    chipCountPeriod: com.d4vram.pillmate2.ui.theme.ChipCountPeriod,
     modifier: Modifier = Modifier
 ) {
+    // Si está configurado para ocultar, no mostrar nada
+    if (chipCountPeriod == com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Hidden) {
+        return
+    }
+
     val backgroundColor = when {
         isPrn -> Color(0xFFEF4444)
         isTaken -> Color(0xFF10B981)
@@ -255,13 +269,20 @@ private fun CountBadge(
         else -> Color(0xFF4B5563)
     }
 
+    // Determinar qué texto mostrar según el período
+    val displayText = when {
+        isPrn -> "PRN"
+        chipCountPeriod == com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Daily -> "$current/$goal"
+        else -> current.toString()
+    }
+
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
         color = backgroundColor
     ) {
         Text(
-            text = if (isPrn) "PRN" else "$current/$goal",
+            text = displayText,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelMedium.copy(
                 fontWeight = FontWeight.Bold,

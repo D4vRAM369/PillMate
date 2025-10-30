@@ -37,6 +37,7 @@ import com.d4vram.pillmate2.ui.theme.LocalUiStyle
 fun HomeScreen(
     repository: MedicationRepository,
     navController: NavController,
+    themeManager: com.d4vram.pillmate2.ui.theme.ThemeManager,
     onAddMedication: () -> Unit,
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {}
@@ -45,6 +46,7 @@ fun HomeScreen(
     val medications by repository.medications.collectAsState()
     val historyEntries by repository.historyEntries.collectAsState()
     val stats by repository.stats.collectAsState()
+    val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)
 
     // Estado para el modal de notas / entrada seleccionada
     var selectedHistoryEntry by remember { mutableStateOf<HistoryEntry?>(null) }
@@ -80,6 +82,8 @@ fun HomeScreen(
                 // Grid de medicamentos reordenable
                 ReorderableMedicationGrid(
                     medications = medications,
+                    repository = repository,
+                    chipCountPeriod = chipCountPeriod,
                     onTakeMedication = { medicationId, quantity ->
                         repository.takeMedication(medicationId, quantity)
                     },

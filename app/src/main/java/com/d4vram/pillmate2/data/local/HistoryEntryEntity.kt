@@ -15,5 +15,6 @@ data class HistoryEntryEntity(
     val quantity: Int,
     val notes: String,
     val timestampIso: String,
-    val dose: String?
+    val dose: String?,
+    val audioNoteUri: String? = null  // Ruta al archivo de audio encriptado
 )

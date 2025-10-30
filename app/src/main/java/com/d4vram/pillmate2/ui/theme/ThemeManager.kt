@@ -25,6 +25,19 @@ enum class AppUiStyle(val storageValue: String, val title: String, val descripti
     }
 }
 
+enum class ChipCountPeriod(val storageValue: String, val title: String, val description: String) {
+    Daily("daily", "Diario", "Mostrar tomas de hoy"),
+    Weekly("weekly", "Semanal", "Mostrar tomas de esta semana"),
+    Monthly("monthly", "Mensual", "Mostrar tomas de este mes"),
+    Total("total", "Total", "Mostrar todas las tomas registradas"),
+    Hidden("hidden", "No mostrar", "Ocultar el chip de recuento");
+
+    companion object {
+        fun fromStorage(value: String?): ChipCountPeriod =
+            entries.firstOrNull { it.storageValue == value } ?: Total
+    }
+}
+
 // Extensión para crear el DataStore
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "theme_preferences")
 
@@ -36,6 +49,7 @@ class ThemeManager(private val context: Context) {
     companion object {
         private val IS_DARK_MODE_KEY = booleanPreferencesKey("is_dark_mode")
         private val UI_STYLE_KEY = stringPreferencesKey("ui_style")
+        private val CHIP_COUNT_PERIOD_KEY = stringPreferencesKey("chip_count_period")
     }
     
     val isDarkMode: Flow<Boolean> = context.dataStore.data
@@ -58,7 +72,17 @@ class ThemeManager(private val context: Context) {
             val stored = preferences[UI_STYLE_KEY]
             AppUiStyle.fromStorage(stored)
         }
-    
+
+    val chipCountPeriod: Flow<ChipCountPeriod> = context.dataStore.data
+        .catch { throwable ->
+            Log.e("ThemeManager", "Error reading chip count period preferences", throwable)
+            emit(emptyPreferences())
+        }
+        .map { preferences ->
+            val stored = preferences[CHIP_COUNT_PERIOD_KEY]
+            ChipCountPeriod.fromStorage(stored)
+        }
+
     suspend fun setDarkMode(isDark: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[IS_DARK_MODE_KEY] = isDark
@@ -68,6 +92,12 @@ class ThemeManager(private val context: Context) {
     suspend fun setUiStyle(style: AppUiStyle) {
         context.dataStore.edit { preferences ->
             preferences[UI_STYLE_KEY] = style.storageValue
+        }
+    }
+
+    suspend fun setChipCountPeriod(period: ChipCountPeriod) {
+        context.dataStore.edit { preferences ->
+            preferences[CHIP_COUNT_PERIOD_KEY] = period.storageValue
         }
     }
 

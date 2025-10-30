@@ -10,7 +10,7 @@ import java.util.Locale
 
 @Database(
     entities = [MedicationEntity::class, HistoryEntryEntity::class, VoiceNoteEntity::class],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class PillMateDatabase : RoomDatabase() {
@@ -35,7 +35,8 @@ abstract class PillMateDatabase : RoomDatabase() {
                     MIGRATION_5_6,
                     MIGRATION_6_7,
                     MIGRATION_7_8,
-                    MIGRATION_8_9
+                    MIGRATION_8_9,
+                    MIGRATION_9_10
                 ).build().also { INSTANCE = it }
             }
         }
@@ -93,6 +94,13 @@ abstract class PillMateDatabase : RoomDatabase() {
         private val MIGRATION_8_9 = object : Migration(8, 9) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 updateHistoryMedicationIds(database)
+            }
+        }
+
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Añadir campo audioNoteUri para notas de voz en historial
+                database.execSQL("ALTER TABLE history ADD COLUMN audioNoteUri TEXT")
             }
         }
 

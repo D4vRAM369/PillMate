@@ -17,5 +17,6 @@ data class HistoryEntry(
     val quantity: Int = 1,
     val notes: String = "",
     val timestamp: LocalDateTime = LocalDateTime.now(),
-    val dose: String? = null
+    val dose: String? = null,
+    val audioNoteUri: String? = null  // Ruta al archivo de audio encriptado
 )

@@ -30,6 +30,8 @@ import com.d4vram.pillmate2.model.Medication
 @Composable
 fun ReorderableMedicationGrid(
     medications: List<Medication>,
+    repository: com.d4vram.pillmate2.data.MedicationRepository,
+    chipCountPeriod: com.d4vram.pillmate2.ui.theme.ChipCountPeriod,
     onTakeMedication: (String, Int) -> Unit,
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {},
@@ -159,6 +161,8 @@ fun ReorderableMedicationGrid(
 
             MedicationCard(
                 medication = medication,
+                repository = repository,
+                chipCountPeriod = chipCountPeriod,
                 onTakeMedication = if (isDragging) { { _, _ -> } } else { onTakeMedication },
                 onEditMedication = if (isDragging) { {} } else { onEditMedication },
                 onDeleteMedication = if (isDragging) { {} } else { onDeleteMedication },

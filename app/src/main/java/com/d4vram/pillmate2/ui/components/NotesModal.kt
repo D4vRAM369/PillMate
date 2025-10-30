@@ -9,6 +9,10 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +29,24 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import androidx.compose.ui.platform.LocalContext
+import android.media.MediaRecorder
+import android.media.MediaPlayer
+import java.io.File
+import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.Manifest
+
+/**
+ * Formatea milisegundos a formato mm:ss
+ */
+private fun formatDuration(millis: Int): String {
+    val seconds = (millis / 1000) % 60
+    val minutes = (millis / 1000) / 60
+    return String.format("%02d:%02d", minutes, seconds)
+}
 
 /**
  * 📝 Modal para añadir y editar notas de entradas del historial
@@ -38,6 +60,9 @@ fun NotesModal(
     onDeleteNotes: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
     val originalDateTime = remember(historyEntry.id) {
         historyEntry.timestamp.withSecond(0).withNano(0)
     }
@@ -47,14 +72,150 @@ fun NotesModal(
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
+    // Estado para grabación de audio
+    var isRecording by remember { mutableStateOf(false) }
+    var recordingDuration by remember { mutableStateOf(0) }
+    var audioFile by remember { mutableStateOf<File?>(null) }
+    var mediaRecorder by remember { mutableStateOf<MediaRecorder?>(null) }
+    var hasRecordPermission by remember { mutableStateOf(false) }
+
+    // Estado para reproducción de audio
+    var isPlaying by remember { mutableStateOf(false) }
+    var playbackProgress by remember { mutableStateOf(0f) }
+    var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+
     val zoneId = remember { ZoneId.systemDefault() }
     val fullDateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm") }
 
     val formattedDisplayDate = remember(selectedDateTime) { selectedDateTime.format(fullDateFormatter) }
     val formattedDisplayTime = remember(selectedDateTime) { selectedDateTime.format(timeFormatter) }
-    val hasChanges = remember(notesText, selectedDateTime) {
-        notesText != historyEntry.notes || selectedDateTime != originalDateTime
+    val hasChanges = remember(notesText, selectedDateTime, audioFile) {
+        notesText != historyEntry.notes || selectedDateTime != originalDateTime || audioFile != null
+    }
+
+    // Limpieza de recursos al desmontar
+    DisposableEffect(Unit) {
+        onDispose {
+            mediaRecorder?.apply {
+                try {
+                    stop()
+                } catch (e: Exception) { }
+                release()
+            }
+            mediaPlayer?.release()
+        }
+    }
+
+    // Timer para duración de grabación
+    LaunchedEffect(isRecording) {
+        if (isRecording) {
+            while (isRecording) {
+                delay(100)
+                recordingDuration += 100
+            }
+        } else {
+            recordingDuration = 0
+        }
+    }
+
+    // Timer para progreso de reproducción
+    LaunchedEffect(isPlaying) {
+        while (isPlaying) {
+            mediaPlayer?.let { player ->
+                if (player.isPlaying) {
+                    playbackProgress = player.currentPosition.toFloat() / player.duration.toFloat()
+                }
+            }
+            delay(100)
+        }
+    }
+
+    // Funciones de control de grabación
+    fun startRecording() {
+        try {
+            val file = File.createTempFile("note_audio_", ".m4a", context.cacheDir)
+            val recorder = MediaRecorder(context).apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setAudioEncodingBitRate(128_000)
+                setAudioSamplingRate(44_100)
+                setOutputFile(file.absolutePath)
+                prepare()
+                start()
+            }
+            mediaRecorder = recorder
+            audioFile = file
+            isRecording = true
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun stopRecording() {
+        try {
+            mediaRecorder?.apply {
+                stop()
+                release()
+            }
+            mediaRecorder = null
+            isRecording = false
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun deleteRecording() {
+        audioFile?.delete()
+        audioFile = null
+        playbackProgress = 0f
+    }
+
+    // Funciones de control de reproducción
+    fun startPlayback() {
+        audioFile?.let { file ->
+            try {
+                val player = MediaPlayer().apply {
+                    setDataSource(file.absolutePath)
+                    prepare()
+                    setOnCompletionListener {
+                        isPlaying = false
+                        playbackProgress = 0f
+                    }
+                    start()
+                }
+                mediaPlayer = player
+                isPlaying = true
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun pausePlayback() {
+        mediaPlayer?.pause()
+        isPlaying = false
+    }
+
+    fun stopPlayback() {
+        mediaPlayer?.apply {
+            stop()
+            release()
+        }
+        mediaPlayer = null
+        isPlaying = false
+        playbackProgress = 0f
+    }
+
+    // Launcher para solicitar permisos de grabación (después de definir startRecording)
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasRecordPermission = isGranted
+        if (isGranted) {
+            startRecording()
+        }
     }
 
     Dialog(
@@ -257,6 +418,158 @@ fun NotesModal(
                                 maxLines = 5,
                                 shape = RoundedCornerShape(8.dp)
                             )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Botón de grabación de audio
+                            if (!isRecording && audioFile == null) {
+                                OutlinedButton(
+                                    onClick = {
+                                        if (hasRecordPermission) {
+                                            startRecording()
+                                        } else {
+                                            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Mic,
+                                        contentDescription = "Grabar nota de voz"
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Grabar nota de voz")
+                                }
+                            }
+
+                            // UI de grabación activa
+                            if (isRecording) {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.errorContainer
+                                    )
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Icon(
+                                                imageVector = Icons.Default.Mic,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Column {
+                                                Text(
+                                                    text = "Grabando...",
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                                Text(
+                                                    text = formatDuration(recordingDuration),
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                        }
+                                        IconButton(
+                                            onClick = { stopRecording() }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Stop,
+                                                contentDescription = "Detener grabación",
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Reproductor de audio compacto
+                            if (audioFile != null && !isRecording) {
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                                    )
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "🎤 Nota de voz",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                            IconButton(
+                                                onClick = {
+                                                    stopPlayback()
+                                                    deleteRecording()
+                                                }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Delete,
+                                                    contentDescription = "Eliminar audio",
+                                                    tint = MaterialTheme.colorScheme.error
+                                                )
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        // Barra de progreso
+                                        LinearProgressIndicator(
+                                            progress = { playbackProgress },
+                                            modifier = Modifier.fillMaxWidth(),
+                                        )
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        // Controles de reproducción
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.Center,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            IconButton(
+                                                onClick = {
+                                                    if (isPlaying) {
+                                                        pausePlayback()
+                                                    } else {
+                                                        if (playbackProgress > 0f && playbackProgress < 1f) {
+                                                            // Reanudar
+                                                            mediaPlayer?.start()
+                                                            isPlaying = true
+                                                        } else {
+                                                            // Iniciar desde el principio
+                                                            stopPlayback()
+                                                            startPlayback()
+                                                        }
+                                                    }
+                                                }
+                                            ) {
+                                                Icon(
+                                                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                                    contentDescription = if (isPlaying) "Pausar" else "Reproducir",
+                                                    modifier = Modifier.size(32.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         } else {
                             if (notesText.isNotEmpty()) {
                                 Card(
