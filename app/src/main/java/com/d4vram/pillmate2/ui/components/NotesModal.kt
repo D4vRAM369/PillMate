@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -38,6 +39,7 @@ import kotlin.math.roundToInt
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.Manifest
+import com.d4vram.pillmate2.data.AudioNoteManager
 
 /**
  * Formatea milisegundos a formato mm:ss
@@ -56,12 +58,13 @@ private fun formatDuration(millis: Int): String {
 fun NotesModal(
     historyEntry: HistoryEntry,
     onDismiss: () -> Unit,
-    onSaveChanges: (String, String, LocalDateTime) -> Unit, // (entryId, notes, timestamp)
+    onSaveChanges: (String, String, LocalDateTime, String?) -> Unit, // (entryId, notes, timestamp, audioNoteUri)
     onDeleteNotes: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val audioNoteManager = remember { AudioNoteManager(context) }
 
     val originalDateTime = remember(historyEntry.id) {
         historyEntry.timestamp.withSecond(0).withNano(0)
@@ -78,11 +81,22 @@ fun NotesModal(
     var audioFile by remember { mutableStateOf<File?>(null) }
     var mediaRecorder by remember { mutableStateOf<MediaRecorder?>(null) }
     var hasRecordPermission by remember { mutableStateOf(false) }
+    var existingAudioId by remember { mutableStateOf(historyEntry.audioNoteUri) }
+    var hasNewRecording by remember { mutableStateOf(false) }
 
     // Estado para reproducción de audio
     var isPlaying by remember { mutableStateOf(false) }
     var playbackProgress by remember { mutableStateOf(0f) }
     var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
+
+    // Cargar audio existente si lo hay
+    LaunchedEffect(historyEntry.id) {
+        historyEntry.audioNoteUri?.let { audioId ->
+            audioNoteManager.decryptAudioForPlayback(audioId)?.let { decryptedFile ->
+                audioFile = decryptedFile
+            }
+        }
+    }
 
     val zoneId = remember { ZoneId.systemDefault() }
     val fullDateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
@@ -131,48 +145,17 @@ fun NotesModal(
         }
     }
 
-    // Funciones de control de grabación
-    fun startRecording() {
-        try {
-            val file = File.createTempFile("note_audio_", ".m4a", context.cacheDir)
-            val recorder = MediaRecorder(context).apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                setAudioEncodingBitRate(128_000)
-                setAudioSamplingRate(44_100)
-                setOutputFile(file.absolutePath)
-                prepare()
-                start()
-            }
-            mediaRecorder = recorder
-            audioFile = file
-            isRecording = true
-        } catch (e: Exception) {
-            e.printStackTrace()
+    // Funciones de control de reproducción
+    fun stopPlayback() {
+        mediaPlayer?.apply {
+            stop()
+            release()
         }
-    }
-
-    fun stopRecording() {
-        try {
-            mediaRecorder?.apply {
-                stop()
-                release()
-            }
-            mediaRecorder = null
-            isRecording = false
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    fun deleteRecording() {
-        audioFile?.delete()
-        audioFile = null
+        mediaPlayer = null
+        isPlaying = false
         playbackProgress = 0f
     }
 
-    // Funciones de control de reproducción
     fun startPlayback() {
         audioFile?.let { file ->
             try {
@@ -198,13 +181,53 @@ fun NotesModal(
         isPlaying = false
     }
 
-    fun stopPlayback() {
-        mediaPlayer?.apply {
-            stop()
-            release()
+    // Funciones de control de grabación
+    fun startRecording() {
+        try {
+            // Si hay un audio existente, eliminarlo del reproductor primero
+            if (audioFile != null && !hasNewRecording) {
+                stopPlayback()
+            }
+
+            val file = File.createTempFile("note_audio_", ".m4a", context.cacheDir)
+            val recorder = MediaRecorder(context).apply {
+                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
+                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+                setAudioEncodingBitRate(128_000)
+                setAudioSamplingRate(44_100)
+                setOutputFile(file.absolutePath)
+                prepare()
+                start()
+            }
+            mediaRecorder = recorder
+            audioFile = file
+            hasNewRecording = true
+            isRecording = true
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
-        mediaPlayer = null
-        isPlaying = false
+    }
+
+    fun stopRecording() {
+        try {
+            mediaRecorder?.apply {
+                stop()
+                release()
+            }
+            mediaRecorder = null
+            isRecording = false
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun deleteRecording() {
+        // Eliminar archivo temporal
+        audioFile?.delete()
+        audioFile = null
+        hasNewRecording = false
+        existingAudioId = null
         playbackProgress = 0f
     }
 
@@ -513,17 +536,49 @@ fun NotesModal(
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 fontWeight = FontWeight.Bold
                                             )
-                                            IconButton(
-                                                onClick = {
-                                                    stopPlayback()
-                                                    deleteRecording()
-                                                }
+                                            Row(
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Delete,
-                                                    contentDescription = "Eliminar audio",
-                                                    tint = MaterialTheme.colorScheme.error
-                                                )
+                                                // Botón de compartir
+                                                IconButton(
+                                                    onClick = {
+                                                        audioFile?.let { file ->
+                                                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                                                context,
+                                                                "${context.packageName}.provider",
+                                                                file
+                                                            )
+                                                            val shareIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                                                type = "audio/*"
+                                                                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                            }
+                                                            context.startActivity(
+                                                                android.content.Intent.createChooser(shareIntent, "Compartir nota de voz")
+                                                            )
+                                                        }
+                                                    }
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Share,
+                                                        contentDescription = "Compartir audio",
+                                                        tint = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                                // Botón de eliminar
+                                                IconButton(
+                                                    onClick = {
+                                                        stopPlayback()
+                                                        deleteRecording()
+                                                    }
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Delete,
+                                                        contentDescription = "Eliminar audio",
+                                                        tint = MaterialTheme.colorScheme.error
+                                                    )
+                                                }
                                             }
                                         }
 
@@ -625,7 +680,24 @@ fun NotesModal(
 
                             Button(
                                 onClick = {
-                                    onSaveChanges(historyEntry.id, notesText, selectedDateTime)
+                                    // Si hay una nueva grabación, encriptarla y guardarla
+                                    val audioId = if (hasNewRecording && audioFile != null) {
+                                        try {
+                                            // Eliminar audio antiguo si existe
+                                            existingAudioId?.let { oldId ->
+                                                audioNoteManager.deleteAudio(oldId)
+                                            }
+                                            // Guardar nuevo audio encriptado
+                                            audioNoteManager.saveEncryptedAudio(audioFile!!)
+                                        } catch (e: Exception) {
+                                            e.printStackTrace()
+                                            null
+                                        }
+                                    } else {
+                                        existingAudioId // Mantener el audio existente si no hay cambios
+                                    }
+
+                                    onSaveChanges(historyEntry.id, notesText, selectedDateTime, audioId)
                                     isEditing = false
                                     onDismiss()
                                 },

@@ -225,9 +225,9 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
         NotesModal(
             historyEntry = entry,
             onDismiss = { selectedHistoryEntry = null },
-            onSaveChanges = { entryId, notes, newTimestamp ->
-                if (notes != entry.notes) {
-                    repository.updateHistoryNotes(entryId, notes)
+            onSaveChanges = { entryId, notes, newTimestamp, audioNoteUri ->
+                if (notes != entry.notes || audioNoteUri != entry.audioNoteUri) {
+                    repository.updateHistoryNotes(entryId, notes, audioNoteUri)
                 }
                 val sanitizedOriginal = entry.timestamp.withSecond(0).withNano(0)
                 if (newTimestamp != sanitizedOriginal) {
@@ -364,6 +364,7 @@ private fun SwipeableHistoryItem(
             HistoryItem(
                 historyEntry = historyEntry,
                 showNotesIndicator = historyEntry.notes.isNotEmpty(),
+                hasAudioNote = !historyEntry.audioNoteUri.isNullOrBlank(),
                 onShowStats = onShowStats
             )
         }

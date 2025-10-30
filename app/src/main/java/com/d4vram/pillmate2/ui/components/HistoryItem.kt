@@ -24,6 +24,7 @@ import com.d4vram.pillmate2.model.HistoryEntry
 fun HistoryItem(
     historyEntry: HistoryEntry,
     showNotesIndicator: Boolean = false,
+    hasAudioNote: Boolean = false,
     onShowStats: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -94,13 +95,17 @@ fun HistoryItem(
             }
 
             // Indicador de notas si las hay
-            if (showNotesIndicator) {
+            if (showNotesIndicator || hasAudioNote) {
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.tertiaryContainer
+                    color = if (hasAudioNote) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.tertiaryContainer
+                    }
                 ) {
                     Text(
-                        text = "📝",
+                        text = if (hasAudioNote) "🎤" else "📝",
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         style = MaterialTheme.typography.labelSmall,
                         fontSize = 10.sp

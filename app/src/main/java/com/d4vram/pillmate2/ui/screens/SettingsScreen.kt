@@ -67,6 +67,7 @@ fun SettingsScreen(
     var showTimeoutPicker by remember { mutableStateOf(false) }
     var pendingEnableLock by remember { mutableStateOf(false) }
     var showVoiceNotePasswordDialog by remember { mutableStateOf(false) }
+    var showHistoryExportDialog by remember { mutableStateOf(false) }
 
     val biometricManager = remember { BiometricManager.from(context) }
     val canAuthenticateBiometric = remember(biometricManager) {
@@ -358,6 +359,14 @@ fun SettingsScreen(
                         }
                     )
                     SettingsItem(
+                        title = "Exportar historial con audios",
+                        description = "Exportar historial completo con notas de voz encriptadas",
+                        icon = Icons.Default.Mic,
+                        onClick = {
+                            showHistoryExportDialog = true
+                        }
+                    )
+                    SettingsItem(
                         title = "Importar CSV",
                         description = "Cargar datos desde archivo CSV",
                         icon = Icons.Default.FileUpload,
@@ -594,6 +603,28 @@ fun SettingsScreen(
                         }
                     } catch (e: Exception) {
                         snackbarMessage = e.localizedMessage ?: "Error al cambiar contraseña"
+                    }
+                }
+            }
+        )
+    }
+
+    if (showHistoryExportDialog) {
+        HistoryExportDialog(
+            onDismiss = { showHistoryExportDialog = false },
+            onExport = { includeAudioNotes ->
+                scope.launch {
+                    try {
+                        val file = exportHistoryWithAudio(context, repository, includeAudioNotes)
+                        shareFile(context, file)
+                        snackbarMessage = if (includeAudioNotes) {
+                            "Historial exportado con ${file.length() / 1024}KB de audios"
+                        } else {
+                            "Historial exportado sin audios"
+                        }
+                        showHistoryExportDialog = false
+                    } catch (e: Exception) {
+                        snackbarMessage = "Error al exportar: ${e.message}"
                     }
                 }
             }
@@ -1055,4 +1086,154 @@ private fun VoiceNotePasswordChangeDialog(
             }
         }
     )
+}
+
+@Composable
+private fun HistoryExportDialog(
+    onDismiss: () -> Unit,
+    onExport: (Boolean) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("📦 Exportar historial") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "Elige cómo exportar tu historial de medicamentos:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "🔒 Seguridad",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Las notas de voz siempre se exportan encriptadas con AES-256",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { onExport(true) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(imageVector = Icons.Default.Mic, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Con notas de voz")
+                }
+                OutlinedButton(
+                    onClick = { onExport(false) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(imageVector = Icons.Default.FileDownload, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Solo texto (CSV)")
+                }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+/**
+ * Exporta el historial con opción de incluir notas de voz encriptadas
+ */
+private suspend fun exportHistoryWithAudio(
+    context: Context,
+    repository: MedicationRepository,
+    includeAudioNotes: Boolean
+): File = withContext(Dispatchers.IO) {
+    if (!includeAudioNotes) {
+        // Exportación simple CSV sin audios
+        return@withContext createExportFile(context, repository)
+    }
+
+    // Exportación completa con audios encriptados
+    val audioNoteManager = com.d4vram.pillmate2.data.AudioNoteManager(context)
+    val database = com.d4vram.pillmate2.data.local.PillMateDatabase.getInstance(context)
+    val timestamp = System.currentTimeMillis()
+    val zipFile = File(context.cacheDir, "PillMate_Export_$timestamp.zip")
+
+    java.util.zip.ZipOutputStream(zipFile.outputStream().buffered()).use { zipOut ->
+        // 1. Añadir CSV del historial
+        val csvFile = createExportFile(context, repository)
+        zipOut.putNextEntry(java.util.zip.ZipEntry("history.csv"))
+        csvFile.inputStream().use { it.copyTo(zipOut) }
+        zipOut.closeEntry()
+
+        // 2. Añadir audios encriptados
+        val history = database.historyDao().getAllHistory()
+        val audioEntries = history.filter { entry ->
+            !entry.audioNoteUri.isNullOrBlank()
+        }
+
+        if (audioEntries.isNotEmpty()) {
+            // Crear directorio de audios en el ZIP
+            zipOut.putNextEntry(java.util.zip.ZipEntry("audio_notes/"))
+            zipOut.closeEntry()
+
+            // Añadir cada audio encriptado
+            audioEntries.forEach { entry ->
+                entry.audioNoteUri?.let { audioId ->
+                    // Archivo encriptado
+                    audioNoteManager.getEncryptedFile(audioId)?.let { encFile ->
+                        zipOut.putNextEntry(java.util.zip.ZipEntry("audio_notes/$audioId.enc"))
+                        encFile.inputStream().use { it.copyTo(zipOut) }
+                        zipOut.closeEntry()
+                    }
+
+                    // Metadatos de encriptación
+                    audioNoteManager.getEncryptionMetadata(audioId)?.let { metadata ->
+                        val metadataJson = """{"salt":"${metadata.salt}","iv":"${metadata.iv}"}"""
+                        zipOut.putNextEntry(java.util.zip.ZipEntry("audio_notes/$audioId.json"))
+                        zipOut.write(metadataJson.toByteArray())
+                        zipOut.closeEntry()
+                    }
+                }
+            }
+        }
+
+        // 3. Añadir archivo README con instrucciones
+        val readme = """
+            PillMate Export Package
+            =======================
+
+            Contenido:
+            - history.csv: Historial completo en formato CSV
+            - audio_notes/: Notas de voz encriptadas (AES-256-GCM)
+
+            Las notas de voz están encriptadas y requieren la misma
+            contraseña utilizada en la app para desencriptarlas.
+
+            Formato de audios:
+            - *.enc: Archivo de audio encriptado
+            - *.json: Metadatos de encriptación (salt e IV)
+
+            Exportado el: ${Date(timestamp)}
+        """.trimIndent()
+
+        zipOut.putNextEntry(java.util.zip.ZipEntry("README.txt"))
+        zipOut.write(readme.toByteArray())
+        zipOut.closeEntry()
+    }
+
+    return@withContext zipFile
 }

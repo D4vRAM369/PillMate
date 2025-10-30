@@ -149,9 +149,9 @@ fun MedicationStatsScreen(
             NotesModal(
                 historyEntry = entry,
                 onDismiss = { entryToEdit = null },
-                onSaveChanges = { entryId, notes, newTimestamp ->
-                    if (notes != entry.notes) {
-                        repository.updateHistoryNotes(entryId, notes)
+                onSaveChanges = { entryId, notes, newTimestamp, audioNoteUri ->
+                    if (notes != entry.notes || audioNoteUri != entry.audioNoteUri) {
+                        repository.updateHistoryNotes(entryId, notes, audioNoteUri)
                     }
                     val sanitizedOriginal = entry.timestamp.withSecond(0).withNano(0)
                     if (newTimestamp != sanitizedOriginal) {
@@ -322,11 +322,21 @@ private fun DayDetailsModal(
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
+                        // Mostrar notas de texto
                         if (entry.notes.isNotEmpty()) {
                             Text(
-                                text = "Notas: ${entry.notes}",
+                                text = "📝 Notas: ${entry.notes}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontStyle = FontStyle.Italic
+                            )
+                        }
+                        // Mostrar indicador de nota de audio
+                        if (!entry.audioNoteUri.isNullOrBlank()) {
+                            Text(
+                                text = "🎤 Nota de voz adjunta",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontStyle = FontStyle.Italic,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
