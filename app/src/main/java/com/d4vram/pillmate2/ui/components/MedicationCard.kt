@@ -81,12 +81,12 @@ fun MedicationCard(
             }
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isTakenToday) 8.dp else 4.dp
+            defaultElevation = if (isTakenToday) 6.dp else 3.dp
         ),
         border = if (isTakenToday) {
             BorderStroke(
                 width = 1.dp,
-                color = medication.color.copy(alpha = 0.4f)
+                color = medication.color.copy(alpha = 0.6f)
             )
         } else null
     ) {
