@@ -81,12 +81,7 @@ fun MedicationCard(
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (isTakenToday) 8.dp else 4.dp
-        ),
-        border = if (isTakenToday) {
-            CardDefaults.outlinedCardBorder().copy(
-                width = 2.dp
-            )
-        } else null
+        )
     ) {
         // Efecto de reset de animación
         LaunchedEffect(isPressed) {
