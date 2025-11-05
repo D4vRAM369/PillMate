@@ -18,5 +18,6 @@ data class MedicationEntity(
     val isPrn: Boolean,
     val sortOrder: Int,
     val scheduleTime: String? = null,
-    @ColumnInfo(defaultValue = "") val scheduleDays: String = ""
+    @ColumnInfo(defaultValue = "") val scheduleDays: String = "",
+    @ColumnInfo(defaultValue = "0") val createdAt: Long = 0L // Timestamp de creación en millis
 )

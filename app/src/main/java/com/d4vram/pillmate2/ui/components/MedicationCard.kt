@@ -260,38 +260,60 @@ private fun CountBadge(
         return
     }
 
-    val backgroundColor = when {
-        isPrn -> Color(0xFFEF4444)
+    val countText = if (chipCountPeriod == com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Daily) {
+        "$current/$goal"
+    } else {
+        current.toString()
+    }
+
+    val takenBackgroundColor = when {
         isTaken -> Color(0xFF10B981)
         else -> Color(0xFFF3F4F6)
     }
 
-    val textColor = when {
-        isPrn || isTaken -> Color.White
+    val takenTextColor = when {
+        isTaken -> Color.White
         else -> Color(0xFF4B5563)
     }
 
-    // Determinar qué texto mostrar según el período
-    val displayText = when {
-        isPrn -> "PRN"
-        chipCountPeriod == com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Daily -> "$current/$goal"
-        else -> current.toString()
-    }
-
-    Surface(
+    // Mostrar badge PRN si es necesario (PRN = Pro Re Nata = según necesidad)
+    Row(
         modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        color = backgroundColor
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            text = displayText,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 10.sp
-            ),
-            color = textColor
-        )
+        if (isPrn) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color(0xFFEF4444)
+            ) {
+                Text(
+                    text = "PRN",
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 10.sp
+                    ),
+                    color = Color.White
+                )
+            }
+        }
+
+        // SIEMPRE mostrar el contador de tomas (incluso para medicamentos PRN)
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = takenBackgroundColor
+        ) {
+            Text(
+                text = countText,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 10.sp
+                ),
+                color = takenTextColor
+            )
+        }
     }
 }
 

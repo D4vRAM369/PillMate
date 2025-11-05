@@ -37,6 +37,7 @@ fun ReorderableMedicationGrid(
     onDeleteMedication: (String) -> Unit = {},
     onAddMedication: () -> Unit,
     onReorder: (Int, Int) -> Unit,
+    dragEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     var draggedItem by remember { mutableStateOf<Int?>(null) }
@@ -82,14 +83,15 @@ fun ReorderableMedicationGrid(
             val isBeingDragged = draggedItemKey == medication.id
             val translation = if (isBeingDragged) dragOffset else Offset.Zero
 
-            val dragModifier = Modifier.pointerInput(medication.id) {
-                detectDragGesturesAfterLongPress(
-                    onDragStart = {
-                        draggedItem = index
-                        draggedItemKey = medication.id
-                        isDragging = true
-                        dragOffset = Offset.Zero
-                    },
+            val dragModifier = if (dragEnabled) {
+                Modifier.pointerInput(medication.id) {
+                    detectDragGesturesAfterLongPress(
+                        onDragStart = {
+                            draggedItem = index
+                            draggedItemKey = medication.id
+                            isDragging = true
+                            dragOffset = Offset.Zero
+                        },
                     onDragEnd = {
                         draggedItem = null
                         draggedItemKey = null
@@ -141,6 +143,9 @@ fun ReorderableMedicationGrid(
                         onReorder(currentIndex, insertionIndex)
                     }
                 }
+                }
+            } else {
+                Modifier
             }
 
             val cardModifier = Modifier

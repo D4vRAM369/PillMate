@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import android.content.Context
 import android.util.Log
+import com.d4vram.pillmate2.model.SortMode
 
 enum class AppUiStyle(val storageValue: String, val title: String, val description: String) {
     Default("default", "Clásico", "Estilo actual de PillMate"),
@@ -50,6 +51,7 @@ class ThemeManager(private val context: Context) {
         private val IS_DARK_MODE_KEY = booleanPreferencesKey("is_dark_mode")
         private val UI_STYLE_KEY = stringPreferencesKey("ui_style")
         private val CHIP_COUNT_PERIOD_KEY = stringPreferencesKey("chip_count_period")
+        private val SORT_MODE_KEY = stringPreferencesKey("sort_mode")
     }
     
     val isDarkMode: Flow<Boolean> = context.dataStore.data
@@ -83,6 +85,16 @@ class ThemeManager(private val context: Context) {
             ChipCountPeriod.fromStorage(stored)
         }
 
+    val sortMode: Flow<SortMode> = context.dataStore.data
+        .catch { throwable ->
+            Log.e("ThemeManager", "Error reading sort mode preferences", throwable)
+            emit(emptyPreferences())
+        }
+        .map { preferences ->
+            val stored = preferences[SORT_MODE_KEY]
+            SortMode.entries.firstOrNull { it.name == stored } ?: SortMode.MANUAL
+        }
+
     suspend fun setDarkMode(isDark: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[IS_DARK_MODE_KEY] = isDark
@@ -98,6 +110,12 @@ class ThemeManager(private val context: Context) {
     suspend fun setChipCountPeriod(period: ChipCountPeriod) {
         context.dataStore.edit { preferences ->
             preferences[CHIP_COUNT_PERIOD_KEY] = period.storageValue
+        }
+    }
+
+    suspend fun setSortMode(mode: SortMode) {
+        context.dataStore.edit { preferences ->
+            preferences[SORT_MODE_KEY] = mode.name
         }
     }
 

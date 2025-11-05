@@ -28,6 +28,7 @@ import com.d4vram.pillmate2.ui.theme.HeaderGradientEnd
 import com.d4vram.pillmate2.ui.theme.HeaderGradientStart
 import com.d4vram.pillmate2.ui.theme.AppUiStyle
 import com.d4vram.pillmate2.ui.theme.LocalUiStyle
+import com.d4vram.pillmate2.model.SortMode
 
 /**
  * 🏠 Pantalla principal de la app
@@ -43,10 +44,16 @@ fun HomeScreen(
     onDeleteMedication: (String) -> Unit = {}
 ) {
     // Estados observables del repositorio
-    val medications by repository.medications.collectAsState()
+    val medicationsRaw by repository.medications.collectAsState()
     val historyEntries by repository.historyEntries.collectAsState()
     val stats by repository.stats.collectAsState()
     val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)
+    val sortMode by themeManager.sortMode.collectAsState(initial = SortMode.MANUAL)
+
+    // Aplicar ordenamiento según la configuración del usuario
+    val medications = remember(medicationsRaw, sortMode) {
+        repository.applySorting(medicationsRaw, sortMode)
+    }
 
     // Estado para el modal de notas / entrada seleccionada
     var selectedHistoryEntry by remember { mutableStateOf<HistoryEntry?>(null) }
@@ -91,8 +98,12 @@ fun HomeScreen(
                     onEditMedication = onEditMedication,
                     onDeleteMedication = onDeleteMedication,
                     onReorder = { fromIndex, toIndex ->
-                        repository.reorderMedications(fromIndex, toIndex)
+                        // Solo permitir reordenar en modo MANUAL
+                        if (sortMode == SortMode.MANUAL) {
+                            repository.reorderMedications(fromIndex, toIndex)
+                        }
                     },
+                    dragEnabled = sortMode == SortMode.MANUAL,
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
             }

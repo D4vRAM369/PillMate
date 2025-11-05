@@ -28,6 +28,7 @@ import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
 import com.d4vram.pillmate2.ui.theme.AppUiStyle
 import com.d4vram.pillmate2.ui.theme.ThemeManager
 import androidx.biometric.BiometricManager
+import com.d4vram.pillmate2.model.SortMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -57,10 +58,12 @@ fun SettingsScreen(
     val isDarkMode by themeManager.isDarkMode.collectAsState(initial = false)
     val uiStyle by themeManager.uiStyle.collectAsState(initial = AppUiStyle.Default)
     val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)
+    val sortMode by themeManager.sortMode.collectAsState(initial = SortMode.MANUAL)
     val snackbarHostState = remember { SnackbarHostState() }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var showUiDialog by remember { mutableStateOf(false) }
     var showChipPeriodDialog by remember { mutableStateOf(false) }
+    var showSortModeDialog by remember { mutableStateOf(false) }
     val securitySettings by securityManager.settings.collectAsState(initial = SecuritySettings())
     var showPinSetupDialog by remember { mutableStateOf(false) }
     var showPinChangeDialog by remember { mutableStateOf(false) }
@@ -205,6 +208,18 @@ fun SettingsScreen(
                         description = "Período: ${chipCountPeriod.title}",
                         icon = Icons.Default.Tag,
                         onClick = { showChipPeriodDialog = true }
+                    )
+                }
+            }
+
+            // Sección de Ordenamiento
+            item {
+                SettingsSection(title = "🔢 Ordenamiento") {
+                    SettingsItem(
+                        title = "Ordenar medicamentos por",
+                        description = "Actual: ${sortMode.title}",
+                        icon = Icons.Default.Sort,
+                        onClick = { showSortModeDialog = true }
                     )
                 }
             }
@@ -525,6 +540,57 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showChipPeriodDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+
+    if (showSortModeDialog) {
+        AlertDialog(
+            onDismissRequest = { showSortModeDialog = false },
+            title = { Text("Ordenar medicamentos por") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    SortMode.entries.forEach { mode ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    showSortModeDialog = false
+                                    scope.launch { themeManager.setSortMode(mode) }
+                                    snackbarMessage = "Ordenamiento cambiado a: ${mode.title}"
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = mode == sortMode,
+                                onClick = {
+                                    showSortModeDialog = false
+                                    scope.launch { themeManager.setSortMode(mode) }
+                                    snackbarMessage = "Ordenamiento cambiado a: ${mode.title}"
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = mode.title,
+                                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                                )
+                                Text(
+                                    text = mode.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSortModeDialog = false }) {
                     Text("Cerrar")
                 }
             }

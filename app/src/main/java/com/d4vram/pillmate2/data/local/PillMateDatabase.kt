@@ -10,7 +10,7 @@ import java.util.Locale
 
 @Database(
     entities = [MedicationEntity::class, HistoryEntryEntity::class, VoiceNoteEntity::class],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class PillMateDatabase : RoomDatabase() {
@@ -36,7 +36,8 @@ abstract class PillMateDatabase : RoomDatabase() {
                     MIGRATION_6_7,
                     MIGRATION_7_8,
                     MIGRATION_8_9,
-                    MIGRATION_9_10
+                    MIGRATION_9_10,
+                    MIGRATION_10_11
                 ).build().also { INSTANCE = it }
             }
         }
@@ -101,6 +102,14 @@ abstract class PillMateDatabase : RoomDatabase() {
             override fun migrate(database: SupportSQLiteDatabase) {
                 // Añadir campo audioNoteUri para notas de voz en historial
                 database.execSQL("ALTER TABLE history ADD COLUMN audioNoteUri TEXT")
+            }
+        }
+
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Añadir timestamp de creación para permitir ordenamiento por fecha
+                // Usamos System.currentTimeMillis() como valor por defecto para medicamentos existentes
+                database.execSQL("ALTER TABLE medications ADD COLUMN createdAt INTEGER NOT NULL DEFAULT 0")
             }
         }
 

@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import com.d4vram.pillmate2.model.SortMode
 
 /**
  * 🗃️ Repositorio que conecta la UI con Room
@@ -180,8 +181,16 @@ class MedicationRepository(
     fun addMedication(medication: Medication) {
         scope.launch {
             val order = medicationDao.getMaxSortOrder() + 1
+            val createdTimestamp = if (medication.createdAt == 0L) {
+                System.currentTimeMillis()
+            } else {
+                medication.createdAt
+            }
             medicationDao.upsertMedication(
-                medication.copy(sortOrder = order).toEntity()
+                medication.copy(
+                    sortOrder = order,
+                    createdAt = createdTimestamp
+                ).toEntity()
             )
         }
     }
@@ -294,6 +303,63 @@ class MedicationRepository(
         }
     }
 
+    /**
+     * 🔢 Aplica el ordenamiento seleccionado a la lista de medicamentos
+     */
+    fun applySorting(medications: List<Medication>, sortMode: SortMode): List<Medication> {
+        return when (sortMode) {
+            SortMode.MANUAL -> {
+                // Orden manual: usar sortOrder de la base de datos
+                medications.sortedBy { it.sortOrder }
+            }
+
+            SortMode.LAST_TAKEN -> {
+                // Por última toma: los más recientemente tomados primero
+                // Medicamentos sin lastTaken van al final
+                medications.sortedWith(
+                    compareByDescending<Medication> { medication ->
+                        medication.lastTaken?.let { lastTaken ->
+                            // Parseamos el timestamp si es posible
+                            parseTimestampOrNull(lastTaken)?.let { timestamp ->
+                                timestamp.toEpochSecond(java.time.ZoneOffset.UTC)
+                            } ?: 0L
+                        } ?: 0L
+                    }.thenBy { it.name }
+                )
+            }
+
+            SortMode.MOST_USED_WEEK -> {
+                // Por más utilizados en la última semana
+                val oneWeekAgo = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L)
+                val recentHistory = historyEntries.value.filter { entry ->
+                    entry.timestamp.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() >= oneWeekAgo
+                }
+
+                medications.sortedWith(
+                    compareByDescending<Medication> { medication ->
+                        // Contar cuántas veces aparece en el historial reciente
+                        recentHistory.count { entry ->
+                            entry.medicationId == medication.id || entry.medicationName == medication.name
+                        }
+                    }.thenBy { it.name }
+                )
+            }
+
+            SortMode.ALPHABETICAL -> {
+                // Orden alfabético por nombre
+                medications.sortedBy { it.name.lowercase() }
+            }
+
+            SortMode.CREATION_ORDER -> {
+                // Por fecha de creación (más antiguos primero)
+                medications.sortedWith(
+                    compareBy<Medication> { it.createdAt }
+                        .thenBy { it.name }
+                )
+            }
+        }
+    }
+
     private fun calculateStats(history: List<HistoryEntry>, medications: List<Medication>): Stats {
         val today = LocalDate.now()
         val takenToday = history
@@ -373,7 +439,8 @@ class MedicationRepository(
         isPrn = isPrn,
         sortOrder = sortOrder,
         scheduleTime = scheduleTime,
-        scheduleDays = scheduleDays.toScheduleDaysList()
+        scheduleDays = scheduleDays.toScheduleDaysList(),
+        createdAt = createdAt
     )
 
     private fun Medication.toEntity(): MedicationEntity = MedicationEntity(
@@ -389,7 +456,8 @@ class MedicationRepository(
         isPrn = isPrn,
         sortOrder = sortOrder,
         scheduleTime = scheduleTime,
-        scheduleDays = scheduleDays.toScheduleDaysString()
+        scheduleDays = scheduleDays.toScheduleDaysString(),
+        createdAt = createdAt
     )
 
     private fun HistoryEntryEntity.toDomain(
@@ -433,6 +501,9 @@ class MedicationRepository(
      * 📱 Datos de ejemplo para la demo
      */
     private fun getSampleMedications(): List<Medication> {
+        val now = System.currentTimeMillis()
+        val dayInMillis = 24 * 60 * 60 * 1000L
+
         return listOf(
             Medication(
                 id = "1",
@@ -447,7 +518,8 @@ class MedicationRepository(
                 isPrn = false,
                 sortOrder = 0,
                 scheduleTime = "08:00",
-                scheduleDays = listOf("L", "M", "X", "J", "V")
+                scheduleDays = listOf("L", "M", "X", "J", "V"),
+                createdAt = now - (30 * dayInMillis) // Creado hace 30 días
             ),
             Medication(
                 id = "2",
@@ -462,7 +534,8 @@ class MedicationRepository(
                 isPrn = false,
                 sortOrder = 1,
                 scheduleTime = "19:00",
-                scheduleDays = listOf("L", "M", "X", "J", "V")
+                scheduleDays = listOf("L", "M", "X", "J", "V"),
+                createdAt = now - (25 * dayInMillis) // Creado hace 25 días
             ),
             Medication(
                 id = "3",
@@ -477,7 +550,8 @@ class MedicationRepository(
                 isPrn = false,
                 sortOrder = 2,
                 scheduleTime = "12:30",
-                scheduleDays = listOf("L", "M", "X", "J", "V", "S")
+                scheduleDays = listOf("L", "M", "X", "J", "V", "S"),
+                createdAt = now - (20 * dayInMillis) // Creado hace 20 días
             ),
             Medication(
                 id = "4",
@@ -492,7 +566,8 @@ class MedicationRepository(
                 isPrn = false,
                 sortOrder = 3,
                 scheduleTime = "22:00",
-                scheduleDays = listOf("L", "M", "X", "J", "V", "S", "D")
+                scheduleDays = listOf("L", "M", "X", "J", "V", "S", "D"),
+                createdAt = now - (15 * dayInMillis) // Creado hace 15 días
             ),
             Medication(
                 id = "5",
@@ -507,7 +582,8 @@ class MedicationRepository(
                 isPrn = true,
                 sortOrder = 4,
                 scheduleTime = null,
-                scheduleDays = emptyList()
+                scheduleDays = emptyList(),
+                createdAt = now - (10 * dayInMillis) // Creado hace 10 días
             )
         )
     }

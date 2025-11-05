@@ -16,8 +16,9 @@ data class Medication(
     val takenToday: Int = 0,
     val dailyGoal: Int = 1,
     val lastTaken: String? = null,
-    val isPrn: Boolean = false,
-    val sortOrder: Int = 0, // PRN = Pro Re Nata (según necesidad) + orden en la cuadrícula
+    val isPrn: Boolean = false, // PRN = Pro Re Nata (según necesidad)
+    val sortOrder: Int = 0, // Orden manual en la cuadrícula
     val scheduleTime: String? = null,
-    val scheduleDays: List<String> = emptyList()
+    val scheduleDays: List<String> = emptyList(),
+    val createdAt: Long = 0L // Timestamp de creación en millis
 )
