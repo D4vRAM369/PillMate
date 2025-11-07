@@ -10,7 +10,7 @@ import java.util.Locale
 
 @Database(
     entities = [MedicationEntity::class, HistoryEntryEntity::class, VoiceNoteEntity::class],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 abstract class PillMateDatabase : RoomDatabase() {
@@ -37,7 +37,8 @@ abstract class PillMateDatabase : RoomDatabase() {
                     MIGRATION_7_8,
                     MIGRATION_8_9,
                     MIGRATION_9_10,
-                    MIGRATION_10_11
+                    MIGRATION_10_11,
+                    MIGRATION_11_12
                 ).build().also { INSTANCE = it }
             }
         }
@@ -110,6 +111,14 @@ abstract class PillMateDatabase : RoomDatabase() {
                 // Añadir timestamp de creación para permitir ordenamiento por fecha
                 // Usamos System.currentTimeMillis() como valor por defecto para medicamentos existentes
                 database.execSQL("ALTER TABLE medications ADD COLUMN createdAt INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        private val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 📸 Añadir campos para fotografías de medicamentos
+                database.execSQL("ALTER TABLE medications ADD COLUMN photoPath TEXT DEFAULT NULL")
+                database.execSQL("ALTER TABLE medications ADD COLUMN usePhotoInstead INTEGER NOT NULL DEFAULT 0")
             }
         }
 

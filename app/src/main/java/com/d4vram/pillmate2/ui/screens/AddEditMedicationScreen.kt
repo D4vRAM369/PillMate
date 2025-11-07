@@ -2,6 +2,7 @@
 
 package com.d4vram.pillmate2.ui.screens
 
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -22,6 +23,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -29,8 +31,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.Medication
+import com.d4vram.pillmate2.ui.components.ImagePickerSection
+import com.d4vram.pillmate2.utils.ImageUtils
 import com.github.skydoves.colorpicker.compose.HsvColorPicker
 import com.github.skydoves.colorpicker.compose.rememberColorPickerController
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.UUID
 import kotlin.math.roundToInt
 
@@ -41,6 +48,8 @@ fun AddEditMedicationScreen(
     medicationId: String? = null,
     onNavigateBack: () -> Unit
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val paletteColors = remember { mutableStateListOf<Color>().apply { addAll(defaultColorPalette) } }
     val quickEmojiOptions = remember { mutableStateListOf<String>().apply { addAll(featuredEmojis) } }
 
@@ -58,6 +67,11 @@ fun AddEditMedicationScreen(
     var showEmojiPicker by remember { mutableStateOf(false) }
     var emojiSearchQuery by remember { mutableStateOf("") }
     var showCustomColorDialog by remember { mutableStateOf(false) }
+
+    // 📸 Estados para foto del medicamento
+    var photoPath by remember { mutableStateOf<String?>(null) }
+    var usePhotoInstead by remember { mutableStateOf(false) }
+    var isProcessingImage by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(medicationId) {
@@ -79,6 +93,10 @@ fun AddEditMedicationScreen(
                 selectedEmoji = it.emoji
                 dailyGoal = it.dailyGoal.toString()
                 isPrn = it.isPrn
+
+                // 📸 Cargar datos de foto si existen
+                photoPath = it.photoPath
+                usePhotoInstead = it.usePhotoInstead
             }
         }
     }
@@ -128,7 +146,9 @@ fun AddEditMedicationScreen(
                             dailyGoal = dailyGoal.toIntOrNull() ?: baseMedication.dailyGoal,
                             isPrn = isPrn,
                             scheduleTime = baseMedication.scheduleTime,
-                            scheduleDays = baseMedication.scheduleDays
+                            scheduleDays = baseMedication.scheduleDays,
+                            photoPath = photoPath, // 📸 Guardar ruta de foto
+                            usePhotoInstead = usePhotoInstead // 🖼️ Guardar preferencia de visualización
                         )
 
                         if (isEditing) {
@@ -253,7 +273,45 @@ fun AddEditMedicationScreen(
                 }
             }
 
-            ConstructionPlaceholder()
+            // 📸 Sección de fotografía del medicamento
+            ImagePickerSection(
+                currentPhotoPath = photoPath,
+                usePhotoInstead = usePhotoInstead,
+                onPhotoSelected = { uri ->
+                    // Procesar imagen en background
+                    scope.launch {
+                        isProcessingImage = true
+                        val newPhotoPath = withContext(Dispatchers.IO) {
+                            val currentMedicationId = medicationId ?: UUID.randomUUID().toString()
+                            ImageUtils.saveImageFromUri(context, uri, currentMedicationId)
+                        }
+                        isProcessingImage = false
+
+                        if (newPhotoPath != null) {
+                            // Eliminar foto anterior si existe
+                            photoPath?.let { oldPath ->
+                                withContext(Dispatchers.IO) {
+                                    ImageUtils.deleteImage(oldPath)
+                                }
+                            }
+                            photoPath = newPhotoPath
+                        }
+                    }
+                },
+                onPhotoDeleted = {
+                    scope.launch {
+                        photoPath?.let { path ->
+                            withContext(Dispatchers.IO) {
+                                ImageUtils.deleteImage(path)
+                            }
+                        }
+                        photoPath = null
+                        usePhotoInstead = false
+                    }
+                },
+                onUsePhotoToggled = { usePhotoInstead = it },
+                medicationId = medicationId ?: UUID.randomUUID().toString()
+            )
 
             SectionCard(
                 title = "Planificación",

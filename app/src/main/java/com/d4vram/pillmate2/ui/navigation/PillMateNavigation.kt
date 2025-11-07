@@ -25,6 +25,9 @@ import com.d4vram.pillmate2.ui.theme.ThemeManager
 import com.d4vram.pillmate2.ui.security.SecurityManager
 import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
 import com.d4vram.pillmate2.ui.voicenotes.VoiceNotesViewModel
+import com.d4vram.pillmate2.ui.permissions.PermissionsManager
+import com.d4vram.pillmate2.ui.components.PermissionsRequestDialog
+import kotlinx.coroutines.launch
 
 /**
  * 🧭 Sistema de navegación principal
@@ -35,6 +38,8 @@ import com.d4vram.pillmate2.ui.voicenotes.VoiceNotesViewModel
 fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityManager) {
     val navController = rememberNavController()
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+
     val repository = remember {
         val database = PillMateDatabase.getInstance(context)
         MedicationRepository(
@@ -43,7 +48,7 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
             historyDao = database.historyDao()
         )
     }
-    
+
     val voiceNoteRepository = remember {
         val database = PillMateDatabase.getInstance(context)
         VoiceNoteRepository(
@@ -51,7 +56,7 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
             voiceNoteDao = database.voiceNoteDao()
         )
     }
-    
+
     val voiceNoteSecurityManager = rememberVoiceNoteSecurityManager()
     val voiceNotesViewModel: VoiceNotesViewModel = viewModel(
         factory = VoiceNotesViewModel.provideFactory(
@@ -60,6 +65,26 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
             securityManager = voiceNoteSecurityManager
         )
     )
+
+    // 📸 Gestor de permisos para fotografías de medicamentos
+    val permissionsManager = remember { PermissionsManager(context) }
+    val shouldShowPermissionsDialog by permissionsManager.shouldShowPermissionsDialog.collectAsState(initial = false)
+
+    // Mostrar diálogo de permisos si es necesario
+    if (shouldShowPermissionsDialog) {
+        PermissionsRequestDialog(
+            onPermissionsGranted = {
+                coroutineScope.launch {
+                    permissionsManager.markPermissionsRequested()
+                }
+            },
+            onDismiss = {
+                coroutineScope.launch {
+                    permissionsManager.markPermissionsDialogShown()
+                }
+            }
+        )
+    }
 
     Scaffold(
         bottomBar = {

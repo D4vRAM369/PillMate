@@ -205,7 +205,9 @@ class MedicationRepository(
                 colorArgb = medication.color.toArgb(),
                 emoji = medication.emoji,
                 dailyGoal = medication.dailyGoal,
-                isPrn = medication.isPrn
+                isPrn = medication.isPrn,
+                photoPath = medication.photoPath, // 📸 Actualizar foto
+                usePhotoInstead = medication.usePhotoInstead // 🖼️ Actualizar preferencia de visualización
             )
             medicationDao.upsertMedication(updated)
         }
@@ -440,7 +442,9 @@ class MedicationRepository(
         sortOrder = sortOrder,
         scheduleTime = scheduleTime,
         scheduleDays = scheduleDays.toScheduleDaysList(),
-        createdAt = createdAt
+        createdAt = createdAt,
+        photoPath = photoPath, // 📸 Ruta de la foto
+        usePhotoInstead = usePhotoInstead // 🖼️ Usar foto como identificador
     )
 
     private fun Medication.toEntity(): MedicationEntity = MedicationEntity(
@@ -457,7 +461,9 @@ class MedicationRepository(
         sortOrder = sortOrder,
         scheduleTime = scheduleTime,
         scheduleDays = scheduleDays.toScheduleDaysString(),
-        createdAt = createdAt
+        createdAt = createdAt,
+        photoPath = photoPath, // 📸 Guardar ruta de foto
+        usePhotoInstead = usePhotoInstead // 🖼️ Guardar preferencia de visualización
     )
 
     private fun HistoryEntryEntity.toDomain(

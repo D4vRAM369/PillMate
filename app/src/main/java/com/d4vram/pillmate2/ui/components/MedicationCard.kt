@@ -19,11 +19,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.d4vram.pillmate2.model.Medication
 import kotlinx.coroutines.delay
+import java.io.File
 
 /**
  * 💊 Card de medicamento clickeable
@@ -188,11 +191,13 @@ fun MedicationCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Icono de la pastilla
+                // Icono de la pastilla o foto
                 PillIcon(
                     emoji = medication.emoji,
                     color = medication.color,
-                    isTaken = isTakenToday
+                    isTaken = isTakenToday,
+                    photoPath = medication.photoPath,
+                    usePhotoInstead = medication.usePhotoInstead
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -319,33 +324,49 @@ private fun CountBadge(
 
 /**
  * 💊 Icono visual de la pastilla con check si se tomó
+ * 📸 Muestra foto si está configurado usePhotoInstead
  */
 @Composable
 private fun PillIcon(
     emoji: String,
     color: Color,
     isTaken: Boolean,
+    photoPath: String? = null,
+    usePhotoInstead: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier.size(48.dp),
         contentAlignment = Alignment.Center
     ) {
-        // Círculo de fondo
-        Box(
-            modifier = Modifier
-                .size(48.dp)
-                .clip(CircleShape)
-                .background(color),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = emoji,
-                fontSize = 24.sp
+        // Mostrar foto si está configurado y existe
+        if (usePhotoInstead && !photoPath.isNullOrEmpty() && File(photoPath).exists()) {
+            // Foto del medicamento
+            AsyncImage(
+                model = photoPath,
+                contentDescription = "Foto del medicamento",
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
             )
+        } else {
+            // Círculo de fondo con emoji (comportamiento original)
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(CircleShape)
+                    .background(color),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = emoji,
+                    fontSize = 24.sp
+                )
+            }
         }
 
-        // Check verde si se tomó
+        // Check verde si se tomó (siempre visible)
         if (isTaken) {
             Box(
                 modifier = Modifier

@@ -132,6 +132,15 @@ dependencies {
     // ZIP4J para archivos ZIP cifrados
     implementation("net.lingala.zip4j:zip4j:2.11.5")
 
+    // Accompanist para manejar permisos en Compose
+    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
+
+    // Coil para cargar y mostrar imágenes
+    implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // ExifInterface para corregir orientación de fotos
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
