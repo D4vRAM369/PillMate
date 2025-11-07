@@ -13,3 +13,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Keystore configuration (contains passwords!)
+keystore.properties
+*.keystore
+*.jks

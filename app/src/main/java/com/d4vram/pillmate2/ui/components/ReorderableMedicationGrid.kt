@@ -44,6 +44,7 @@ fun ReorderableMedicationGrid(
     var draggedItemKey by remember { mutableStateOf<String?>(null) }
     var isDragging by remember { mutableStateOf(false) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
+    var dragSessionId by remember { mutableIntStateOf(0) }
 
     val localMedications = remember { mutableStateListOf<Medication>() }
 
@@ -64,16 +65,13 @@ fun ReorderableMedicationGrid(
     }
 
     val gridState = rememberLazyGridState()
-    val totalItems = localMedications.size + 1 // +1 por card de agregar
-    val rows = (totalItems + 1) / 2
-    val gridHeight = (rows * 180).dp
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        modifier = modifier.height(gridHeight),
-        userScrollEnabled = !isDragging,
+        modifier = modifier.heightIn(min = 0.dp, max = 10000.dp), // Altura flexible grande
+        userScrollEnabled = false, // El LazyColumn padre maneja todo el scroll
         state = gridState
     ) {
         itemsIndexed(
@@ -84,7 +82,7 @@ fun ReorderableMedicationGrid(
             val translation = if (isBeingDragged) dragOffset else Offset.Zero
 
             val dragModifier = if (dragEnabled) {
-                Modifier.pointerInput(medication.id) {
+                Modifier.pointerInput(medication.id, dragSessionId) {
                     detectDragGesturesAfterLongPress(
                         onDragStart = {
                             draggedItem = index
@@ -97,15 +95,17 @@ fun ReorderableMedicationGrid(
                         draggedItemKey = null
                         isDragging = false
                         dragOffset = Offset.Zero
+                        dragSessionId++ // Reiniciar el gesture detector
                     },
                     onDragCancel = {
                         draggedItem = null
                         draggedItemKey = null
                         isDragging = false
                         dragOffset = Offset.Zero
+                        dragSessionId++ // Reiniciar el gesture detector
                     }
                 ) { change, dragAmount ->
-                    change.consumePositionChange()
+                    change.consume()
                     dragOffset += dragAmount
 
                     val currentIndex = draggedItem ?: return@detectDragGesturesAfterLongPress
