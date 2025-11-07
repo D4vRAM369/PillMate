@@ -2,6 +2,7 @@ package com.d4vram.pillmate2.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -24,6 +25,8 @@ fun MedicationsScreen(
 ) {
     val medications by repository.medications.collectAsState()
     val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)
+
+    val listState = rememberLazyListState()
 
     Scaffold(
         topBar = {
@@ -57,7 +60,8 @@ fun MedicationsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp),
+            state = listState
         ) {
             item {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -77,6 +81,7 @@ fun MedicationsScreen(
                     onReorder = { fromIndex, toIndex ->
                         repository.reorderMedications(fromIndex, toIndex)
                     },
+                    parentListState = listState,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

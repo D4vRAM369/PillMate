@@ -15,13 +15,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.d4vram.pillmate2.model.Medication
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 
 /**
  * 🔄 Grid reordenable de medicamentos con drag & drop táctil
@@ -38,6 +43,7 @@ fun ReorderableMedicationGrid(
     onAddMedication: () -> Unit,
     onReorder: (Int, Int) -> Unit,
     dragEnabled: Boolean = true,
+    parentListState: androidx.compose.foundation.lazy.LazyListState? = null,
     modifier: Modifier = Modifier
 ) {
     var draggedItem by remember { mutableStateOf<Int?>(null) }
@@ -45,8 +51,16 @@ fun ReorderableMedicationGrid(
     var isDragging by remember { mutableStateOf(false) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     var dragSessionId by remember { mutableIntStateOf(0) }
+    var autoScrollJob by remember { mutableStateOf<Job?>(null) }
 
     val localMedications = remember { mutableStateListOf<Medication>() }
+    val coroutineScope = rememberCoroutineScope()
+
+    // Obtener altura de la pantalla
+    val configuration = LocalConfiguration.current
+    val screenHeight = with(LocalDensity.current) {
+        configuration.screenHeightDp.dp.toPx()
+    }
 
     LaunchedEffect(medications, isDragging) {
         val incomingById = medications.associateBy { it.id }
@@ -91,6 +105,8 @@ fun ReorderableMedicationGrid(
                             dragOffset = Offset.Zero
                         },
                     onDragEnd = {
+                        autoScrollJob?.cancel()  // Detener el auto-scroll
+                        autoScrollJob = null
                         draggedItem = null
                         draggedItemKey = null
                         isDragging = false
@@ -98,6 +114,8 @@ fun ReorderableMedicationGrid(
                         dragSessionId++ // Reiniciar el gesture detector
                     },
                     onDragCancel = {
+                        autoScrollJob?.cancel()  // Detener el auto-scroll
+                        autoScrollJob = null
                         draggedItem = null
                         draggedItemKey = null
                         isDragging = false
@@ -118,6 +136,44 @@ fun ReorderableMedicationGrid(
                         x = draggedInfo.offset.x + draggedInfo.size.width / 2f + dragOffset.x,
                         y = draggedInfo.offset.y + draggedInfo.size.height / 2f + dragOffset.y
                     )
+
+                    // Auto-scroll basado en posición del item en el grid
+                    if (parentListState != null) {
+                        val autoScrollZone = 200f  // 200px desde cada borde
+                        val itemY = itemCenter.y  // Posición Y del item en el grid
+
+                        if (itemY < autoScrollZone) {
+                            // Cerca del borde superior: scroll hacia arriba
+                            autoScrollJob?.cancel()
+                            autoScrollJob = coroutineScope.launch {
+                                while (isActive) {
+                                    var scrolled = 0f
+                                    parentListState.scroll {
+                                        scrolled = scrollBy(-20f)
+                                    }
+                                    dragOffset = dragOffset.copy(y = dragOffset.y - scrolled)
+                                    delay(16)
+                                }
+                            }
+                        } else if (itemY > layoutInfo.viewportEndOffset - autoScrollZone) {
+                            // Cerca del borde inferior: scroll hacia abajo
+                            autoScrollJob?.cancel()
+                            autoScrollJob = coroutineScope.launch {
+                                while (isActive) {
+                                    var scrolled = 0f
+                                    parentListState.scroll {
+                                        scrolled = scrollBy(20f)
+                                    }
+                                    dragOffset = dragOffset.copy(y = dragOffset.y - scrolled)
+                                    delay(16)
+                                }
+                            }
+                        } else {
+                            // Fuera de las zonas: cancelar auto-scroll
+                            autoScrollJob?.cancel()
+                            autoScrollJob = null
+                        }
+                    }
 
                     val targetInfo = layoutInfo.visibleItemsInfo.firstOrNull { info ->
                         itemCenter.x in info.offset.x.toFloat()..(info.offset.x + info.size.width).toFloat() &&

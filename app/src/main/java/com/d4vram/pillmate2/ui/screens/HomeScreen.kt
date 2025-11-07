@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -58,9 +59,12 @@ fun HomeScreen(
     // Estado para el modal de notas / entrada seleccionada
     var selectedHistoryEntry by remember { mutableStateOf<HistoryEntry?>(null) }
 
+    val listState = rememberLazyListState()
+
     Box(modifier = Modifier.fillMaxSize()) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            state = listState
         ) {
             item {
                 // Header con gradiente verde
@@ -104,6 +108,7 @@ fun HomeScreen(
                         }
                     },
                     dragEnabled = sortMode == SortMode.MANUAL,
+                    parentListState = listState,
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
             }
