@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.BackupManager
+import com.d4vram.pillmate2.data.BackupZipManager
 import com.d4vram.pillmate2.data.CsvUtils
 import com.d4vram.pillmate2.ui.security.SecurityManager
 import com.d4vram.pillmate2.ui.security.SecuritySettings
@@ -71,6 +72,9 @@ fun SettingsScreen(
     var pendingEnableLock by remember { mutableStateOf(false) }
     var showVoiceNotePasswordDialog by remember { mutableStateOf(false) }
     var showHistoryExportDialog by remember { mutableStateOf(false) }
+    var showBackupExportDialog by remember { mutableStateOf(false) }
+    var showBackupPasswordDialog by remember { mutableStateOf(false) }
+    var pendingEncryptedBackupFile by remember { mutableStateOf<File?>(null) }
 
     val biometricManager = remember { BiometricManager.from(context) }
     val canAuthenticateBiometric = remember(biometricManager) {
@@ -111,19 +115,82 @@ fun SettingsScreen(
         }
     }
 
-    // Launcher para seleccionar archivo CSV
+    // 📦 Launcher para restaurar backup ZIP (incluye fotos)
+    val zipBackupLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                try {
+                    // Validar que sea un archivo .zip
+                    val fileName = getFileNameFromUri(context, it) ?: ""
+                    if (!fileName.endsWith(".zip", ignoreCase = true)) {
+                        snackbarMessage = "⚠️ Por favor selecciona un archivo .zip"
+                        return@launch
+                    }
+
+                    // Copiar a archivo temporal
+                    val tempFile = withContext(Dispatchers.IO) {
+                        val temp = File(context.cacheDir, "import_${System.currentTimeMillis()}.zip")
+                        context.contentResolver.openInputStream(it)?.use { input ->
+                            temp.outputStream().use { output ->
+                                input.copyTo(output)
+                            }
+                        }
+                        temp
+                    }
+
+                    // Detectar si el ZIP está cifrado
+                    val isEncrypted = withContext(Dispatchers.IO) {
+                        try {
+                            val zipFile = net.lingala.zip4j.ZipFile(tempFile)
+                            zipFile.isEncrypted
+                        } catch (e: Exception) {
+                            false
+                        }
+                    }
+
+                    if (isEncrypted) {
+                        // Mostrar diálogo para pedir contraseña
+                        pendingEncryptedBackupFile = tempFile
+                        showBackupPasswordDialog = true
+                    } else {
+                        // Extraer directamente si no está cifrado
+                        try {
+                            val parsed = BackupZipManager.extractBackupZip(context, tempFile)
+                            repository.replaceAllData(parsed.medications, parsed.history)
+                            snackbarMessage = "✅ Backup restaurado correctamente (con fotos)"
+                        } finally {
+                            tempFile.delete()
+                        }
+                    }
+                } catch (e: Exception) {
+                    snackbarMessage = "❌ Error al restaurar backup: ${e.message}"
+                }
+            }
+        }
+    }
+
+    // 📄 Launcher para importar CSV (sin fotos)
     val csvImportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent()
     ) { uri ->
         uri?.let {
             scope.launch {
                 try {
+                    // Validar que sea un archivo .csv
+                    val fileName = getFileNameFromUri(context, it) ?: ""
+                    if (!fileName.endsWith(".csv", ignoreCase = true)) {
+                        snackbarMessage = "⚠️ Por favor selecciona un archivo .csv"
+                        return@launch
+                    }
+
                     val csvContent = readTextFromUri(context, it)
                     val parsed = CsvUtils.parseCsv(csvContent)
                     repository.replaceAllData(parsed.medications, parsed.history)
-                    snackbarMessage = "Datos importados correctamente"
+                    snackbarMessage = "✅ CSV importado correctamente"
                 } catch (e: Exception) {
-                    snackbarMessage = "Error al importar: ${e.message ?: "desconocido"}"
+                    snackbarMessage = "❌ Error al importar CSV: ${e.message}"
                 }
             }
         }
@@ -357,6 +424,7 @@ fun SettingsScreen(
 
             item {
                 SettingsSection(title = "📊 Datos") {
+                    // 📄 Exportar CSV (sin fotos)
                     SettingsItem(
                         title = "Exportar CSV",
                         description = "Crear archivo CSV con medicamentos e historial",
@@ -366,13 +434,15 @@ fun SettingsScreen(
                                 try {
                                     val file = createExportFile(context, repository)
                                     shareFile(context, file)
-                                    snackbarMessage = "CSV exportado: ${file.name}"
+                                    snackbarMessage = "✅ CSV exportado: ${file.name}"
                                 } catch (e: Exception) {
-                                    snackbarMessage = "Error al exportar: ${e.message ?: "desconocido"}"
+                                    snackbarMessage = "❌ Error al exportar: ${e.message}"
                                 }
                             }
                         }
                     )
+
+                    // 🎙️ Exportar historial con audios
                     SettingsItem(
                         title = "Exportar historial con audios",
                         description = "Exportar historial completo con notas de voz encriptadas",
@@ -381,36 +451,72 @@ fun SettingsScreen(
                             showHistoryExportDialog = true
                         }
                     )
+
+                    // 🔄 Restaurar Backup (importar ZIP con fotos)
                     SettingsItem(
-                        title = "Importar CSV",
-                        description = "Cargar datos desde archivo CSV",
-                        icon = Icons.Default.FileUpload,
+                        title = "Restaurar Backup",
+                        description = "Importar desde archivo .zip (incluye fotos)",
+                        icon = Icons.Default.Restore,
                         onClick = {
-                            csvImportLauncher.launch("text/*")
+                            zipBackupLauncher.launch("*/*")
                         }
                     )
+
+                    // 📥 Importar CSV (sin fotos)
+                    SettingsItem(
+                        title = "Importar CSV",
+                        description = "Cargar datos desde archivo .csv (sin fotos)",
+                        icon = Icons.Default.FileUpload,
+                        onClick = {
+                            csvImportLauncher.launch("*/*")
+                        }
+                    )
+
+                    // 🗑️ Limpiar todos los datos
                     SettingsItem(
                         title = "Limpiar todos los datos",
                         description = "Eliminar todos los medicamentos y entradas",
                         icon = Icons.Default.Delete,
                         onClick = {
                             repository.clearAllData()
-                            snackbarMessage = "Datos eliminados"
+                            snackbarMessage = "✅ Datos eliminados"
                         }
                     )
+
+                    // 💾 AutoBackup (cada 24h)
                     SettingsItem(
-                        title = "Copia de seguridad",
+                        title = "Copia de seguridad automática",
                         description = "Última copia: $lastBackupText",
                         icon = Icons.Default.Backup,
                         onClick = {
                             scope.launch {
                                 try {
                                     val file = backupManager.createManualBackup()
-                                    snackbarMessage = "Copia guardada: ${file.name}"
+                                    snackbarMessage = "✅ Copia guardada: ${file.name}"
                                 } catch (e: Exception) {
-                                    snackbarMessage = "Error en copia: ${e.message ?: "desconocido"}"
+                                    snackbarMessage = "❌ Error en copia: ${e.message}"
                                 }
                             }
+                        }
+                    )
+
+                    // 📦 Exportar Backup (con opción de cifrado AES-256)
+                    SettingsItem(
+                        title = "Exportar Backup",
+                        description = "Compartir backup completo con fotos (con/sin cifrado)",
+                        icon = Icons.Default.Lock,
+                        onClick = {
+                            showBackupExportDialog = true
+                        }
+                    )
+
+                    // 📁 Ver carpeta de backups
+                    SettingsItem(
+                        title = "Ver carpeta de backups",
+                        description = "Abrir ubicación de copias de seguridad",
+                        icon = Icons.Default.Folder,
+                        onClick = {
+                            openBackupsFolder(context)
                         }
                     )
                 }
@@ -691,6 +797,71 @@ fun SettingsScreen(
                         showHistoryExportDialog = false
                     } catch (e: Exception) {
                         snackbarMessage = "Error al exportar: ${e.message}"
+                    }
+                }
+            }
+        )
+    }
+
+    if (showBackupExportDialog) {
+        BackupExportDialog(
+            onDismiss = { showBackupExportDialog = false },
+            onExport = { password ->
+                scope.launch {
+                    try {
+                        val medications = repository.getMedicationsSnapshot()
+                        val history = repository.getHistorySnapshot()
+                        val directory = context.getExternalFilesDir("exports") ?: context.filesDir
+                        if (!directory.exists()) directory.mkdirs()
+                        val timestamp = System.currentTimeMillis()
+                        val file = File(directory, "pillmate_backup_$timestamp.zip")
+
+                        if (password != null) {
+                            // Exportar con cifrado AES-256
+                            BackupZipManager.createEncryptedBackupZip(context, medications, history, file, password)
+                            snackbarMessage = "✅ Backup cifrado exportado: ${file.name}"
+                        } else {
+                            // Exportar sin cifrar
+                            BackupZipManager.createBackupZip(context, medications, history, file)
+                            snackbarMessage = "✅ Backup exportado: ${file.name}"
+                        }
+
+                        shareFile(context, file)
+                        showBackupExportDialog = false
+                    } catch (e: Exception) {
+                        snackbarMessage = "❌ Error al exportar backup: ${e.message}"
+                    }
+                }
+            }
+        )
+    }
+
+    if (showBackupPasswordDialog) {
+        BackupPasswordInputDialog(
+            onDismiss = {
+                showBackupPasswordDialog = false
+                pendingEncryptedBackupFile?.delete()
+                pendingEncryptedBackupFile = null
+            },
+            onConfirm = { password ->
+                scope.launch {
+                    try {
+                        pendingEncryptedBackupFile?.let { tempFile ->
+                            try {
+                                val parsed = BackupZipManager.extractBackupZip(context, tempFile, password)
+                                repository.replaceAllData(parsed.medications, parsed.history)
+                                snackbarMessage = "✅ Backup cifrado restaurado correctamente (con fotos)"
+                            } finally {
+                                tempFile.delete()
+                                pendingEncryptedBackupFile = null
+                            }
+                        }
+                        showBackupPasswordDialog = false
+                    } catch (e: Exception) {
+                        snackbarMessage = "❌ Error: ${e.message ?: "Contraseña incorrecta"}"
+                        pendingEncryptedBackupFile?.delete()
+                        pendingEncryptedBackupFile = null
+                        showBackupPasswordDialog = false
                     }
                 }
             }
@@ -1036,6 +1207,17 @@ private suspend fun readTextFromUri(context: Context, uri: Uri): String = withCo
     } ?: throw IllegalArgumentException("Archivo no disponible")
 }
 
+private fun getFileNameFromUri(context: Context, uri: Uri): String? {
+    var fileName: String? = null
+    context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+        val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+        if (nameIndex >= 0 && cursor.moveToFirst()) {
+            fileName = cursor.getString(nameIndex)
+        }
+    }
+    return fileName
+}
+
 private fun shareFile(context: Context, file: File) {
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
     val shareIntent = Intent(Intent.ACTION_SEND).apply {
@@ -1044,6 +1226,55 @@ private fun shareFile(context: Context, file: File) {
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(shareIntent, "Compartir CSV"))
+}
+
+/**
+ * Abre la carpeta de backups en el explorador de archivos
+ * Ruta accesible sin root: /Android/data/com.d4vram.pillmate2/files/backups/
+ */
+private fun openBackupsFolder(context: Context) {
+    try {
+        val backupsDir = context.getExternalFilesDir("backups")
+
+        if (backupsDir == null || !backupsDir.exists()) {
+            android.widget.Toast.makeText(
+                context,
+                "⚠️ No hay backups todavía. Crea uno primero.",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        // Intent para abrir la carpeta
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            val uri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.provider",
+                backupsDir
+            )
+            setDataAndType(uri, "resource/folder")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+        try {
+            context.startActivity(Intent.createChooser(intent, "Abrir carpeta de backups"))
+        } catch (e: Exception) {
+            // Fallback: Mostrar la ruta en un Toast largo
+            val path = backupsDir.absolutePath
+            android.widget.Toast.makeText(
+                context,
+                "📂 Carpeta de backups:\n$path\n\nAbre tu explorador de archivos y navega a esta ruta.",
+                android.widget.Toast.LENGTH_LONG
+            ).show()
+        }
+    } catch (e: Exception) {
+        android.widget.Toast.makeText(
+            context,
+            "❌ Error al abrir carpeta: ${e.message}",
+            android.widget.Toast.LENGTH_SHORT
+        ).show()
+    }
 }
 
 @Composable
@@ -1209,6 +1440,219 @@ private fun HistoryExportDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Solo texto (CSV)")
                 }
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+private fun BackupExportDialog(
+    onDismiss: () -> Unit,
+    onExport: (password: String?) -> Unit
+) {
+    var showPasswordInput by remember { mutableStateOf(false) }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
+
+    val passwordsMatch = password.isNotBlank() && password == confirmPassword
+    val isValid = passwordsMatch && password.length >= 6
+
+    if (!showPasswordInput) {
+        // Primer paso: elegir si cifrar o no
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("📦 Exportar Backup Completo") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "Elige cómo exportar tu backup completo (medicamentos, historial y fotos):",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Text(
+                                text = "🔒 Cifrado AES-256",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "El cifrado protege tus datos con encriptación de grado militar. Recomendado si vas a compartir el backup.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = { showPasswordInput = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(imageVector = Icons.Default.Lock, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Con cifrado AES-256")
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            onExport(null) // Sin cifrado
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(imageVector = Icons.Default.FileDownload, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Sin cifrar")
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = onDismiss) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    } else {
+        // Segundo paso: ingresar contraseña
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text("🔐 Contraseña para el backup") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "Introduce una contraseña segura para cifrar el backup:",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Contraseña (mín. 6 caracteres)") },
+                        singleLine = true,
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(
+                                    imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = confirmPassword,
+                        onValueChange = { confirmPassword = it },
+                        label = { Text("Confirmar contraseña") },
+                        singleLine = true,
+                        visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                                Icon(
+                                    imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = null
+                                )
+                            }
+                        },
+                        isError = confirmPassword.isNotBlank() && password != confirmPassword,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    if (confirmPassword.isNotBlank() && password != confirmPassword) {
+                        Text(
+                            text = "Las contraseñas no coinciden",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+
+                    if (password.isNotBlank() && password.length < 6) {
+                        Text(
+                            text = "La contraseña debe tener al menos 6 caracteres",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onExport(password)
+                        onDismiss()
+                    },
+                    enabled = isValid
+                ) {
+                    Text("Exportar cifrado")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showPasswordInput = false }) {
+                    Text("Atrás")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun BackupPasswordInputDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("🔐 Backup cifrado") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "Este backup está protegido con cifrado AES-256. Introduce la contraseña para descifrarlo:",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Contraseña") },
+                    singleLine = true,
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = null
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(password) },
+                enabled = password.isNotBlank()
+            ) {
+                Text("Descifrar")
             }
         },
         dismissButton = {

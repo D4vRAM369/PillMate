@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.model.Medication
+import java.io.File
 import java.time.LocalDateTime
 
 /**
@@ -24,7 +25,7 @@ object CsvUtils {
         val builder = StringBuilder()
         builder.appendLine(HEADER)
         builder.appendLine(SECTION_MEDICATIONS)
-        builder.appendLine("id,name,dose,type,colorArgb,emoji,totalTaken,dailyGoal,lastTaken,isPrn,sortOrder,scheduleTime,scheduleDays")
+        builder.appendLine("id,name,dose,type,colorArgb,emoji,totalTaken,dailyGoal,lastTaken,isPrn,sortOrder,scheduleTime,scheduleDays,photoPath,usePhotoInstead")
         medications.forEach { medication ->
             builder.appendLine(
                 listOf(
@@ -40,7 +41,9 @@ object CsvUtils {
                     medication.isPrn.toString(),
                     medication.sortOrder.toString(),
                     medication.scheduleTime ?: "",
-                    medication.scheduleDays.joinToString("|")
+                    medication.scheduleDays.joinToString("|"),
+                    medication.photoPath?.let { File(it).name } ?: "", // 📸 Solo el nombre del archivo
+                    medication.usePhotoInstead.toString() // 🖼️ Preferencia de visualización
                 ).joinToCsv()
             )
         }
@@ -88,6 +91,7 @@ object CsvUtils {
                 throw IllegalArgumentException("Fila de medicamentos incompleta")
             }
             val hasSchedule = tokens.size >= 13
+            val hasPhotoFields = tokens.size >= 15
             medications.add(
                 Medication(
                     id = tokens[0],
@@ -102,7 +106,9 @@ object CsvUtils {
                     isPrn = tokens[9].toBooleanStrictOrNull() ?: false,
                     sortOrder = tokens[10].toIntOrNull() ?: 0,
                     scheduleTime = if (hasSchedule) tokens[11].ifBlank { null } else null,
-                    scheduleDays = if (hasSchedule) tokens[12].split('|').mapNotNull { it.trim().takeIf { value -> value.isNotEmpty() } } else emptyList()
+                    scheduleDays = if (hasSchedule) tokens[12].split('|').mapNotNull { it.trim().takeIf { value -> value.isNotEmpty() } } else emptyList(),
+                    photoPath = if (hasPhotoFields) tokens[13].ifBlank { null } else null, // 📸 Será reconstruida al restaurar
+                    usePhotoInstead = if (hasPhotoFields) tokens[14].toBooleanStrictOrNull() ?: false else false // 🖼️ Preferencia
                 )
             )
             index++

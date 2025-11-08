@@ -55,15 +55,17 @@ class BackupManager(
     private suspend fun createBackupFile(prefix: String): File = withContext(Dispatchers.IO) {
         val medications = repository.getMedicationsSnapshot()
         val history = repository.getHistorySnapshot()
-        val csv = CsvUtils.buildCsv(medications, history)
 
         val directory = context.getExternalFilesDir("backups") ?: context.filesDir
         if (!directory.exists()) {
             directory.mkdirs()
         }
         val timestamp = System.currentTimeMillis()
-        val file = File(directory, "pillmate_${prefix}_$timestamp.csv")
-        file.writeText(csv)
-        file
+
+        // 📦 Crear backup en formato ZIP (incluye CSV + fotos)
+        val zipFile = File(directory, "pillmate_${prefix}_$timestamp.zip")
+        BackupZipManager.createBackupZip(context, medications, history, zipFile)
+
+        zipFile
     }
 }
