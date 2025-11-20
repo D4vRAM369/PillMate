@@ -143,9 +143,10 @@ class MedicationRepository(
     }
 
     data class Stats(
-        val takenToday: Int,
-        val takenThisWeek: Int,
-        val adherencePercentage: Int
+        val takenToday: Int = 0,
+        val takenThisWeek: Int = 0,
+        val adherencePercentage: Int = 0,
+        val dailyAverage: Float = 0f
     )
 
     fun takeMedication(medicationId: String, quantity: Int = 1) {
@@ -376,16 +377,23 @@ class MedicationRepository(
             .sumOf { it.quantity }
 
         val totalGoals = medications.filterNot { it.isPrn }.sumOf { it.dailyGoal }
-        val adherence = if (totalGoals > 0) {
-            ((takenToday.toDouble() / totalGoals.toDouble()) * 100.0).roundToInt().coerceIn(0, 100)
+        val adherencePercentage = if (totalGoals > 0) {
+            (takenThisWeek.toFloat() / totalGoals.toFloat()) * 100f
         } else {
-            0
+            0f
+        }
+        
+        // Calcular promedio diario (tomas totales / 7 días)
+        // Usamos 1 decimal para precisión (ej. 4.5)
+        val dailyAverage = (takenThisWeek.toFloat() / 7f).let {
+            kotlin.math.round(it * 10) / 10f
         }
 
         return Stats(
             takenToday = takenToday,
             takenThisWeek = takenThisWeek,
-            adherencePercentage = adherence
+            adherencePercentage = adherencePercentage.toInt(),
+            dailyAverage = dailyAverage
         )
     }
 

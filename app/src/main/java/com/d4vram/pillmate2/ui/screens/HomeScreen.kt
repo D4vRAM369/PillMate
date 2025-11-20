@@ -259,11 +259,40 @@ private fun StatsSection(
             label = "Esta Semana",
             modifier = Modifier.weight(1f)
         )
-        StatCard(
-            number = "${stats.adherencePercentage}%",
-            label = "Adherencia",
-            modifier = Modifier.weight(1f)
-        )
+        
+        // Botón de Estadísticas Globales (Reemplaza a Adherencia)
+        Card(
+            modifier = Modifier
+                .weight(1f)
+                .height(IntrinsicSize.Max), // Igualar altura
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "📊",
+                    style = MaterialTheme.typography.headlineMedium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Estadísticas",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                )
+            }
+        }
     }
 }
 

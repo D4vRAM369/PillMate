@@ -139,17 +139,11 @@ fun SummaryCards(stats: MedicationRepository.Stats) {
             color = MaterialTheme.colorScheme.secondaryContainer
         )
         SummaryCard(
-            title = "Adherencia",
-            value = "${stats.adherencePercentage}%",
+            title = "Promedio",
+            value = "${stats.dailyAverage}/día",
             modifier = Modifier.weight(1f),
-            color = if (stats.adherencePercentage >= 80) 
-                Color(0xFFDCFCE7) // Green container
-            else 
-                MaterialTheme.colorScheme.errorContainer,
-            textColor = if (stats.adherencePercentage >= 80)
-                Color(0xFF14532D) // Green text
-            else
-                MaterialTheme.colorScheme.onErrorContainer
+            color = MaterialTheme.colorScheme.tertiaryContainer,
+            textColor = MaterialTheme.colorScheme.onTertiaryContainer
         )
     }
 }
