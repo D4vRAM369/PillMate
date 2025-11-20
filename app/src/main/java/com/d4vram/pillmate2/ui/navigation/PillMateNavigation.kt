@@ -89,42 +89,49 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentDestination = navBackStackEntry?.destination
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentDestination = navBackStackEntry?.destination
+            val currentRoute = currentDestination?.route
 
-                bottomNavItems.forEach { screen ->
-                    NavigationBarItem(
-                        icon = {
-                            screen.icon?.let {
-                                Icon(
-                                    imageVector = it,
-                                    contentDescription = screen.label
-                                )
-                            }
-                        },
-                        label = {
-                            screen.label?.let {
-                                Text(
-                                    text = it,
-                                    style = MaterialTheme.typography.labelMedium
-                                )
-                            }
-                        },
-                        selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
-                        onClick = {
-                            navController.navigate(screen.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+            // Solo mostrar la barra de navegación en las pantallas principales
+            val showBottomBar = bottomNavItems.any { it.route == currentRoute }
+
+            if (showBottomBar) {
+                NavigationBar {
+                    bottomNavItems.forEach { screen ->
+                        NavigationBarItem(
+                            icon = {
+                                screen.icon?.let {
+                                    Icon(
+                                        imageVector = it,
+                                        contentDescription = screen.label
+                                    )
                                 }
-                                launchSingleTop = true
-                                restoreState = true
+                            },
+                            label = {
+                                screen.label?.let {
+                                    Text(
+                                        text = it,
+                                        style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
+                            },
+                            selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                            onClick = {
+                                navController.navigate(screen.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = true
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
+
     ) { innerPadding ->
         NavHost(
             navController = navController,

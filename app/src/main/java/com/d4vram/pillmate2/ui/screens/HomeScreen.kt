@@ -2,34 +2,54 @@ package com.d4vram.pillmate2.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.HistoryEntry
+import com.d4vram.pillmate2.model.SortMode
 import com.d4vram.pillmate2.ui.components.HistoryItem
-import com.d4vram.pillmate2.ui.components.MedicationCard
 import com.d4vram.pillmate2.ui.components.ReorderableMedicationGrid
-import com.d4vram.pillmate2.ui.components.StatCard
+import com.d4vram.pillmate2.ui.theme.AppUiStyle
 import com.d4vram.pillmate2.ui.theme.HeaderGradientEnd
 import com.d4vram.pillmate2.ui.theme.HeaderGradientStart
-import com.d4vram.pillmate2.ui.theme.AppUiStyle
 import com.d4vram.pillmate2.ui.theme.LocalUiStyle
-import com.d4vram.pillmate2.model.SortMode
 
 /**
  * 🏠 Pantalla principal de la app
@@ -75,10 +95,10 @@ fun HomeScreen(
 
             item {
                 // Fila de estadísticas - clickeable para ver estadísticas avanzadas
-                StatsSection(
-                    stats = stats,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
-                    onClick = { navController.navigate("global_stats") }
+                // Tarjeta de acceso a estadísticas
+                StatisticsEntryCard(
+                    onClick = { navController.navigate("global_stats") },
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
                 )
             }
 
@@ -234,64 +254,72 @@ private fun HeaderSection(
 }
 
 /**
- * 📊 Sección de estadísticas (3 cards horizontales)
- * Clickeable para navegar a estadísticas avanzadas
+ * 📊 Tarjeta de acceso a estadísticas
+ * Un solo punto de entrada para ver el detalle completo
  */
 @Composable
-private fun StatsSection(
-    stats: MedicationRepository.Stats,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+private fun StatisticsEntryCard(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Row(
+    Card(
         modifier = modifier
             .fillMaxWidth()
+            .height(80.dp)
             .clickable(onClick = onClick),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        StatCard(
-            number = stats.takenToday.toString(),
-            label = "Tomadas Hoy",
-            modifier = Modifier.weight(1f)
-        )
-        StatCard(
-            number = stats.takenThisWeek.toString(),
-            label = "Esta Semana",
-            modifier = Modifier.weight(1f)
-        )
-        
-        // Botón de Estadísticas Globales (Reemplaza a Adherencia)
-        Card(
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .height(IntrinsicSize.Max), // Igualar altura
-            shape = RoundedCornerShape(12.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                .fillMaxSize()
+                .padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "📊",
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Estadísticas",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Icono con fondo circular
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "📊",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                Column {
+                    Text(
+                        text = "Estadísticas Globales",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Ver resumen y progreso",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
+            
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = "Ver estadísticas",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
