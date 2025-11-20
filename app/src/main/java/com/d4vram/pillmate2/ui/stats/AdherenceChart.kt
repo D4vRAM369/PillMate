@@ -48,8 +48,9 @@ import androidx.compose.ui.unit.sp
  */
 @Composable
 fun AdherenceChart(
-    data: List<Pair<String, Float>>,
+    data: List<AdherenceDataPoint>,
     title: String = "Adherencia Semanal (Canvas Custom)",
+    barColor: Color = MaterialTheme.colorScheme.primary,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -85,7 +86,6 @@ fun AdherenceChart(
                 )
             }
 
-            val primaryColor = MaterialTheme.colorScheme.primary
             val secondaryColor = MaterialTheme.colorScheme.secondary
             val axisColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
             val labelColor = MaterialTheme.colorScheme.onSurface.toArgb()
@@ -94,111 +94,131 @@ fun AdherenceChart(
             Canvas(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(220.dp) // Aumentamos altura para asegurar espacio
+                    .height(220.dp)
                     .pointerInput(data) {
                         detectTapGestures { tapOffset ->
                             val width = size.width
-                            // Recalculamos dimensiones para encontrar la barra tocada
-                            val barWidth = (width / (data.size * 2f)).coerceAtMost(100f)
-                            val spacing = (width - (barWidth * data.size)) / (data.size + 1)
+                            val leftPadding = 40.dp.toPx() // Espacio para eje Y
+                            val chartWidth = width - leftPadding
+                            
+                            val barWidth = (chartWidth / (data.size * 2f)).coerceAtMost(100f)
+                            val spacing = (chartWidth - (barWidth * data.size)) / (data.size + 1)
                             
                             data.forEachIndexed { index, item ->
-                                val x = spacing + (index * (barWidth + spacing))
+                                val x = leftPadding + spacing + (index * (barWidth + spacing))
                                 if (tapOffset.x >= x && tapOffset.x <= x + barWidth) {
                                     selectedBarIndex = index
-                                    Toast.makeText(
-                                        context, 
-                                        "${item.first}: ${item.second.toInt()}%", 
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    val valueText = if (item.unit == "tomas") 
+                                        "${item.taken}/${item.goal} tomas" 
+                                    else 
+                                        "${item.totalValue.toInt()}${item.unit} (${item.taken} tomas)"
+                                        
+                                    Toast.makeText(context, "${item.dayName}: $valueText", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }
                     }
             ) {
-                // Dimensiones útiles
                 val width = size.width
                 val height = size.height
-                val bottomPadding = 40.dp.toPx() // Espacio reservado para etiquetas
+                val bottomPadding = 30.dp.toPx()
+                val leftPadding = 50.dp.toPx() // Espacio para etiquetas Eje Y
+                
                 val chartHeight = height - bottomPadding
+                val chartWidth = width - leftPadding
                 
-                val barWidth = (width / (data.size * 2f)).coerceAtMost(100f) // Ancho dinámico
-                val spacing = (width - (barWidth * data.size)) / (data.size + 1)
+                // Calcular valor máximo para la escala
+                val maxDataValue = data.maxOfOrNull { it.totalValue } ?: 0f
+                // Asegurar que el máximo sea al menos la meta diaria promedio si no hay datos, o un mínimo
+                val yAxisMax = maxDataValue.coerceAtLeast(1f) * 1.2f // 20% de margen superior
+
+                val barWidth = (chartWidth / (data.size * 2f)).coerceAtMost(100f)
+                val spacing = (chartWidth - (barWidth * data.size)) / (data.size + 1)
                 
-                // 1. Dibujar líneas de guía (Grid)
-                val gridLines = 5
-                val stepHeight = chartHeight / gridLines
-                
+                val textPaint = android.graphics.Paint().apply {
+                    color = labelColor
+                    textSize = 10.sp.toPx()
+                    textAlign = android.graphics.Paint.Align.RIGHT
+                    isAntiAlias = true
+                }
+
+                // 1. Dibujar Eje Y y Líneas de Grid
+                val gridLines = 4
                 for (i in 0..gridLines) {
-                    val y = stepHeight * i
+                    val fraction = i.toFloat() / gridLines
+                    val y = chartHeight - (chartHeight * fraction)
+                    val value = yAxisMax * fraction
+                    
+                    // Línea horizontal
                     drawLine(
                         color = axisColor.copy(alpha = 0.2f),
-                        start = Offset(0f, y),
+                        start = Offset(leftPadding, y),
                         end = Offset(width, y),
                         strokeWidth = 1.dp.toPx()
                     )
+                    
+                    // Etiqueta Eje Y
+                    drawContext.canvas.nativeCanvas.drawText(
+                        "${value.toInt()}",
+                        leftPadding - 8.dp.toPx(),
+                        y + 4.dp.toPx(), // Centrar verticalmente
+                        textPaint
+                    )
+                }
+                
+                // Unidad en la parte inferior del eje Y (para evitar solapamiento arriba)
+                val unit = data.firstOrNull { it.unit.isNotEmpty() }?.unit ?: ""
+                if (unit.isNotEmpty()) {
+                     drawContext.canvas.nativeCanvas.drawText(
+                        unit,
+                        leftPadding - 8.dp.toPx(),
+                        chartHeight + 20.dp.toPx(), // Alineado con las etiquetas de los días
+                        textPaint
+                    )
                 }
 
-                // 2. Dibujar barras
-                data.forEachIndexed { index, (day, percentage) ->
-                    val x = spacing + (index * (barWidth + spacing))
+                // 2. Dibujar Barras
+                data.forEachIndexed { index, item ->
+                    val x = leftPadding + spacing + (index * (barWidth + spacing))
                     
-                    // Altura objetivo basada en el porcentaje (0-100)
-                    val targetBarHeight = (percentage / 100f) * chartHeight
-                    
-                    // Aplicar animación
+                    // Altura relativa al máximo del eje Y
+                    val targetBarHeight = (item.totalValue / yAxisMax) * chartHeight
                     val currentBarHeight = targetBarHeight * animationProgress.value
                     
                     val barTop = chartHeight - currentBarHeight
                     
-                    // Color dinámico: Highlight si está seleccionado
                     val isSelected = selectedBarIndex == index
-                    val baseColor = if (isSelected) highlightColor else if (percentage >= 80f) primaryColor else secondaryColor
+                    val baseColorToUse = if (isSelected) highlightColor else barColor
                     
-                    // Gradiente para efecto "premium"
                     val brush = Brush.verticalGradient(
-                        colors = listOf(
-                            baseColor,
-                            baseColor.copy(alpha = 0.6f)
-                        ),
+                        colors = listOf(baseColorToUse, baseColorToUse.copy(alpha = 0.6f)),
                         startY = barTop,
                         endY = chartHeight
                     )
 
-                    drawRoundRect(
-                        brush = brush,
-                        topLeft = Offset(x, barTop),
-                        size = Size(barWidth, currentBarHeight),
-                        cornerRadius = CornerRadius(8.dp.toPx(), 8.dp.toPx())
-                    )
-
-                    // 3. Dibujar etiquetas (Texto)
-                    drawContext.canvas.nativeCanvas.apply {
-                        val paint = android.graphics.Paint().apply {
-                            color = labelColor
-                            textSize = 12.sp.toPx()
-                            textAlign = android.graphics.Paint.Align.CENTER
-                            isAntiAlias = true
-                        }
-                        
-                        // Etiqueta del día (debajo de la barra, en el espacio reservado)
-                        drawText(
-                            day,
-                            x + barWidth / 2,
-                            chartHeight + 20.dp.toPx(), 
-                            paint
+                    if (currentBarHeight > 0) {
+                        drawRoundRect(
+                            brush = brush,
+                            topLeft = Offset(x, barTop),
+                            size = Size(barWidth, currentBarHeight),
+                            cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
                         )
-                        
-                        // Etiqueta del porcentaje (encima de la barra, si la animación terminó)
-                        if (animationProgress.value > 0.9f || isSelected) {
-                            drawText(
-                                "${percentage.toInt()}%",
-                                x + barWidth / 2,
-                                barTop - 5.dp.toPx(),
-                                paint
-                            )
-                        }
                     }
+
+                    // 3. Etiquetas Eje X (Días)
+                    val dayPaint = android.graphics.Paint().apply {
+                        color = labelColor
+                        textSize = 12.sp.toPx()
+                        textAlign = android.graphics.Paint.Align.CENTER
+                        isAntiAlias = true
+                    }
+                    
+                    drawContext.canvas.nativeCanvas.drawText(
+                        item.dayName,
+                        x + barWidth / 2,
+                        height - 5.dp.toPx(), 
+                        dayPaint
+                    )
                 }
             }
         }

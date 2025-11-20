@@ -391,10 +391,10 @@ class MedicationRepository(
 
     /**
      * 📊 Obtiene la adherencia de los últimos 7 días para gráficas
-     * Retorna una lista de pares (Día de la semana, Porcentaje)
+     * Retorna una lista de puntos de datos con detalles (Día, %, Tomados, Meta)
      * @param medicationId Si se proporciona, filtra solo para ese medicamento. Si es null, es global.
      */
-    fun getAdherenceLast7Days(medicationId: String? = null): Flow<List<Pair<String, Float>>> {
+    fun getAdherenceLast7Days(medicationId: String? = null): Flow<List<com.d4vram.pillmate2.ui.stats.AdherenceDataPoint>> {
         return combine(historyEntries, medicationsFlow) { history, medications ->
             val today = LocalDate.now()
             val last7Days = (0..6).map { today.minusDays(it.toLong()) }.reversed()
@@ -424,8 +424,44 @@ class MedicationRepository(
                 } else {
                     0f
                 }
+
+                // Lógica de parsing de dosis
+                var totalValue = 0f
+                var unit = ""
                 
-                dayName to percentage.coerceIn(0f, 100f)
+                if (medicationId != null) {
+                    val medication = medications.find { it.id == medicationId }
+                    if (medication != null) {
+                        val doseString = medication.dose.trim()
+                        // Regex para separar número de unidad (ej. "10mg" -> "10", "mg")
+                        val regex = """^(\d+(\.\d+)?)\s*([a-zA-Z]+)$""".toRegex()
+                        val match = regex.find(doseString)
+                        
+                        if (match != null) {
+                            val (value, _, unitStr) = match.destructured
+                            val doseValue = value.toFloatOrNull() ?: 0f
+                            totalValue = takenOnDate * doseValue
+                            unit = unitStr
+                        } else {
+                            // Fallback: si no hay unidad clara, usar "tomas" o similar
+                            totalValue = takenOnDate.toFloat()
+                            unit = "tomas" // O dejar vacío si se prefiere
+                        }
+                    }
+                } else {
+                    // Global: Usamos porcentaje o tomas totales
+                    totalValue = takenOnDate.toFloat()
+                    unit = "tomas"
+                }
+                
+                com.d4vram.pillmate2.ui.stats.AdherenceDataPoint(
+                    dayName = dayName,
+                    percentage = percentage.coerceIn(0f, 100f),
+                    taken = takenOnDate,
+                    goal = totalGoal,
+                    totalValue = totalValue,
+                    unit = unit
+                )
             }
         }
     }

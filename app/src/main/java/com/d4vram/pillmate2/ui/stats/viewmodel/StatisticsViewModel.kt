@@ -21,7 +21,7 @@ class StatisticsViewModel(
     val selectedMedicationId: StateFlow<String?> = _selectedMedicationId.asStateFlow()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val adherenceLast7Days: StateFlow<List<Pair<String, Float>>> = _selectedMedicationId
+    val adherenceLast7Days: StateFlow<List<com.d4vram.pillmate2.ui.stats.AdherenceDataPoint>> = _selectedMedicationId
         .flatMapLatest { medicationId ->
             repository.getAdherenceLast7Days(medicationId)
         }

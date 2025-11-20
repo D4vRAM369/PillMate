@@ -88,16 +88,21 @@ fun StatisticsScreen(
 
             // Gráfica de Adherencia Semanal (Custom Canvas)
             if (adherenceData.isNotEmpty()) {
-                // Buscar nombre del medicamento seleccionado para el título
-                val selectedMedicationName = mostTaken.find { it.first.id == selectedMedicationId }?.first?.name
-                val chartTitle = if (selectedMedicationName != null) 
-                    "Adherencia: $selectedMedicationName" 
+                // Buscar nombre y color del medicamento seleccionado
+                val selectedMedication = mostTaken.find { it.first.id == selectedMedicationId }?.first
+                
+                val chartTitle = if (selectedMedication != null) 
+                    "Adherencia: ${selectedMedication.name}" 
                 else 
                     "Adherencia Global"
+                
+                // Usar color del medicamento o el primario por defecto
+                val chartColor = selectedMedication?.color ?: MaterialTheme.colorScheme.primary
 
                 AdherenceChart(
                     data = adherenceData,
-                    title = chartTitle
+                    title = chartTitle,
+                    barColor = chartColor
                 )
             }
 
