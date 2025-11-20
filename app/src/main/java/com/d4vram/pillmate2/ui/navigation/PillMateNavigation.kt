@@ -21,6 +21,7 @@ import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.local.PillMateDatabase
 import com.d4vram.pillmate2.data.voice.VoiceNoteRepository
 import com.d4vram.pillmate2.ui.screens.*
+import com.d4vram.pillmate2.ui.stats.StatisticsScreen
 import com.d4vram.pillmate2.ui.theme.ThemeManager
 import com.d4vram.pillmate2.ui.security.SecurityManager
 import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
@@ -212,6 +213,16 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
                     repository = repository
                 )
             }
+
+            // Pantalla de estadísticas globales con gráficos
+            composable(Screen.GlobalStats.route) {
+                StatisticsScreen(
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    repository = repository
+                )
+            }
         }
     }
 }
@@ -226,6 +237,7 @@ sealed class Screen(val route: String, val label: String? = null, val icon: Imag
     object VoiceNotes : Screen("voice_notes", "Notes", Icons.Default.Mic)
     object Settings : Screen("settings", "Ajustes", Icons.Default.Settings)
     object MedicationStats : Screen("medication_stats/{medicationId}")
+    object GlobalStats : Screen("global_stats")
 }
 
 private val bottomNavItems = listOf(

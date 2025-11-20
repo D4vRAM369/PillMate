@@ -74,10 +74,11 @@ fun HomeScreen(
             }
 
             item {
-                // Fila de estadísticas
+                // Fila de estadísticas - clickeable para ver estadísticas avanzadas
                 StatsSection(
                     stats = stats,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp)
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
+                    onClick = { navController.navigate("global_stats") }
                 )
             }
 
@@ -234,14 +235,18 @@ private fun HeaderSection(
 
 /**
  * 📊 Sección de estadísticas (3 cards horizontales)
+ * Clickeable para navegar a estadísticas avanzadas
  */
 @Composable
 private fun StatsSection(
     stats: MedicationRepository.Stats,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit = {}
 ) {
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         StatCard(

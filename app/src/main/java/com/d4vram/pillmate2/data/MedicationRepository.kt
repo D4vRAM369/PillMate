@@ -389,6 +389,53 @@ class MedicationRepository(
         )
     }
 
+    /**
+     * 📊 Obtiene la adherencia de los últimos 7 días para gráficas
+     * Retorna una lista de pares (Día de la semana, Porcentaje)
+     */
+    fun getAdherenceLast7Days(): Flow<List<Pair<String, Float>>> {
+        return combine(historyEntries, medicationsFlow) { history, medications ->
+            val today = LocalDate.now()
+            val last7Days = (0..6).map { today.minusDays(it.toLong()) }.reversed()
+            
+            last7Days.map { date ->
+                val dayName = date.format(DateTimeFormatter.ofPattern("EE")) // Lun, Mar, etc.
+                
+                val takenOnDate = history
+                    .filter { it.timestamp.toLocalDate() == date }
+                    .sumOf { it.quantity }
+
+                // Calcular meta total para ese día (excluyendo PRN)
+                // Nota: Esto asume que la meta es constante, lo cual es una simplificación válida por ahora
+                val totalGoal = medications.filterNot { it.isPrn }.sumOf { it.dailyGoal }
+                
+                val percentage = if (totalGoal > 0) {
+                    (takenOnDate.toFloat() / totalGoal.toFloat()) * 100f
+                } else {
+                    0f
+                }
+                
+                dayName to percentage.coerceIn(0f, 100f)
+            }
+        }
+    }
+
+    /**
+     * 🏆 Obtiene los medicamentos más tomados (Top 5)
+     */
+    fun getMostTakenMedications(): Flow<List<Pair<Medication, Int>>> {
+        return combine(historyEntries, medicationsFlow) { history, medications ->
+            val medicationCounts = history
+                .groupingBy { it.medicationId }
+                .fold(0) { acc, entry -> acc + entry.quantity }
+            
+            medications
+                .map { med -> med to (medicationCounts[med.id] ?: 0) }
+                .sortedByDescending { it.second }
+                .take(5)
+        }
+    }
+
     private fun formatDateTime(dateTime: LocalDateTime): String {
         return "${formatDate(dateTime)} ${formatTime(dateTime)}"
     }
