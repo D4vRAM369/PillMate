@@ -70,32 +70,28 @@ class MedicationRepository(
         return when (period) {
             com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Daily -> {
                 history
-                    .filter { (it.medicationId == medicationId || it.medicationName == medicationName) &&
+                    .count { (it.medicationId == medicationId || it.medicationName == medicationName) &&
                               it.timestamp.toLocalDate() == today }
-                    .sumOf { it.quantity }
             }
             com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Weekly -> {
                 history
-                    .filter {
+                    .count {
                         val daysDiff = ChronoUnit.DAYS.between(it.timestamp.toLocalDate(), today)
                         (it.medicationId == medicationId || it.medicationName == medicationName) &&
                         daysDiff in 0..6
                     }
-                    .sumOf { it.quantity }
             }
             com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Monthly -> {
                 val firstDayOfMonth = today.withDayOfMonth(1)
                 history
-                    .filter {
+                    .count {
                         (it.medicationId == medicationId || it.medicationName == medicationName) &&
                         !it.timestamp.toLocalDate().isBefore(firstDayOfMonth)
                     }
-                    .sumOf { it.quantity }
             }
             com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total -> {
                 history
-                    .filter { it.medicationId == medicationId || it.medicationName == medicationName }
-                    .sumOf { it.quantity }
+                    .count { it.medicationId == medicationId || it.medicationName == medicationName }
             }
             com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Hidden -> 0
         }
@@ -366,15 +362,13 @@ class MedicationRepository(
     private fun calculateStats(history: List<HistoryEntry>, medications: List<Medication>): Stats {
         val today = LocalDate.now()
         val takenToday = history
-            .filter { it.timestamp.toLocalDate() == today }
-            .sumOf { it.quantity }
+            .count { it.timestamp.toLocalDate() == today }
 
         val takenThisWeek = history
-            .filter {
+            .count {
                 val daysDiff = ChronoUnit.DAYS.between(it.timestamp.toLocalDate(), today)
                 daysDiff in 0..6
             }
-            .sumOf { it.quantity }
 
         val totalGoals = medications.filterNot { it.isPrn }.sumOf { it.dailyGoal }
         val adherencePercentage = if (totalGoals > 0) {
@@ -401,7 +395,7 @@ class MedicationRepository(
      * 📊 Obtiene la adherencia de los últimos 7 días para gráficas
      * Retorna una lista de puntos de datos con detalles (Día, %, Tomados, Meta)
      * @param medicationId Si se proporciona, filtra solo para ese medicamento. Si es null, es global.
-     * @param weekOffset Desplazamiento en semanas (0 = actual, 1 = semana pasada, etc.)
+     *  @param weekOffset Desplazamiento en semanas (0 = actual, 1 = semana pasada, etc.)
      */
     fun getAdherenceLast7Days(medicationId: String? = null, weekOffset: Int = 0): Flow<List<com.d4vram.pillmate2.ui.stats.AdherenceDataPoint>> {
         return combine(historyEntries, medicationsFlow) { history, medications ->
@@ -417,12 +411,14 @@ class MedicationRepository(
                 val dayName = date.format(DateTimeFormatter.ofPattern("EE")) // Lun, Mar, etc.
                 
                 // Filtrar historial por fecha y opcionalmente por medicamento
-                val takenOnDate = history
+                val entriesOnDate = history
                     .filter { entry -> 
                         entry.timestamp.toLocalDate() == date && 
                         (medicationId == null || entry.medicationId == medicationId)
                     }
-                    .sumOf { it.quantity }
+                
+                val takenCount = entriesOnDate.size
+                val totalQuantity = entriesOnDate.sumOf { it.quantity }
 
                 // Calcular meta total
                 val totalGoal = if (medicationId == null) {
@@ -434,7 +430,7 @@ class MedicationRepository(
                 }
                 
                 val percentage = if (totalGoal > 0) {
-                    (takenOnDate.toFloat() / totalGoal.toFloat()) * 100f
+                    (takenCount.toFloat() / totalGoal.toFloat()) * 100f
                 } else {
                     0f
                 }
@@ -454,24 +450,31 @@ class MedicationRepository(
                         if (match != null) {
                             val (value, _, unitStr) = match.destructured
                             val doseValue = value.toFloatOrNull() ?: 0f
-                            totalValue = takenOnDate * doseValue
+                            // Usar totalQuantity para calcular el valor total real (ej. 10 gotas * 1mg)
+                            totalValue = totalQuantity * doseValue
                             unit = unitStr
                         } else {
                             // Fallback: si no hay unidad clara, usar "tomas" o similar
-                            totalValue = takenOnDate.toFloat()
-                            unit = "tomas" // O dejar vacío si se prefiere
+                            // Si es gotas, queremos ver el número de gotas
+                            if (medication.type.equals("Gota", ignoreCase = true)) {
+                                totalValue = totalQuantity.toFloat()
+                                unit = "gotas"
+                            } else {
+                                totalValue = takenCount.toFloat()
+                                unit = "tomas"
+                            }
                         }
                     }
                 } else {
                     // Global: Usamos porcentaje o tomas totales
-                    totalValue = takenOnDate.toFloat()
+                    totalValue = takenCount.toFloat()
                     unit = "tomas"
                 }
                 
                 com.d4vram.pillmate2.ui.stats.AdherenceDataPoint(
                     dayName = dayName,
                     percentage = percentage.coerceIn(0f, 100f),
-                    taken = takenOnDate,
+                    taken = takenCount,
                     goal = totalGoal,
                     totalValue = totalValue,
                     unit = unit
@@ -487,7 +490,7 @@ class MedicationRepository(
         return combine(historyEntries, medicationsFlow) { history, medications ->
             val medicationCounts = history
                 .groupingBy { it.medicationId }
-                .fold(0) { acc, entry -> acc + entry.quantity }
+                .eachCount()
             
             medications
                 .map { med -> med to (medicationCounts[med.id] ?: 0) }
