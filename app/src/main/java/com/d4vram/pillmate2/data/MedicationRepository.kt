@@ -392,8 +392,9 @@ class MedicationRepository(
     /**
      * 📊 Obtiene la adherencia de los últimos 7 días para gráficas
      * Retorna una lista de pares (Día de la semana, Porcentaje)
+     * @param medicationId Si se proporciona, filtra solo para ese medicamento. Si es null, es global.
      */
-    fun getAdherenceLast7Days(): Flow<List<Pair<String, Float>>> {
+    fun getAdherenceLast7Days(medicationId: String? = null): Flow<List<Pair<String, Float>>> {
         return combine(historyEntries, medicationsFlow) { history, medications ->
             val today = LocalDate.now()
             val last7Days = (0..6).map { today.minusDays(it.toLong()) }.reversed()
@@ -401,13 +402,22 @@ class MedicationRepository(
             last7Days.map { date ->
                 val dayName = date.format(DateTimeFormatter.ofPattern("EE")) // Lun, Mar, etc.
                 
+                // Filtrar historial por fecha y opcionalmente por medicamento
                 val takenOnDate = history
-                    .filter { it.timestamp.toLocalDate() == date }
+                    .filter { entry -> 
+                        entry.timestamp.toLocalDate() == date && 
+                        (medicationId == null || entry.medicationId == medicationId)
+                    }
                     .sumOf { it.quantity }
 
-                // Calcular meta total para ese día (excluyendo PRN)
-                // Nota: Esto asume que la meta es constante, lo cual es una simplificación válida por ahora
-                val totalGoal = medications.filterNot { it.isPrn }.sumOf { it.dailyGoal }
+                // Calcular meta total
+                val totalGoal = if (medicationId == null) {
+                    // Global: suma de metas de todos los medicamentos (no PRN)
+                    medications.filterNot { it.isPrn }.sumOf { it.dailyGoal }
+                } else {
+                    // Específico: meta de ese medicamento
+                    medications.find { it.id == medicationId }?.dailyGoal ?: 1
+                }
                 
                 val percentage = if (totalGoal > 0) {
                     (takenOnDate.toFloat() / totalGoal.toFloat()) * 100f

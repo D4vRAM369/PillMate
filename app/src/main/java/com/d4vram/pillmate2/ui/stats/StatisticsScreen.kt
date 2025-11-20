@@ -1,6 +1,7 @@
 package com.d4vram.pillmate2.ui.stats
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,12 +9,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -27,10 +26,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,18 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.Medication
-import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
-import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
-import com.patrykandpatrick.vico.compose.chart.Chart
-import com.patrykandpatrick.vico.compose.chart.column.columnChart
-import com.patrykandpatrick.vico.compose.component.lineComponent
-import com.patrykandpatrick.vico.compose.component.textComponent
-import com.patrykandpatrick.vico.core.axis.AxisPosition
-import com.patrykandpatrick.vico.core.axis.formatter.AxisValueFormatter
-import com.patrykandpatrick.vico.core.chart.column.ColumnChart
-import com.patrykandpatrick.vico.core.component.shape.Shapes
-import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
-import com.patrykandpatrick.vico.core.entry.entryOf
+import com.d4vram.pillmate2.ui.stats.viewmodel.StatisticsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,6 +52,7 @@ fun StatisticsScreen(
     val adherenceData by viewModel.adherenceLast7Days.collectAsState()
     val mostTaken by viewModel.mostTakenMedications.collectAsState()
     val stats by viewModel.stats.collectAsState()
+    val selectedMedicationId by viewModel.selectedMedicationId.collectAsState()
 
     Scaffold(
         topBar = {
@@ -99,14 +86,30 @@ fun StatisticsScreen(
             // Resumen General
             SummaryCards(stats)
 
-            // Gráfica de Adherencia Semanal
+            // Gráfica de Adherencia Semanal (Custom Canvas)
             if (adherenceData.isNotEmpty()) {
-                AdherenceChart(adherenceData)
+                // Buscar nombre del medicamento seleccionado para el título
+                val selectedMedicationName = mostTaken.find { it.first.id == selectedMedicationId }?.first?.name
+                val chartTitle = if (selectedMedicationName != null) 
+                    "Adherencia: $selectedMedicationName" 
+                else 
+                    "Adherencia Global"
+
+                AdherenceChart(
+                    data = adherenceData,
+                    title = chartTitle
+                )
             }
 
             // Top Medicamentos
             if (mostTaken.isNotEmpty()) {
-                TopMedicationsList(mostTaken)
+                TopMedicationsList(
+                    medications = mostTaken,
+                    selectedMedicationId = selectedMedicationId,
+                    onMedicationClick = { medicationId ->
+                        viewModel.selectMedication(medicationId)
+                    }
+                )
             }
         }
     }
@@ -152,10 +155,11 @@ fun SummaryCard(
     value: String,
     modifier: Modifier = Modifier,
     color: Color,
-    textColor: Color = MaterialTheme.colorScheme.onSurface
+    textColor: Color = MaterialTheme.colorScheme.onSurface,
+    onClick: () -> Unit = {}
 ) {
     Card(
-        modifier = modifier,
+        modifier = modifier.clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = color)
     ) {
         Column(
@@ -180,66 +184,11 @@ fun SummaryCard(
 }
 
 @Composable
-fun AdherenceChart(data: List<Pair<String, Float>>) {
-    val chartEntryModelProducer = remember { ChartEntryModelProducer() }
-    val dayLabels = remember(data) { data.map { it.first } }
-
-    // Actualizar el modelo cuando cambien los datos
-    LaunchedEffect(data) {
-        if (data.isNotEmpty()) {
-            val entries = data.mapIndexed { index, (_, value) ->
-                entryOf(index.toFloat(), value)
-            }
-            chartEntryModelProducer.setEntries(entries)
-        }
-    }
-
-    val primaryColor = MaterialTheme.colorScheme.primary
-
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Adherencia (Últimos 7 días)",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            val bottomAxisValueFormatter = AxisValueFormatter<AxisPosition.Horizontal.Bottom> { value, _ ->
-                dayLabels.getOrNull(value.toInt()) ?: ""
-            }
-
-            Chart(
-                chart = columnChart(
-                    columns = listOf(
-                        lineComponent(
-                            color = primaryColor,
-                            thickness = 16.dp,
-                            shape = Shapes.roundedCornerShape(allPercent = 20)
-                        )
-                    )
-                ),
-                chartModelProducer = chartEntryModelProducer,
-                startAxis = rememberStartAxis(),
-                bottomAxis = rememberBottomAxis(
-                    valueFormatter = bottomAxisValueFormatter
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(200.dp)
-            )
-        }
-    }
-}
-
-@Composable
-fun TopMedicationsList(medications: List<Pair<Medication, Int>>) {
+fun TopMedicationsList(
+    medications: List<Pair<Medication, Int>>,
+    selectedMedicationId: String? = null,
+    onMedicationClick: (String) -> Unit = {}
+) {
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainer
@@ -256,10 +205,19 @@ fun TopMedicationsList(medications: List<Pair<Medication, Int>>) {
             )
 
             medications.forEach { (medication, count) ->
+                val isSelected = medication.id == selectedMedicationId
+                val backgroundColor = if (isSelected) 
+                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) 
+                else 
+                    Color.Transparent
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp),
+                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
+                        .background(backgroundColor)
+                        .clickable { onMedicationClick(medication.id) }
+                        .padding(vertical = 8.dp, horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(

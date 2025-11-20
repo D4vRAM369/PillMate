@@ -141,9 +141,6 @@ dependencies {
     // ExifInterface para corregir orientación de fotos
     implementation("androidx.exifinterface:exifinterface:1.3.7")
 
-    // Vico Charts
-    implementation(libs.bundles.vico)
-
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
