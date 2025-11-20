@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,6 +54,8 @@ fun StatisticsScreen(
     val mostTaken by viewModel.mostTakenMedications.collectAsState()
     val stats by viewModel.stats.collectAsState()
     val selectedMedicationId by viewModel.selectedMedicationId.collectAsState()
+    val weekOffset by viewModel.weekOffset.collectAsState()
+    val dateRange by viewModel.dateRange.collectAsState()
 
     Scaffold(
         topBar = {
@@ -85,6 +88,14 @@ fun StatisticsScreen(
         ) {
             // Resumen General
             SummaryCards(stats)
+
+            // Navegación de Fechas
+            DateNavigationControl(
+                dateRange = dateRange,
+                canGoNext = weekOffset > 0,
+                onPreviousClick = { viewModel.previousWeek() },
+                onNextClick = { viewModel.nextWeek() }
+            )
 
             // Gráfica de Adherencia Semanal (Custom Canvas)
             if (adherenceData.isNotEmpty()) {
@@ -251,6 +262,51 @@ fun TopMedicationsList(
                     )
                 }
             }
+        }
+    }
+}
+
+
+@Composable
+fun DateNavigationControl(
+    dateRange: String,
+    canGoNext: Boolean,
+    onPreviousClick: () -> Unit,
+    onNextClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+            )
+            .padding(8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = onPreviousClick) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Semana Anterior"
+            )
+        }
+
+        Text(
+            text = dateRange,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        IconButton(
+            onClick = onNextClick,
+            enabled = canGoNext
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = "Semana Siguiente",
+                tint = if (canGoNext) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+            )
         }
     }
 }

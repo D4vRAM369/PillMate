@@ -401,11 +401,17 @@ class MedicationRepository(
      * 📊 Obtiene la adherencia de los últimos 7 días para gráficas
      * Retorna una lista de puntos de datos con detalles (Día, %, Tomados, Meta)
      * @param medicationId Si se proporciona, filtra solo para ese medicamento. Si es null, es global.
+     * @param weekOffset Desplazamiento en semanas (0 = actual, 1 = semana pasada, etc.)
      */
-    fun getAdherenceLast7Days(medicationId: String? = null): Flow<List<com.d4vram.pillmate2.ui.stats.AdherenceDataPoint>> {
+    fun getAdherenceLast7Days(medicationId: String? = null, weekOffset: Int = 0): Flow<List<com.d4vram.pillmate2.ui.stats.AdherenceDataPoint>> {
         return combine(historyEntries, medicationsFlow) { history, medications ->
-            val today = LocalDate.now()
-            val last7Days = (0..6).map { today.minusDays(it.toLong()) }.reversed()
+            // Calcular la fecha base según el offset
+            // weekOffset = 0 -> Hoy
+            // weekOffset = 1 -> Hace 7 días
+            val baseDate = LocalDate.now().minusWeeks(weekOffset.toLong())
+            
+            // Generar los últimos 7 días desde la fecha base
+            val last7Days = (0..6).map { baseDate.minusDays(it.toLong()) }.reversed()
             
             last7Days.map { date ->
                 val dayName = date.format(DateTimeFormatter.ofPattern("EE")) // Lun, Mar, etc.
