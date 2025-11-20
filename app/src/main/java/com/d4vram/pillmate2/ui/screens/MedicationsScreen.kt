@@ -25,7 +25,6 @@ fun MedicationsScreen(
 ) {
     val medications by repository.medications.collectAsState()
     val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)
-
     val listState = rememberLazyListState()
 
     Scaffold(
