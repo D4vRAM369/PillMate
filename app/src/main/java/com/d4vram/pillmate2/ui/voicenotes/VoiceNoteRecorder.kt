@@ -14,7 +14,14 @@ class VoiceNoteRecorder(private val context: Context) {
             throw IllegalStateException("Recorder already started")
         }
         val file = File.createTempFile("voice_recording_", ".m4a", context.cacheDir)
-        val recorder = MediaRecorder(context).apply {
+        
+        // ARREGLO: Añadir la comprobación de versión de SDK para compatibilidad.
+        val recorder = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+            MediaRecorder(context)
+        } else {
+            @Suppress("DEPRECATION")
+            MediaRecorder()
+        }.apply {
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)

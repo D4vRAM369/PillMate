@@ -1,23 +1,21 @@
 package com.d4vram.pillmate2.ui.stats
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material3.Card
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -25,21 +23,22 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d4vram.pillmate2.data.MedicationRepository
-import com.d4vram.pillmate2.model.Medication
+import com.d4vram.pillmate2.ui.components.StatCard
+import com.d4vram.pillmate2.ui.stats.viewmodel.FilterRange
 import com.d4vram.pillmate2.ui.stats.viewmodel.StatisticsViewModel
-
+import com.d4vram.pillmate2.ui.stats.viewmodel.StatisticsUiState
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatisticsScreen(
@@ -50,22 +49,26 @@ fun StatisticsScreen(
         factory = StatisticsViewModel.provideFactory(repository)
     )
 
-    val adherenceData by viewModel.adherenceLast7Days.collectAsState()
-    val mostTaken by viewModel.mostTakenMedications.collectAsState()
-    val stats by viewModel.stats.collectAsState()
-    val selectedMedicationId by viewModel.selectedMedicationId.collectAsState()
-    val weekOffset by viewModel.weekOffset.collectAsState()
-    val dateRange by viewModel.dateRange.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        text = "Estadísticas Globales",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column {
+                        Text(
+                            text = "Estadísticas",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        if (uiState.dateRangeText.isNotEmpty()) {
+                            Text(
+                                text = uiState.dateRangeText,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -84,229 +87,284 @@ fun StatisticsScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Resumen General
-            SummaryCards(stats)
-
-            // Navegación de Fechas
-            DateNavigationControl(
-                dateRange = dateRange,
-                canGoNext = weekOffset > 0,
-                onPreviousClick = { viewModel.previousWeek() },
-                onNextClick = { viewModel.nextWeek() }
+            FilterButtons(
+                activeFilter = uiState.activeFilter,
+                onFilterSelected = { range -> viewModel.setFilter(range) }
             )
+            
+            if (uiState.activeFilter != FilterRange.ALL_TIME) {
+                DateNavigation(
+                    dateRangeText = uiState.dateRangeText,
+                    onPrevious = { viewModel.previousPeriod() },
+                    onNext = { viewModel.nextPeriod() }
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // Gráfica de Adherencia Semanal (Custom Canvas)
-            if (adherenceData.isNotEmpty()) {
-                // Buscar nombre y color del medicamento seleccionado
-                val selectedMedication = mostTaken.find { it.first.id == selectedMedicationId }?.first
-                
-                val chartTitle = if (selectedMedication != null) 
-                    "Adherencia: ${selectedMedication.name}" 
-                else 
-                    "Adherencia Global"
-                
-                // Usar color del medicamento o el primario por defecto
-                val chartColor = selectedMedication?.color ?: MaterialTheme.colorScheme.primary
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                StatCard(
+                    label = "Dosis Totales",
+                    number = uiState.totalDoses.toString(),
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    label = "Dosis Tomadas",
+                    number = uiState.dosesTaken.toString(),
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                StatCard(
+                    label = "Adherencia",
+                    number = "${(uiState.adherenceRate * 100).toInt()}%",
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    label = "Más Tomado",
+                    number = uiState.mostTakenMedication,
+                    modifier = Modifier.weight(1f)
+                )
+            }
 
+            if (uiState.adherenceData.isNotEmpty()) {
                 AdherenceChart(
-                    data = adherenceData,
-                    title = chartTitle,
-                    barColor = chartColor
+                    data = uiState.adherenceData,
+                    title = "Adherencia en el período",
+                    barColor = MaterialTheme.colorScheme.primary
                 )
             }
-
-            // Top Medicamentos
-            if (mostTaken.isNotEmpty()) {
-                TopMedicationsList(
-                    medications = mostTaken,
-                    selectedMedicationId = selectedMedicationId,
-                    onMedicationClick = { medicationId ->
-                        viewModel.selectMedication(medicationId)
-                    }
-                )
+            
+            if (uiState.topMedications.isNotEmpty()) {
+                TopMedicationsList(medications = uiState.topMedications)
+            }
+            
+            if (uiState.recentHistory.isNotEmpty()) {
+                RecentHistoryList(history = uiState.recentHistory)
             }
         }
     }
 }
 
 @Composable
-fun SummaryCards(stats: MedicationRepository.Stats) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        SummaryCard(
-            title = "Hoy",
-            value = stats.takenToday.toString(),
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.primaryContainer
+fun TopMedicationsList(medications: List<Pair<String, Int>>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Más Tomados",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 4.dp)
         )
-        SummaryCard(
-            title = "Semana",
-            value = stats.takenThisWeek.toString(),
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.secondaryContainer
-        )
-        SummaryCard(
-            title = "Promedio",
-            value = "${stats.dailyAverage}/día",
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.tertiaryContainer,
-            textColor = MaterialTheme.colorScheme.onTertiaryContainer
-        )
-    }
-}
-
-@Composable
-fun SummaryCard(
-    title: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    color: Color,
-    textColor: Color = MaterialTheme.colorScheme.onSurface,
-    onClick: () -> Unit = {}
-) {
-    Card(
-        modifier = modifier.clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = color)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+        
+        androidx.compose.material3.ElevatedCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium,
+            colors = CardDefaults.elevatedCardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = textColor
-            )
-            Text(
-                text = title,
-                style = MaterialTheme.typography.bodySmall,
-                color = textColor.copy(alpha = 0.8f)
-            )
-        }
-    }
-}
-
-@Composable
-fun TopMedicationsList(
-    medications: List<Pair<Medication, Int>>,
-    selectedMedicationId: String? = null,
-    onMedicationClick: (String) -> Unit = {}
-) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "Más Tomados",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            medications.forEach { (medication, count) ->
-                val isSelected = medication.id == selectedMedicationId
-                val backgroundColor = if (isSelected) 
-                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) 
-                else 
-                    Color.Transparent
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(androidx.compose.foundation.shape.RoundedCornerShape(8.dp))
-                        .background(backgroundColor)
-                        .clickable { onMedicationClick(medication.id) }
-                        .padding(vertical = 8.dp, horizontal = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(
+            Column(modifier = Modifier.padding(16.dp)) {
+                medications.forEachIndexed { index, (name, count) ->
+                    Row(
                         modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(medication.color.copy(alpha = 0.2f)),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(text = medication.emoji)
-                    }
-                    
-                    Spacer(modifier = Modifier.size(12.dp))
-                    
-                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "${index + 1}.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                         Text(
-                            text = medication.name,
+                            text = "$count tomas",
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = medication.dose,
-                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    
-                    Text(
-                        text = "$count tomas",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold
-                    )
+                    if (index < medications.lastIndex) {
+                        androidx.compose.material3.HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                    }
                 }
             }
         }
     }
 }
 
+@Composable
+fun RecentHistoryList(history: List<com.d4vram.pillmate2.model.HistoryEntry>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Historial Reciente",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 4.dp)
+        )
+        
+        androidx.compose.material3.ElevatedCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium,
+            colors = CardDefaults.elevatedCardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                history.forEachIndexed { index, entry ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = entry.medicationName,
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = "${entry.date} • ${entry.time}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        
+                        // Chip pequeño para la dosis
+                        androidx.compose.foundation.layout.Box(
+                            modifier = Modifier
+                                .background(
+                                    color = MaterialTheme.colorScheme.secondaryContainer,
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "${entry.quantity}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    if (index < history.lastIndex) {
+                        androidx.compose.material3.HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
 
 @Composable
-fun DateNavigationControl(
-    dateRange: String,
-    canGoNext: Boolean,
-    onPreviousClick: () -> Unit,
-    onNextClick: () -> Unit
+fun DateNavigation(
+    dateRangeText: String,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(
                 color = MaterialTheme.colorScheme.surfaceContainer,
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
+                shape = MaterialTheme.shapes.medium
             )
-            .padding(8.dp),
+            .padding(4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(onClick = onPreviousClick) {
+        IconButton(onClick = onPrevious) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Semana Anterior"
+                contentDescription = "Anterior"
             )
         }
-
+        
         Text(
-            text = dateRange,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
+            text = dateRangeText,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface
         )
 
-        IconButton(
-            onClick = onNextClick,
-            enabled = canGoNext
-        ) {
+        IconButton(onClick = onNext) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Semana Siguiente",
-                tint = if (canGoNext) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+                contentDescription = "Siguiente"
             )
+        }
+    }
+}
+
+@Composable
+fun FilterButtons(
+    activeFilter: FilterRange,
+    onFilterSelected: (FilterRange) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                MaterialTheme.colorScheme.surfaceContainer,
+                shape = MaterialTheme.shapes.extraLarge
+            )
+            .padding(4.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        val filters = listOf(
+            "Semana" to FilterRange.WEEK,
+            "15 Días" to FilterRange.DAYS_15,
+            "30 Días" to FilterRange.DAYS_30,
+            "Todos" to FilterRange.ALL_TIME
+        )
+
+        filters.forEach { (text, range) ->
+            val isSelected = activeFilter == range
+            val buttonColors = if (isSelected) {
+                ButtonDefaults.textButtonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                ButtonDefaults.textButtonColors(
+                    containerColor = Color.Transparent,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            TextButton(
+                onClick = { onFilterSelected(range) },
+                modifier = Modifier.weight(1f),
+                shape = MaterialTheme.shapes.large,
+                colors = buttonColors
+            ) {
+                Text(text = text)
+            }
         }
     }
 }

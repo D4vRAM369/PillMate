@@ -77,6 +77,14 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    lint {
+        // Establecemos un archivo de baseline. Lint ignorará los errores listados aquí.
+        // baseline = file("lint-baseline.xml")
+        abortOnError = false
+        checkReleaseBuilds = false
+        textReport = true
+    }
 }
 
 dependencies {

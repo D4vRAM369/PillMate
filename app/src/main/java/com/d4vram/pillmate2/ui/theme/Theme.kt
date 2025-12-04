@@ -123,9 +123,9 @@ fun PillMateTheme(
     content: @Composable () -> Unit
 ) {
     val isDarkMode by (themeManager?.isDarkMode?.collectAsState(initial = darkTheme)
-        ?: mutableStateOf(darkTheme))
+        ?: androidx.compose.runtime.remember { mutableStateOf(darkTheme) })
     val uiStyle by (themeManager?.uiStyle?.collectAsState(initial = AppUiStyle.Default)
-        ?: mutableStateOf(AppUiStyle.Default))
+        ?: androidx.compose.runtime.remember { mutableStateOf(AppUiStyle.Default) })
 
     val context = LocalContext.current
     val useDynamicColors = uiStyle == AppUiStyle.MaterialYou && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S

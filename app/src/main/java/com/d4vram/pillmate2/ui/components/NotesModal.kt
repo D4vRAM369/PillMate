@@ -1,5 +1,10 @@
 package com.d4vram.pillmate2.ui.components
 
+import android.Manifest
+import android.media.MediaPlayer
+import android.media.MediaRecorder
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,26 +25,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.d4vram.pillmate2.data.AudioNoteManager
 import com.d4vram.pillmate2.model.HistoryEntry
+import kotlinx.coroutines.delay
+import java.io.File
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import androidx.compose.ui.platform.LocalContext
-import android.media.MediaRecorder
-import android.media.MediaPlayer
-import java.io.File
-import kotlinx.coroutines.delay
-import kotlin.math.roundToInt
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import android.Manifest
-import com.d4vram.pillmate2.data.AudioNoteManager
 
 /**
  * Formatea milisegundos a formato mm:ss
@@ -190,7 +189,14 @@ fun NotesModal(
             }
 
             val file = File.createTempFile("note_audio_", ".m4a", context.cacheDir)
-            val recorder = MediaRecorder(context).apply {
+            
+            // ARREGLO: Comprobar la versión de Android para usar el constructor correcto.
+            val recorder = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                MediaRecorder(context)
+            } else {
+                @Suppress("DEPRECATION")
+                MediaRecorder()
+            }.apply {
                 setAudioSource(MediaRecorder.AudioSource.MIC)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
@@ -639,7 +645,7 @@ fun NotesModal(
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
-                                }
+                                 }
                             } else {
                                 Column(
                                     modifier = Modifier.fillMaxWidth(),

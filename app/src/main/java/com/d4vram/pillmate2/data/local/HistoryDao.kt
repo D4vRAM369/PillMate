@@ -17,6 +17,9 @@ interface HistoryDao {
     @Query("SELECT * FROM history ORDER BY timestampIso DESC")
     suspend fun getAllHistory(): List<HistoryEntryEntity>
 
+    @Query("SELECT * FROM history WHERE timestampIso BETWEEN :startDate AND :endDate ORDER BY timestampIso DESC")
+    suspend fun getHistoryBetween(startDate: String, endDate: String): List<HistoryEntryEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(entry: HistoryEntryEntity)
 

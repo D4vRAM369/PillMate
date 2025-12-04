@@ -75,23 +75,17 @@ fun MedicationCard(
                 isPressed = true
                 showQuantityDialog = true
             },
-        shape = RoundedCornerShape(16.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = if (isTakenToday) {
-                medication.color.copy(alpha = 0.1f)
+                medication.color.copy(alpha = 0.12f)
             } else {
                 MaterialTheme.colorScheme.surface
             }
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isTakenToday) 6.dp else 3.dp
-        ),
-        border = if (isTakenToday) {
-            BorderStroke(
-                width = 1.dp,
-                color = medication.color.copy(alpha = 0.6f)
-            )
-        } else null
+            defaultElevation = if (isTakenToday) 0.dp else 2.dp
+        )
     ) {
         // Efecto de reset de animación
         LaunchedEffect(isPressed) {

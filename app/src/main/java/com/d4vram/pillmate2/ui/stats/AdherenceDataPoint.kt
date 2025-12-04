@@ -6,5 +6,6 @@ data class AdherenceDataPoint(
     val taken: Int,
     val goal: Int,
     val totalValue: Float = 0f,
-    val unit: String = ""
+    val unit: String = "",
+    val fullDate: String = ""
 )

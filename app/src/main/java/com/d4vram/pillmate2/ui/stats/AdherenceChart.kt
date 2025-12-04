@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,11 +57,13 @@ fun AdherenceChart(
     val context = LocalContext.current
     var selectedBarIndex by remember { mutableStateOf<Int?>(null) }
 
-    Card(
+    ElevatedCard(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -108,12 +111,6 @@ fun AdherenceChart(
                                 val x = leftPadding + spacing + (index * (barWidth + spacing))
                                 if (tapOffset.x >= x && tapOffset.x <= x + barWidth) {
                                     selectedBarIndex = index
-                                    val valueText = if (item.unit == "tomas") 
-                                        "${item.taken}/${item.goal} tomas" 
-                                    else 
-                                        "${item.totalValue.toInt()}${item.unit} (${item.taken} tomas)"
-                                        
-                                    Toast.makeText(context, "${item.dayName}: $valueText", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         }
@@ -142,37 +139,40 @@ fun AdherenceChart(
                     isAntiAlias = true
                 }
 
-                // 1. Dibujar Eje Y y Líneas de Grid
+                // 1. Dibujar Eje Y y Líneas de Grid (Punteadas para menos ruido)
                 val gridLines = 4
+                val dashEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
+                
                 for (i in 0..gridLines) {
                     val fraction = i.toFloat() / gridLines
                     val y = chartHeight - (chartHeight * fraction)
                     val value = yAxisMax * fraction
                     
-                    // Línea horizontal
+                    // Línea horizontal punteada
                     drawLine(
                         color = axisColor.copy(alpha = 0.2f),
                         start = Offset(leftPadding, y),
                         end = Offset(width, y),
-                        strokeWidth = 1.dp.toPx()
+                        strokeWidth = 1.dp.toPx(),
+                        pathEffect = dashEffect
                     )
                     
                     // Etiqueta Eje Y
                     drawContext.canvas.nativeCanvas.drawText(
                         "${value.toInt()}",
                         leftPadding - 8.dp.toPx(),
-                        y + 4.dp.toPx(), // Centrar verticalmente
+                        y + 4.dp.toPx(),
                         textPaint
                     )
                 }
                 
-                // Unidad en la parte inferior del eje Y (para evitar solapamiento arriba)
+                // Unidad en la parte inferior
                 val unit = data.firstOrNull { it.unit.isNotEmpty() }?.unit ?: ""
                 if (unit.isNotEmpty()) {
                      drawContext.canvas.nativeCanvas.drawText(
                         unit,
                         leftPadding - 8.dp.toPx(),
-                        chartHeight + 20.dp.toPx(), // Alineado con las etiquetas de los días
+                        chartHeight + 20.dp.toPx(),
                         textPaint
                     )
                 }
@@ -181,7 +181,6 @@ fun AdherenceChart(
                 data.forEachIndexed { index, item ->
                     val x = leftPadding + spacing + (index * (barWidth + spacing))
                     
-                    // Altura relativa al máximo del eje Y
                     val targetBarHeight = (item.totalValue / yAxisMax) * chartHeight
                     val currentBarHeight = targetBarHeight * animationProgress.value
                     
@@ -197,28 +196,103 @@ fun AdherenceChart(
                     )
 
                     if (currentBarHeight > 0) {
-                        drawRoundRect(
-                            brush = brush,
-                            topLeft = Offset(x, barTop),
-                            size = Size(barWidth, currentBarHeight),
-                            cornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx())
-                        )
+                        // Usamos Path para redondear SOLO las esquinas superiores
+                        val barPath = androidx.compose.ui.graphics.Path().apply {
+                            addRoundRect(
+                                androidx.compose.ui.geometry.RoundRect(
+                                    left = x,
+                                    top = barTop,
+                                    right = x + barWidth,
+                                    bottom = chartHeight,
+                                    topLeftCornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx()),
+                                    topRightCornerRadius = CornerRadius(4.dp.toPx(), 4.dp.toPx()),
+                                    bottomLeftCornerRadius = CornerRadius.Zero,
+                                    bottomRightCornerRadius = CornerRadius.Zero
+                                )
+                            )
+                        }
+                        drawPath(path = barPath, brush = brush)
                     }
 
-                    // 3. Etiquetas Eje X (Días)
+                    // 3. Etiquetas Eje X (Smart Skipping)
                     val dayPaint = android.graphics.Paint().apply {
                         color = labelColor
-                        textSize = 12.sp.toPx()
+                        textSize = 10.sp.toPx()
                         textAlign = android.graphics.Paint.Align.CENTER
                         isAntiAlias = true
+                        // Si está seleccionado, lo ponemos en negrita
+                        isFakeBoldText = isSelected
+                    }
+
+                    val skipInterval = if (data.size > 10) (data.size / 6).coerceAtLeast(1) else 1
+                    
+                    if (index % skipInterval == 0 || isSelected) { // Siempre mostrar etiqueta si está seleccionado
+                        drawContext.canvas.nativeCanvas.drawText(
+                            item.dayName,
+                            x + barWidth / 2,
+                            height - 5.dp.toPx(), 
+                            dayPaint
+                        )
                     }
                     
-                    drawContext.canvas.nativeCanvas.drawText(
-                        item.dayName,
-                        x + barWidth / 2,
-                        height - 5.dp.toPx(), 
-                        dayPaint
-                    )
+                    // 4. TOOLTIP (Burbuja de información)
+                    if (isSelected) {
+                        val dateText = item.fullDate
+                        val valueText = "${item.totalValue.toInt()} ${item.unit}"
+                        
+                        val tooltipPaint = android.graphics.Paint().apply {
+                            color = android.graphics.Color.WHITE
+                            textSize = 12.sp.toPx()
+                            textAlign = android.graphics.Paint.Align.CENTER
+                            isAntiAlias = true
+                            setShadowLayer(4f, 0f, 2f, android.graphics.Color.LTGRAY)
+                            typeface = android.graphics.Typeface.DEFAULT_BOLD
+                        }
+                        
+                        val dateWidth = tooltipPaint.measureText(dateText)
+                        val valueWidth = tooltipPaint.measureText(valueText)
+                        val maxWidth = maxOf(dateWidth, valueWidth)
+                        
+                        val tooltipPadding = 12.dp.toPx()
+                        val lineHeight = 16.dp.toPx()
+                        val tooltipWidth = maxWidth + (tooltipPadding * 2)
+                        val tooltipHeight = (lineHeight * 2) + (tooltipPadding * 1.5f)
+                        
+                        val tooltipX = x + barWidth / 2
+                        val tooltipY = barTop - 10.dp.toPx() // Un poco arriba de la barra
+                        
+                        // Dibujar fondo del tooltip (Pill shape)
+                        drawRoundRect(
+                            color = secondaryColor,
+                            topLeft = Offset(tooltipX - tooltipWidth / 2, tooltipY - tooltipHeight),
+                            size = Size(tooltipWidth, tooltipHeight),
+                            cornerRadius = CornerRadius(8.dp.toPx(), 8.dp.toPx())
+                        )
+                        
+                        // Triangulito abajo del tooltip
+                        val path = androidx.compose.ui.graphics.Path().apply {
+                            moveTo(tooltipX, tooltipY)
+                            lineTo(tooltipX - 6.dp.toPx(), tooltipY - 6.dp.toPx())
+                            lineTo(tooltipX + 6.dp.toPx(), tooltipY - 6.dp.toPx())
+                            close()
+                        }
+                        drawPath(path, color = secondaryColor)
+
+                        // Dibujar textos
+                        drawContext.canvas.nativeCanvas.drawText(
+                            dateText,
+                            tooltipX,
+                            tooltipY - tooltipHeight + tooltipPadding + (lineHeight * 0.8f),
+                            tooltipPaint
+                        )
+                        
+                        drawContext.canvas.nativeCanvas.drawText(
+                            valueText,
+                            tooltipX,
+                            tooltipY - tooltipPadding, 
+                            tooltipPaint
+                        )
+                    }
                 }
             }
         }
