@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -67,6 +68,16 @@ fun MedicationCard(
     val isTakenToday = takenCount > 0
 
     val combinedModifier = modifier
+        .then(
+            if (isTakenToday) {
+                Modifier.shadow(
+                    elevation = 4.dp,
+                    shape = MaterialTheme.shapes.medium,
+                    ambientColor = medication.color.copy(alpha = 0.3f),
+                    spotColor = medication.color.copy(alpha = 0.3f)
+                )
+            } else Modifier
+        )
 
     Card(
         modifier = combinedModifier
@@ -85,7 +96,13 @@ fun MedicationCard(
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (isTakenToday) 0.dp else 2.dp
-        )
+        ),
+        border = if (isTakenToday) {
+            BorderStroke(
+                width = 2.dp,
+                color = medication.color.copy(alpha = 0.4f)
+            )
+        } else null
     ) {
         // Efecto de reset de animación
         LaunchedEffect(isPressed) {
