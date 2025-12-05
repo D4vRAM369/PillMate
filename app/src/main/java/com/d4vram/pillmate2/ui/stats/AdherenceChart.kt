@@ -52,7 +52,8 @@ fun AdherenceChart(
     data: List<AdherenceDataPoint>,
     title: String = "Adherencia Semanal (Canvas Custom)",
     barColor: Color = MaterialTheme.colorScheme.primary,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tooltipColor: Color = MaterialTheme.colorScheme.secondary
 ) {
     val context = LocalContext.current
     var selectedBarIndex by remember { mutableStateOf<Int?>(null) }
@@ -263,7 +264,7 @@ fun AdherenceChart(
                         
                         // Dibujar fondo del tooltip (Pill shape)
                         drawRoundRect(
-                            color = secondaryColor,
+                            color = tooltipColor,
                             topLeft = Offset(tooltipX - tooltipWidth / 2, tooltipY - tooltipHeight),
                             size = Size(tooltipWidth, tooltipHeight),
                             cornerRadius = CornerRadius(8.dp.toPx(), 8.dp.toPx())
@@ -276,7 +277,7 @@ fun AdherenceChart(
                             lineTo(tooltipX + 6.dp.toPx(), tooltipY - 6.dp.toPx())
                             close()
                         }
-                        drawPath(path, color = secondaryColor)
+                        drawPath(path, color = tooltipColor)
 
                         // Dibujar textos
                         drawContext.canvas.nativeCanvas.drawText(

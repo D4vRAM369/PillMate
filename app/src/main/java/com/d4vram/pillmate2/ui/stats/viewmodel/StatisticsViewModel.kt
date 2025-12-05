@@ -32,7 +32,10 @@ data class StatisticsUiState(
     val activeFilter: FilterRange = FilterRange.WEEK,
     val dateRangeText: String = "",
     val recentHistory: List<com.d4vram.pillmate2.model.HistoryEntry> = emptyList(),
-    val topMedications: List<Pair<String, Int>> = emptyList()
+    val topMedications: List<Pair<String, Int>> = emptyList(),
+    val availableMedications: List<com.d4vram.pillmate2.model.Medication> = emptyList(),
+    val selectedMedicationId: String? = null,
+    val selectedMedicationColor: androidx.compose.ui.graphics.Color? = null
 )
 
 class StatisticsViewModel(
@@ -43,6 +46,7 @@ class StatisticsViewModel(
     val uiState: StateFlow<StatisticsUiState> = _uiState.asStateFlow()
 
     private val _filter = MutableStateFlow(FilterRange.WEEK)
+    private var selectedMedicationId: String? = null
 
     private var currentEndDate: LocalDate = LocalDate.now()
 
@@ -56,6 +60,11 @@ class StatisticsViewModel(
 
     fun setFilter(range: FilterRange) {
         _filter.value = range
+    }
+
+    fun selectMedication(medicationId: String?) {
+        selectedMedicationId = medicationId
+        loadStatistics()
     }
 
     fun previousPeriod() {
@@ -99,8 +108,20 @@ class StatisticsViewModel(
                 FilterRange.ALL_TIME -> LocalDate.of(1970, 1, 1)
             }
 
-            val history = medicationRepository.getHistoryBetween(startDate.toEpochDay(), endDate.toEpochDay())
+            val allHistory = medicationRepository.getHistoryBetween(startDate.toEpochDay(), endDate.toEpochDay())
             val allMedications = medicationRepository.getMedicationsSnapshot()
+
+            // Filtrar por medicamento si hay uno seleccionado
+            val history = if (selectedMedicationId != null) {
+                allHistory.filter { it.medicationId == selectedMedicationId }
+            } else {
+                allHistory
+            }
+
+            // Obtener color del medicamento seleccionado
+            val selectedMedColor = selectedMedicationId?.let { id ->
+                allMedications.find { it.id == id }?.color
+            }
 
             val dosesTaken = history.size
             
@@ -113,7 +134,8 @@ class StatisticsViewModel(
                 0f
             }
 
-            val mostTakenMedication = history.groupBy { it.medicationId }
+            // Más Tomado siempre se calcula del historial completo (no filtrado)
+            val mostTakenMedication = allHistory.groupBy { it.medicationId }
                 .maxByOrNull { it.value.size }
                 ?.let { entry -> allMedications.find { it.id == entry.key }?.name }
                 ?: "N/A"
@@ -191,7 +213,10 @@ class StatisticsViewModel(
                     activeFilter = range,
                     dateRangeText = dateRangeText,
                     recentHistory = recentHistoryList,
-                    topMedications = topMedicationsList
+                    topMedications = topMedicationsList,
+                    availableMedications = allMedications,
+                    selectedMedicationId = selectedMedicationId,
+                    selectedMedicationColor = selectedMedColor
                 )
             }
         }

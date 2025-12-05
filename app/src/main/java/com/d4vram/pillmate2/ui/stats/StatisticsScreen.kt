@@ -1,3 +1,4 @@
+// kotlin
 package com.d4vram.pillmate2.ui.stats
 
 import androidx.compose.foundation.background
@@ -39,6 +40,7 @@ import com.d4vram.pillmate2.ui.components.StatCard
 import com.d4vram.pillmate2.ui.stats.viewmodel.FilterRange
 import com.d4vram.pillmate2.ui.stats.viewmodel.StatisticsViewModel
 import com.d4vram.pillmate2.ui.stats.viewmodel.StatisticsUiState
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatisticsScreen(
@@ -94,7 +96,15 @@ fun StatisticsScreen(
                 activeFilter = uiState.activeFilter,
                 onFilterSelected = { range -> viewModel.setFilter(range) }
             )
-            
+
+            if (uiState.availableMedications.isNotEmpty()) {
+                MedicationFilterDropdown(
+                    medications = uiState.availableMedications,
+                    selectedId = uiState.selectedMedicationId,
+                    onMedicationSelected = { id -> viewModel.selectMedication(id) }
+                )
+            }
+
             if (uiState.activeFilter != FilterRange.ALL_TIME) {
                 DateNavigation(
                     dateRangeText = uiState.dateRangeText,
@@ -102,7 +112,7 @@ fun StatisticsScreen(
                     onNext = { viewModel.nextPeriod() }
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(
@@ -140,14 +150,15 @@ fun StatisticsScreen(
                 AdherenceChart(
                     data = uiState.adherenceData,
                     title = "Adherencia en el período",
-                    barColor = MaterialTheme.colorScheme.primary
+                    barColor = uiState.selectedMedicationColor ?: MaterialTheme.colorScheme.primary,
+                    tooltipColor = uiState.selectedMedicationColor ?: MaterialTheme.colorScheme.secondary
                 )
             }
-            
+
             if (uiState.topMedications.isNotEmpty()) {
                 TopMedicationsList(medications = uiState.topMedications)
             }
-            
+
             if (uiState.recentHistory.isNotEmpty()) {
                 RecentHistoryList(history = uiState.recentHistory)
             }
@@ -164,7 +175,7 @@ fun TopMedicationsList(medications: List<Pair<String, Int>>) {
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 4.dp)
         )
-        
+
         androidx.compose.material3.ElevatedCard(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.medium,
@@ -222,7 +233,7 @@ fun RecentHistoryList(history: List<com.d4vram.pillmate2.model.HistoryEntry>) {
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 4.dp)
         )
-        
+
         androidx.compose.material3.ElevatedCard(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.medium,
@@ -252,8 +263,7 @@ fun RecentHistoryList(history: List<com.d4vram.pillmate2.model.HistoryEntry>) {
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
-                        
-                        // Chip pequeño para la dosis
+
                         androidx.compose.foundation.layout.Box(
                             modifier = Modifier
                                 .background(
@@ -304,7 +314,7 @@ fun DateNavigation(
                 contentDescription = "Anterior"
             )
         }
-        
+
         Text(
             text = dateRangeText,
             style = MaterialTheme.typography.titleSmall,
