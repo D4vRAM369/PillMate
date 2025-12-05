@@ -1,3 +1,4 @@
+// kotlin
 package com.d4vram.pillmate2.ui.stats.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -26,8 +27,8 @@ enum class FilterRange {
 data class StatisticsUiState(
     val totalDoses: Int = 0,
     val dosesTaken: Int = 0,
-    val adherenceRate: Float = 0f,
-    val mostTakenMedication: String = "N/A",
+    val lastTaken: String = "Nunca",
+    val selectedMedicationName: String = "Todos",
     val adherenceData: List<AdherenceDataPoint> = emptyList(),
     val activeFilter: FilterRange = FilterRange.WEEK,
     val dateRangeText: String = "",
@@ -87,7 +88,7 @@ class StatisticsViewModel(
             FilterRange.DAYS_30 -> currentEndDate.plusDays(30)
             FilterRange.ALL_TIME -> currentEndDate
         }
-        
+
         // No permitir ir al futuro más allá de hoy (o el final del periodo actual que contenga hoy)
         if (nextDate.isAfter(today)) {
             currentEndDate = today
@@ -123,15 +124,38 @@ class StatisticsViewModel(
                 allMedications.find { it.id == id }?.color
             }
 
+            // Obtener nombre del medicamento seleccionado (nuevo)
+            val selectedMedName = selectedMedicationId?.let { id ->
+                allMedications.find { it.id == id }?.name
+            } ?: "Todos"
+
             val dosesTaken = history.size
-            
-            val totalDosesInRange = allMedications.sumOf { it.dailyGoal } * (if (range == FilterRange.ALL_TIME) 1 else (java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1))
 
-
-            val adherenceRate = if (totalDosesInRange > 0) {
-                (dosesTaken.toFloat() / totalDosesInRange.toFloat())
+            // Dosis totales: si hay medicamento seleccionado, solo contar ese; si no, todos
+            val totalDosesInRange = if (selectedMedicationId != null) {
+                val selectedMed = allMedications.find { it.id == selectedMedicationId }
+                val days = if (range == FilterRange.ALL_TIME) 1 else (java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1)
+                (selectedMed?.dailyGoal ?: 0) * days.toInt()
             } else {
-                0f
+                allMedications.sumOf { it.dailyGoal } * (if (range == FilterRange.ALL_TIME) 1 else (java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1).toInt())
+            }
+
+            // Última toma: obtener la más reciente del historial filtrado
+            val lastTaken = if (history.isNotEmpty()) {
+                val mostRecent = history.maxByOrNull { it.timestamp }
+                mostRecent?.let { entry ->
+                    val today = java.time.LocalDate.now()
+                    val entryDate = entry.timestamp.toLocalDate()
+                    val time = entry.timestamp.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
+
+                    when {
+                        entryDate == today -> "Hoy $time"
+                        entryDate == today.minusDays(1) -> "Ayer $time"
+                        else -> "${entryDate.dayOfMonth} ${entryDate.month.name.lowercase().take(3)} $time"
+                    }
+                } ?: "Nunca"
+            } else {
+                "Nunca"
             }
 
             // Más Tomado siempre se calcula del historial completo (no filtrado)
@@ -139,7 +163,7 @@ class StatisticsViewModel(
                 .maxByOrNull { it.value.size }
                 ?.let { entry -> allMedications.find { it.id == entry.key }?.name }
                 ?: "N/A"
-            
+
             val spanishLocale = java.util.Locale.forLanguageTag("es")
             val dateFormatter = java.time.format.DateTimeFormatter.ofPattern("d MMM", spanishLocale)
             val dateRangeText = if (range == FilterRange.ALL_TIME) "Desde siempre" else "${startDate.format(dateFormatter)} - ${endDate.format(dateFormatter)}"
@@ -155,7 +179,7 @@ class StatisticsViewModel(
                     val takenCount = entriesOnDate.size
                     val totalGoal = allMedications.filterNot { it.isPrn }.sumOf { it.dailyGoal }
                     val percentage = if (totalGoal > 0) (takenCount.toFloat() / totalGoal) * 100f else 0f
-                    
+
                     AdherenceDataPoint(
                         dayName = dayName,
                         percentage = percentage,
@@ -176,7 +200,7 @@ class StatisticsViewModel(
                     val takenCount = entriesOnDate.size
                     val totalGoal = allMedications.filterNot { it.isPrn }.sumOf { it.dailyGoal }
                     val percentage = if (totalGoal > 0) (takenCount.toFloat() / totalGoal) * 100f else 0f
-                    
+
                     AdherenceDataPoint(
                         dayName = dayName,
                         percentage = percentage,
@@ -207,8 +231,8 @@ class StatisticsViewModel(
                 it.copy(
                     totalDoses = totalDosesInRange.toInt(),
                     dosesTaken = dosesTaken,
-                    adherenceRate = adherenceRate,
-                    mostTakenMedication = mostTakenMedication,
+                    lastTaken = lastTaken,
+                    selectedMedicationName = selectedMedName,
                     adherenceData = adherenceData,
                     activeFilter = range,
                     dateRangeText = dateRangeText,

@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d4vram.pillmate2.data.MedicationRepository
@@ -135,13 +136,13 @@ fun StatisticsScreen(
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 StatCard(
-                    label = "Adherencia",
-                    number = "${(uiState.adherenceRate * 100).toInt()}%",
+                    label = "Última Toma",
+                    number = uiState.lastTaken,
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(
-                    label = "Más Tomado",
-                    number = uiState.mostTakenMedication,
+                    label = "Medicamento",
+                    number = uiState.selectedMedicationName,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -347,7 +348,7 @@ fun FilterButtons(
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         val filters = listOf(
-            "Semana" to FilterRange.WEEK,
+            "7 Días" to FilterRange.WEEK,
             "15 Días" to FilterRange.DAYS_15,
             "30 Días" to FilterRange.DAYS_30,
             "Todos" to FilterRange.ALL_TIME
@@ -373,7 +374,11 @@ fun FilterButtons(
                 shape = MaterialTheme.shapes.large,
                 colors = buttonColors
             ) {
-                Text(text = text)
+                Text(
+                    text = text,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
