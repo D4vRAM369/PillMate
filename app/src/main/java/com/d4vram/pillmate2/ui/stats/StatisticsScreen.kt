@@ -116,17 +116,18 @@ fun StatisticsScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // STATS CARDS MODIFIED
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 StatCard(
-                    label = "Dosis Totales",
-                    number = uiState.totalDoses.toString(),
+                    label = "Promedio Diario",
+                    number = uiState.dailyAverage,
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(
-                    label = "Dosis Tomadas",
+                    label = "Dosis Registradas",
                     number = uiState.dosesTaken.toString(),
                     modifier = Modifier.weight(1f)
                 )
@@ -150,7 +151,7 @@ fun StatisticsScreen(
             if (uiState.adherenceData.isNotEmpty()) {
                 AdherenceChart(
                     data = uiState.adherenceData,
-                    title = "Adherencia en el período",
+                    title = "Consumo en el período",
                     barColor = uiState.selectedMedicationColor ?: MaterialTheme.colorScheme.primary,
                     tooltipColor = uiState.selectedMedicationColor ?: MaterialTheme.colorScheme.secondary
                 )

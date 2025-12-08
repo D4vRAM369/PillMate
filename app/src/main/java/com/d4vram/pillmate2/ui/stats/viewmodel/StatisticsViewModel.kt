@@ -5,18 +5,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.d4vram.pillmate2.data.MedicationRepository
+import com.d4vram.pillmate2.model.Medication
 import com.d4vram.pillmate2.ui.stats.AdherenceDataPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
+import kotlin.math.roundToInt
 
-// 1. MOVIMOS ESTAS DEFINICIONES FUERA DE LA CLASE para que sean públicas.
+// Enums para los filtros de tiempo disponibles
 enum class FilterRange {
     WEEK,
     DAYS_15,
@@ -25,8 +29,8 @@ enum class FilterRange {
 }
 
 data class StatisticsUiState(
-    val totalDoses: Int = 0,
-    val dosesTaken: Int = 0,
+    val dailyAverage: String = "0", // Promedio diario (nuevo métrica)
+    val dosesTaken: Int = 0, // Dosis realmente tomadas (suma de cantidades)
     val lastTaken: String = "Nunca",
     val selectedMedicationName: String = "Todos",
     val adherenceData: List<AdherenceDataPoint> = emptyList(),
@@ -49,15 +53,19 @@ class StatisticsViewModel(
     private val _filter = MutableStateFlow(FilterRange.WEEK)
     private var selectedMedicationId: String? = null
 
+    // Fecha fin del rango (normalmente hoy, pero permite navegar al pasado)
     private var currentEndDate: LocalDate = LocalDate.now()
 
     init {
+        // Recargar estadísticas cuando cambia el filtro
         _filter.onEach { range ->
-            // Al cambiar el filtro, reseteamos la fecha a hoy
+            // Al cambiar filtro, reseteamos a hoy para no perdernos en el pasado
             currentEndDate = LocalDate.now()
             loadStatistics()
         }.launchIn(viewModelScope)
     }
+
+    // --- Métodos Públicos ---
 
     fun setFilter(range: FilterRange) {
         _filter.value = range
@@ -74,7 +82,7 @@ class StatisticsViewModel(
             FilterRange.WEEK -> currentEndDate.minusWeeks(1)
             FilterRange.DAYS_15 -> currentEndDate.minusDays(15)
             FilterRange.DAYS_30 -> currentEndDate.minusDays(30)
-            FilterRange.ALL_TIME -> currentEndDate // No tiene sentido mover "todo el tiempo"
+            FilterRange.ALL_TIME -> currentEndDate 
         }
         loadStatistics()
     }
@@ -89,7 +97,7 @@ class StatisticsViewModel(
             FilterRange.ALL_TIME -> currentEndDate
         }
 
-        // No permitir ir al futuro más allá de hoy (o el final del periodo actual que contenga hoy)
+        // No permitir navegar al futuro
         if (nextDate.isAfter(today)) {
             currentEndDate = today
         } else {
@@ -98,53 +106,65 @@ class StatisticsViewModel(
         loadStatistics()
     }
 
+    // --- Lógica Principal de Cálculo ---
+
     private fun loadStatistics() {
         val range = _filter.value
         viewModelScope.launch {
             val endDate = currentEndDate
-            val startDate = when (range) {
-                FilterRange.WEEK -> endDate.minusDays(6)
+            
+            // 1. Determinar fecha de inicio según rango para la query
+            val queryStartDate = when (range) {
+                FilterRange.WEEK -> endDate.minusDays(6) // 7 días total
                 FilterRange.DAYS_15 -> endDate.minusDays(14)
                 FilterRange.DAYS_30 -> endDate.minusDays(29)
-                FilterRange.ALL_TIME -> LocalDate.of(1970, 1, 1)
+                FilterRange.ALL_TIME -> LocalDate.of(2020, 1, 1) // Base temporal safe
             }
 
-            val allHistory = medicationRepository.getHistoryBetween(startDate.toEpochDay(), endDate.toEpochDay())
+            // 2. Cargar datos del repositorio
+            val allHistory = if (range == FilterRange.ALL_TIME) {
+                medicationRepository.getHistorySnapshot()
+            } else {
+                medicationRepository.getHistoryBetween(queryStartDate.toEpochDay(), endDate.toEpochDay())
+            }
             val allMedications = medicationRepository.getMedicationsSnapshot()
 
-            // Filtrar por medicamento si hay uno seleccionado
-            val history = if (selectedMedicationId != null) {
+            // 3. Ajustar fecha de inicio REAL para visualización y cálculos
+            val effectiveStartDate = if (range == FilterRange.ALL_TIME) {
+                val firstHistory = allHistory.minByOrNull { it.timestamp }?.timestamp?.toLocalDate()
+                val firstMedCreation = allMedications.filter { it.createdAt > 0 }
+                    .minByOrNull { it.createdAt }?.createdAt?.let {
+                        Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
+                    }
+                listOfNotNull(firstHistory, firstMedCreation).minOrNull() ?: LocalDate.now().minusDays(30)
+            } else {
+                queryStartDate
+            }
+
+            // Filtrar historial si hay un medicamento seleccionado
+            val filteredHistory = if (selectedMedicationId != null) {
                 allHistory.filter { it.medicationId == selectedMedicationId }
             } else {
                 allHistory
             }
 
-            // Obtener color del medicamento seleccionado
-            val selectedMedColor = selectedMedicationId?.let { id ->
-                allMedications.find { it.id == id }?.color
-            }
+            // --- Cálculos de Dosis Totales y Tomadas ---
 
-            // Obtener nombre del medicamento seleccionado (nuevo)
-            val selectedMedName = selectedMedicationId?.let { id ->
-                allMedications.find { it.id == id }?.name
-            } ?: "Todos"
+            // Usar quantity (cantidad de pastillas)
+            val dosesTaken = filteredHistory.sumOf { it.quantity }
 
-            val dosesTaken = history.size
+            // Calcular días totales en el rango para el promedio
+            val totalDays = ChronoUnit.DAYS.between(effectiveStartDate, endDate) + 1
+            // Promedio Diario = Dosis Totales / Días en Rango
+            val dailyAvg = if (totalDays > 0) {
+                (dosesTaken.toFloat() / totalDays).let { (it * 10).roundToInt() / 10f }
+            } else 0f
 
-            // Dosis totales: si hay medicamento seleccionado, solo contar ese; si no, todos
-            val totalDosesInRange = if (selectedMedicationId != null) {
-                val selectedMed = allMedications.find { it.id == selectedMedicationId }
-                val days = if (range == FilterRange.ALL_TIME) 1 else (java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1)
-                (selectedMed?.dailyGoal ?: 0) * days.toInt()
-            } else {
-                allMedications.sumOf { it.dailyGoal } * (if (range == FilterRange.ALL_TIME) 1 else (java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1).toInt())
-            }
-
-            // Última toma: obtener la más reciente del historial filtrado
-            val lastTaken = if (history.isNotEmpty()) {
-                val mostRecent = history.maxByOrNull { it.timestamp }
+            // --- Última Toma ---
+            val lastTaken = if (filteredHistory.isNotEmpty()) {
+                val mostRecent = filteredHistory.maxByOrNull { it.timestamp }
                 mostRecent?.let { entry ->
-                    val today = java.time.LocalDate.now()
+                    val today = LocalDate.now()
                     val entryDate = entry.timestamp.toLocalDate()
                     val time = entry.timestamp.format(java.time.format.DateTimeFormatter.ofPattern("HH:mm"))
 
@@ -158,64 +178,25 @@ class StatisticsViewModel(
                 "Nunca"
             }
 
-            // Más Tomado siempre se calcula del historial completo (no filtrado)
-            val mostTakenMedication = allHistory.groupBy { it.medicationId }
-                .maxByOrNull { it.value.size }
-                ?.let { entry -> allMedications.find { it.id == entry.key }?.name }
-                ?: "N/A"
-
+            // --- Preparar UI ---
             val spanishLocale = java.util.Locale.forLanguageTag("es")
             val dateFormatter = java.time.format.DateTimeFormatter.ofPattern("d MMM", spanishLocale)
-            val dateRangeText = if (range == FilterRange.ALL_TIME) "Desde siempre" else "${startDate.format(dateFormatter)} - ${endDate.format(dateFormatter)}"
-
-            val adherenceData = if (range == FilterRange.ALL_TIME) {
-                val chartStartDate = endDate.minusDays(29)
-                val chartDays = java.time.temporal.ChronoUnit.DAYS.between(chartStartDate, endDate).toInt() + 1
-                (0 until chartDays).map { offset ->
-                    val date = chartStartDate.plusDays(offset.toLong())
-                    val dayName = date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM"))
-                    val fullDate = date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM d 'de' MMMM", spanishLocale))
-                    val entriesOnDate = history.filter { it.timestamp.toLocalDate() == date }
-                    val takenCount = entriesOnDate.size
-                    val totalGoal = allMedications.filterNot { it.isPrn }.sumOf { it.dailyGoal }
-                    val percentage = if (totalGoal > 0) (takenCount.toFloat() / totalGoal) * 100f else 0f
-
-                    AdherenceDataPoint(
-                        dayName = dayName,
-                        percentage = percentage,
-                        taken = takenCount,
-                        goal = totalGoal,
-                        totalValue = takenCount.toFloat(),
-                        unit = "dosis",
-                        fullDate = fullDate
-                    )
-                }
+            val dateRangeText = if (range == FilterRange.ALL_TIME) {
+                "Desde siempre"
             } else {
-                val days = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate).toInt() + 1
-                (0 until days).map { offset ->
-                    val date = startDate.plusDays(offset.toLong())
-                    val dayName = date.format(java.time.format.DateTimeFormatter.ofPattern("EE", spanishLocale))
-                    val fullDate = date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM d 'de' MMMM", spanishLocale))
-                    val entriesOnDate = history.filter { it.timestamp.toLocalDate() == date }
-                    val takenCount = entriesOnDate.size
-                    val totalGoal = allMedications.filterNot { it.isPrn }.sumOf { it.dailyGoal }
-                    val percentage = if (totalGoal > 0) (takenCount.toFloat() / totalGoal) * 100f else 0f
-
-                    AdherenceDataPoint(
-                        dayName = dayName,
-                        percentage = percentage,
-                        taken = takenCount,
-                        goal = totalGoal,
-                        totalValue = takenCount.toFloat(),
-                        unit = "dosis",
-                        fullDate = fullDate
-                    )
-                }
+                "${effectiveStartDate.format(dateFormatter)} - ${endDate.format(dateFormatter)}"
             }
 
-            // Top Medicamentos (Top 5)
-            val topMedicationsList = history.groupBy { it.medicationId }
-                .mapValues { it.value.size }
+            // --- Generar Datos de la Gráfica (Consumo) ---
+            val adherenceChartData = generateAdherenceData(
+                start = effectiveStartDate,
+                end = endDate,
+                history = filteredHistory
+            )
+
+            // --- Top Medicamentos ---
+            val topMedicationsList = filteredHistory.groupBy { it.medicationId }
+                .mapValues { entry -> entry.value.sumOf { it.quantity } }
                 .toList()
                 .sortedByDescending { it.second }
                 .take(5)
@@ -224,25 +205,71 @@ class StatisticsViewModel(
                     name to count
                 }
 
-            // Historial Reciente (Últimos 5 del periodo seleccionado)
-            val recentHistoryList = history.take(5)
+            val recentHistoryList = filteredHistory.take(5)
+
+            val selectedMed = selectedMedicationId?.let { id -> allMedications.find { it.id == id } }
 
             _uiState.update {
                 it.copy(
-                    totalDoses = totalDosesInRange.toInt(),
+                    dailyAverage = String.format("%.1f", dailyAvg),
                     dosesTaken = dosesTaken,
                     lastTaken = lastTaken,
-                    selectedMedicationName = selectedMedName,
-                    adherenceData = adherenceData,
+                    selectedMedicationName = selectedMed?.name ?: "Todos",
+                    adherenceData = adherenceChartData,
                     activeFilter = range,
                     dateRangeText = dateRangeText,
                     recentHistory = recentHistoryList,
                     topMedications = topMedicationsList,
                     availableMedications = allMedications,
                     selectedMedicationId = selectedMedicationId,
-                    selectedMedicationColor = selectedMedColor
+                    selectedMedicationColor = selectedMed?.color
                 )
             }
+        }
+    }
+
+    private fun generateAdherenceData(
+        start: LocalDate,
+        end: LocalDate,
+        history: List<com.d4vram.pillmate2.model.HistoryEntry>
+    ): List<AdherenceDataPoint> {
+        val days = ChronoUnit.DAYS.between(start, end).toInt() + 1
+        
+        val (chartStart, chartDays) = if (days > 31) {
+             end.minusDays(30) to 31
+        } else {
+             start to days
+        }
+
+        val spanishLocale = java.util.Locale.forLanguageTag("es")
+
+        return (0 until chartDays).map { offset ->
+            val date = chartStart.plusDays(offset.toLong())
+            val dayName = if (chartDays <= 7) {
+                date.format(java.time.format.DateTimeFormatter.ofPattern("EE", spanishLocale))
+            } else {
+                date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM"))
+            }
+
+            val fullDate = date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM d 'de' MMMM", spanishLocale))
+
+            // Tomas reales ese día
+            val entriesOnDate = history.filter { it.timestamp.toLocalDate() == date }
+            val takenCount = entriesOnDate.sumOf { it.quantity }
+
+            // En "A demanda", no hay meta. Usamos 0.
+            val dayGoal = 0 
+            val percentage = 0f 
+
+            AdherenceDataPoint(
+                dayName = dayName,
+                percentage = percentage,
+                taken = takenCount,
+                goal = dayGoal,
+                totalValue = takenCount.toFloat(),
+                unit = "dosis",
+                fullDate = fullDate
+            )
         }
     }
 

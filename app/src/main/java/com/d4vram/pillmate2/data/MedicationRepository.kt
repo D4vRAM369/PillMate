@@ -309,13 +309,8 @@ class MedicationRepository(
             }
             SortMode.LAST_TAKEN -> {
                 medications.sortedWith(
-                    compareByDescending<Medication> { medication ->
-                        medication.lastTaken?.let { lastTaken ->
-                            parseTimestampOrNull(lastTaken)?.let { timestamp ->
-                                timestamp.toEpochSecond(java.time.ZoneOffset.UTC)
-                            } ?: 0L
-                        } ?: 0L
-                    }.thenBy { it.name }
+                    compareByDescending<Medication> { it.lastTakenTimestamp ?: 0L }
+                        .thenBy { it.name }
                 )
             }
             SortMode.MOST_USED_WEEK -> {
@@ -501,6 +496,10 @@ class MedicationRepository(
         lastTaken = lastTakenTimestamp?.let { formatDateTime(it) }
             ?: lastTaken?.let { stored ->
                 parseTimestampOrNull(stored)?.let { parsed -> formatDateTime(parsed) } ?: stored
+            },
+        lastTakenTimestamp = lastTakenTimestamp?.atZone(java.time.ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+            ?: lastTaken?.let { stored ->
+                parseTimestampOrNull(stored)?.atZone(java.time.ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
             },
         isPrn = isPrn,
         sortOrder = sortOrder,

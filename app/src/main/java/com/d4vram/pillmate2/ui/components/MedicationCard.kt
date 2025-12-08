@@ -276,11 +276,8 @@ private fun CountBadge(
         return
     }
 
-    val countText = if (chipCountPeriod == com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Daily) {
-        "$current/$goal"
-    } else {
-        current.toString()
-    }
+    // MODO ON-DEMAND: Solo mostramos la cantidad actual, nada de metas o PRN tags
+    val countText = "$current"
 
     val takenBackgroundColor = when {
         isTaken -> Color(0xFF10B981)
@@ -292,30 +289,12 @@ private fun CountBadge(
         else -> Color(0xFF4B5563)
     }
 
-    // Mostrar badge PRN si es necesario (PRN = Pro Re Nata = según necesidad)
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        if (isPrn) {
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color(0xFFEF4444)
-            ) {
-                Text(
-                    text = "PRN",
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 10.sp
-                    ),
-                    color = Color.White
-                )
-            }
-        }
-
-        // SIEMPRE mostrar el contador de tomas (incluso para medicamentos PRN)
+        // Solo mostramos el contador de tomas
         Surface(
             shape = RoundedCornerShape(12.dp),
             color = takenBackgroundColor
@@ -368,7 +347,7 @@ private fun PillIcon(
                     .size(48.dp)
                     .clip(CircleShape)
                     .background(color),
-                contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = emoji,
