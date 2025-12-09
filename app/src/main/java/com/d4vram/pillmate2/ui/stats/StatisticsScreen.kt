@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -116,55 +118,375 @@ fun StatisticsScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // STATS CARDS MODIFIED
+            // 🔥 DASHBOARD AVANZADO CON KPIs DESTACADOS 🔥
+
+            // KPI Principal - Total de dosis
+            androidx.compose.material3.ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.large,
+                colors = CardDefaults.elevatedCardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Total Registrado",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            text = uiState.totalDosesLogged.toString(),
+                            style = MaterialTheme.typography.displayMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            text = "dosis en el período",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        )
+                    }
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primary,
+                                shape = androidx.compose.foundation.shape.CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "📊",
+                            style = MaterialTheme.typography.headlineMedium
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Grid de métricas principales
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 StatCard(
+                    number = uiState.averageDailyDoses,
                     label = "Promedio Diario",
-                    number = uiState.dailyAverage,
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(
-                    label = "Dosis Registradas",
-                    number = uiState.dosesTaken.toString(),
+                    number = uiState.totalDaysWithRecords.toString(),
+                    label = "Días con Registros",
                     modifier = Modifier.weight(1f)
                 )
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 StatCard(
-                    label = "Última Toma",
-                    number = uiState.lastTaken,
+                    number = uiState.loggingConsistency,
+                    label = "Consistencia",
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(
-                    label = "Medicamento",
-                    number = uiState.selectedMedicationName,
+                    number = uiState.mostActiveDay,
+                    label = "Día Más Activo",
                     modifier = Modifier.weight(1f)
                 )
             }
 
-            if (uiState.adherenceData.isNotEmpty()) {
-                AdherenceChart(
-                    data = uiState.adherenceData,
-                    title = "Consumo en el período",
-                    barColor = uiState.selectedMedicationColor ?: MaterialTheme.colorScheme.primary,
-                    tooltipColor = uiState.selectedMedicationColor ?: MaterialTheme.colorScheme.secondary
-                )
-            }
-
-            if (uiState.topMedications.isNotEmpty()) {
-                TopMedicationsList(medications = uiState.topMedications)
-            }
-
+            // Historial Reciente
             if (uiState.recentHistory.isNotEmpty()) {
                 RecentHistoryList(history = uiState.recentHistory)
             }
+                // Resumen de Actividad
+                ActivitySummaryCard(
+                    totalDosesLogged = uiState.totalDosesLogged,
+                    averageDailyDoses = uiState.averageDailyDoses,
+                    mostActiveDay = uiState.mostActiveDay,
+                    leastActiveDay = uiState.leastActiveDay,
+                    loggingConsistency = uiState.loggingConsistency,
+                    totalDaysWithRecords = uiState.totalDaysWithRecords,
+                    totalPeriodDays = calculateTotalDays(uiState.dateRangeText)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (uiState.weeklyActivityPattern.isNotEmpty()) {
+                    WeeklyActivityChart(weeklyActivity = uiState.weeklyActivityPattern)
+                }
+
+            }
         }
+    }
+
+@Composable
+fun WeeklyActivityChart(weeklyActivity: Map<String, Int>) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Actividad Semanal",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 4.dp)
+        )
+
+        androidx.compose.material3.ElevatedCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium,
+            colors = CardDefaults.elevatedCardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                val days = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
+                val maxActivity = weeklyActivity.values.maxOrNull() ?: 1
+
+                days.forEach { day ->
+                    val activity = weeklyActivity[day] ?: 0
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = day,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.width(40.dp)
+                        )
+
+                        androidx.compose.foundation.layout.Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(10.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(5.dp)
+                                )
+                        ) {
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(if (maxActivity > 0) activity.toFloat() / maxActivity else 0f)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(5.dp)
+                                    )
+                            )
+                        }
+
+                        Text(
+                            text = activity.toString(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.width(30.dp),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.End
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ActivitySummaryCard(
+    totalDosesLogged: Int,
+    averageDailyDoses: String,
+    mostActiveDay: String,
+    leastActiveDay: String,
+    loggingConsistency: String,
+    totalDaysWithRecords: Int,
+    totalPeriodDays: Int
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Resumen de Actividad",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 4.dp)
+        )
+
+        androidx.compose.material3.ElevatedCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.medium,
+            colors = CardDefaults.elevatedCardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                // 🔥 Indicador visual de actividad total 🔥
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    androidx.compose.foundation.layout.Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                shape = androidx.compose.foundation.shape.CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = totalDosesLogged.toString(),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                text = "dosis",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 🔥 Métricas de actividad 🔥
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ActivityMetricItem(
+                        label = "Día Más Activo",
+                        value = mostActiveDay,
+                        icon = "📈",
+                        modifier = Modifier.weight(1f)
+                    )
+                    ActivityMetricItem(
+                        label = "Día Menos Activo",
+                        value = leastActiveDay,
+                        icon = "📉",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ActivityMetricItem(
+                        label = "Consistencia",
+                        value = loggingConsistency,
+                        icon = "📊",
+                        modifier = Modifier.weight(1f)
+                    )
+                    ActivityMetricItem(
+                        label = "Promedio Diario",
+                        value = averageDailyDoses,
+                        icon = "📅",
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 🔥 Barra de actividad del período 🔥
+                if (totalPeriodDays > 0) {
+                    Column {
+                        Text(
+                            text = "Actividad del Período",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        androidx.compose.foundation.layout.Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surfaceVariant,
+                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                                )
+                        ) {
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier
+                                    .fillMaxHeight()
+                                    .fillMaxWidth(totalDaysWithRecords.toFloat() / totalPeriodDays)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.primary,
+                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
+                                    )
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "$totalDaysWithRecords de $totalPeriodDays días con registros",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ActivityMetricItem(
+    label: String,
+    value: String,
+    icon: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            text = icon,
+            style = MaterialTheme.typography.headlineSmall
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+    }
+}
+
+private fun calculateTotalDays(dateRangeText: String): Int {
+    // Estimación simple basada en el texto del rango
+    return when {
+        dateRangeText.contains("7") -> 7
+        dateRangeText.contains("15") -> 15
+        dateRangeText.contains("30") -> 30
+        else -> 30 // Default para "Todos"
     }
 }
 
