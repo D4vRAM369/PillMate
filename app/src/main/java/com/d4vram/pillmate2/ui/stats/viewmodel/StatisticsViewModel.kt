@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.d4vram.pillmate2.data.MedicationRepository
+
 import com.d4vram.pillmate2.model.Medication
 import com.d4vram.pillmate2.ui.stats.AdherenceDataPoint
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,7 +39,7 @@ data class StatisticsUiState(
     val activeFilter: FilterRange = FilterRange.WEEK,
     val dateRangeText: String = "",
     val recentHistory: List<com.d4vram.pillmate2.model.HistoryEntry> = emptyList(),
-    val topMedications: List<Pair<String, Int>> = emptyList(),
+    val topMedications: List<Triple<String, Int, String>> = emptyList(), // name, count, id
     val availableMedications: List<com.d4vram.pillmate2.model.Medication> = emptyList(),
     val selectedMedicationId: String? = null,
     val selectedMedicationColor: androidx.compose.ui.graphics.Color? = null,
@@ -52,7 +53,20 @@ data class StatisticsUiState(
     val monthlyActivityData: List<StatisticsViewModel.MonthlyActivityPoint> = emptyList(), // Datos mensuales de actividad
     val loggingConsistency: String = "", // Nivel de consistencia en el registro
     val totalDaysWithRecords: Int = 0, // Días con al menos un registro
-    val averageDosesPerActiveDay: String = "0" // Promedio de dosis en días activos
+    val averageDosesPerActiveDay: String = "0", // Promedio de dosis en días activos
+    // 🔥 MÉTRICAS AVANZADAS CON DOSIS REALES 🔥
+    val adherenceRate: String = "0%", // Tasa de adherencia vs metas diarias
+    val hourlyPattern: Map<String, Int> = emptyMap(), // Patrón horario de tomas (hora -> cantidad)
+    val medicationEffectiveness: List<Pair<String, String>> = emptyList(), // Efectividad por medicamento (nombre -> porcentaje)
+    val streakData: StreakInfo = StreakInfo(), // Información de rachas
+    val predictionAccuracy: String = "0%", // Precisión de predicciones basada en patrones
+
+)
+
+data class StreakInfo(
+    val currentStreak: Int = 0, // Días consecutivos con registros
+    val longestStreak: Int = 0, // Racha más larga
+    val streakStatus: String = "Sin racha" // Estado descriptivo
 )
 
 class StatisticsViewModel(
@@ -153,6 +167,20 @@ class StatisticsViewModel(
                 queryStartDate
             }
 
+            // 4. Filtrar historial relevante (por medicamento si está seleccionado)
+            val relevantHistory = if (selectedMedicationId != null) {
+                allHistory.filter { it.medicationId == selectedMedicationId }
+            } else {
+                allHistory
+            }
+
+            // 5. Para patrón semanal, usar TODO el historial disponible (filtrado por medicamento)
+            val weeklyPatternHistory = if (selectedMedicationId != null) {
+                allHistory.filter { it.medicationId == selectedMedicationId }
+            } else {
+                allHistory
+            }
+
             // Filtrar historial si hay un medicamento seleccionado
             val filteredHistory = if (selectedMedicationId != null) {
                 allHistory.filter { it.medicationId == selectedMedicationId }
@@ -178,7 +206,8 @@ class StatisticsViewModel(
                 endDate = endDate,
                 history = filteredHistory,
                 medications = allMedications,
-                selectedMedicationId = selectedMedicationId
+                selectedMedicationId = selectedMedicationId,
+                weeklyPatternHistory = weeklyPatternHistory
             )
 
             // --- Última Toma ---
@@ -217,16 +246,16 @@ class StatisticsViewModel(
                 selectedMedicationId = selectedMedicationId
             )
 
-            // --- Top Medicamentos ---
-            val topMedicationsList = filteredHistory.groupBy { it.medicationId }
-                .mapValues { entry -> entry.value.sumOf { it.quantity } }
-                .toList()
-                .sortedByDescending { it.second }
-                .take(5)
-                .map { (id, count) ->
-                    val name = allMedications.find { it.id == id }?.name ?: "Desconocido"
-                    name to count
-                }
+             // --- Top Medicamentos ---
+             val topMedicationsList = filteredHistory.groupBy { it.medicationId }
+                 .mapValues { entry -> entry.value.sumOf { it.quantity } }
+                 .toList()
+                 .sortedByDescending { it.second }
+                 .take(5)
+                 .map { (id, count) ->
+                     val name = allMedications.find { it.id == id }?.name ?: "Desconocido"
+                     Triple(name, count, id) // name, count, id
+                 }
 
             val recentHistoryList = filteredHistory.take(5)
 
@@ -256,7 +285,15 @@ class StatisticsViewModel(
                     monthlyActivityData = trackingMetrics.monthlyActivityData,
                     loggingConsistency = trackingMetrics.loggingConsistency,
                     totalDaysWithRecords = trackingMetrics.totalDaysWithRecords,
-                    averageDosesPerActiveDay = String.format("%.1f", trackingMetrics.averageDosesPerActiveDay)
+                    averageDosesPerActiveDay = String.format("%.1f", trackingMetrics.averageDosesPerActiveDay),
+                    // 🔥 MÉTRICAS AVANZADAS 🔥
+                    adherenceRate = String.format("%.1f%%", trackingMetrics.adherenceRate),
+                    hourlyPattern = trackingMetrics.hourlyPattern,
+                     medicationEffectiveness = trackingMetrics.medicationEffectiveness.map { (name, rate) ->
+                         name to String.format("%.1f%%", rate)
+                     },
+                     streakData = trackingMetrics.streakData,
+                     predictionAccuracy = String.format("%.1f%%", trackingMetrics.predictionAccuracy)
                 )
             }
         }
@@ -267,9 +304,11 @@ class StatisticsViewModel(
         endDate: LocalDate,
         history: List<com.d4vram.pillmate2.model.HistoryEntry>,
         medications: List<com.d4vram.pillmate2.model.Medication>,
-        selectedMedicationId: String?
+        selectedMedicationId: String?,
+        weeklyPatternHistory: List<com.d4vram.pillmate2.model.HistoryEntry>
     ): TrackingMetrics {
         val totalDays = ChronoUnit.DAYS.between(startDate, endDate) + 1
+        val medsById = medications.associateBy { it.id }
 
         // Filtrar historial por medicamento si está seleccionado
         val relevantHistory = if (selectedMedicationId != null) {
@@ -278,14 +317,14 @@ class StatisticsViewModel(
             history
         }
 
-        // Cálculos básicos de seguimiento
+        // Cálculos básicos de seguimiento (conteo de tomas)
         val totalDosesLogged = relevantHistory.sumOf { it.quantity }
         val totalDaysWithRecords = relevantHistory.map { it.timestamp.toLocalDate() }.distinct().size
         val averageDailyDoses = if (totalDays > 0) totalDosesLogged.toFloat() / totalDays else 0f
         val averageDosesPerActiveDay = if (totalDaysWithRecords > 0) totalDosesLogged.toFloat() / totalDaysWithRecords else 0f
 
-        // Patrón semanal de actividad (dosis por día de la semana)
-        val weeklyActivityPattern = calculateWeeklyActivityPattern(relevantHistory)
+        // Patrón semanal de actividad (dosis por día de la semana) - USANDO TODO EL HISTORIAL
+        val weeklyActivityPattern = calculateWeeklyActivityPattern(weeklyPatternHistory)
 
         // Día más y menos activo
         val mostActiveDay = weeklyActivityPattern.maxByOrNull { it.value }?.key ?: ""
@@ -318,6 +357,34 @@ class StatisticsViewModel(
             else -> "Poco frecuente"
         }
 
+        // 🔥 CÁLCULOS DE MÉTRICAS AVANZADAS 🔥
+
+        // Tasa de adherencia (comparando con metas diarias)
+        val adherenceRate = calculateAdherenceRate(
+            startDate = startDate,
+            endDate = endDate,
+            history = relevantHistory,
+            medications = medications,
+            selectedMedicationId = selectedMedicationId
+        )
+
+        // Patrón horario de tomas
+        val hourlyPattern = calculateHourlyPattern(relevantHistory)
+
+        // Efectividad por medicamento
+        val medicationEffectiveness = calculateMedicationEffectiveness(
+            startDate = startDate,
+            endDate = endDate,
+            history = relevantHistory,
+            medications = medications
+        )
+
+        // Información de rachas
+        val streakData = calculateStreakInfo(relevantHistory, startDate, endDate)
+
+        // Precisión de predicciones (simplificada - basada en consistencia)
+        val predictionAccuracy = (totalDaysWithRecords.toFloat() / totalDays * 100).coerceAtMost(100f)
+
         return TrackingMetrics(
             totalDosesLogged = totalDosesLogged,
             averageDailyDoses = averageDailyDoses,
@@ -328,7 +395,132 @@ class StatisticsViewModel(
             monthlyActivityData = monthlyActivityData,
             loggingConsistency = loggingConsistency,
             totalDaysWithRecords = totalDaysWithRecords,
-            averageDosesPerActiveDay = averageDosesPerActiveDay
+            averageDosesPerActiveDay = averageDosesPerActiveDay,
+            adherenceRate = adherenceRate,
+            hourlyPattern = hourlyPattern,
+            medicationEffectiveness = medicationEffectiveness,
+            streakData = streakData,
+            predictionAccuracy = predictionAccuracy
+        )
+    }
+
+    private fun calculateAdherenceRate(
+        startDate: LocalDate,
+        endDate: LocalDate,
+        history: List<com.d4vram.pillmate2.model.HistoryEntry>,
+        medications: List<com.d4vram.pillmate2.model.Medication>,
+        selectedMedicationId: String?
+    ): Float {
+        val days = ChronoUnit.DAYS.between(startDate, endDate) + 1
+        val medsById = medications.associateBy { it.id }
+
+        var totalTaken = 0
+        var totalPrescribed = 0
+
+        (0 until days.toInt()).forEach { offset ->
+            val date = startDate.plusDays(offset.toLong())
+            val dayEntries = history.filter { it.timestamp.toLocalDate() == date }
+
+            if (selectedMedicationId != null) {
+                val med = medsById[selectedMedicationId]
+                if (med != null && !med.isPrn) {
+                    val taken = dayEntries.filter { it.medicationId == med.id }.sumOf { it.quantity }
+                    totalTaken += minOf(taken, med.dailyGoal)
+                    totalPrescribed += med.dailyGoal
+                }
+            } else {
+                medications.filter { !it.isPrn }.forEach { med ->
+                    val taken = dayEntries.filter { it.medicationId == med.id }.sumOf { it.quantity }
+                    totalTaken += minOf(taken, med.dailyGoal)
+                    totalPrescribed += med.dailyGoal
+                }
+            }
+        }
+
+        return if (totalPrescribed > 0) (totalTaken.toFloat() / totalPrescribed * 100) else 0f
+    }
+
+    private fun calculateHourlyPattern(history: List<com.d4vram.pillmate2.model.HistoryEntry>): Map<String, Int> {
+        return history.groupBy { entry ->
+            val hour = entry.timestamp.hour
+            when (hour) {
+                in 6..11 -> "Mañana"
+                in 12..17 -> "Tarde"
+                in 18..23 -> "Noche"
+                else -> "Madrugada"
+            }
+        }.mapValues { it.value.sumOf { entry -> entry.quantity } }
+    }
+
+    private fun calculateMedicationEffectiveness(
+        startDate: LocalDate,
+        endDate: LocalDate,
+        history: List<com.d4vram.pillmate2.model.HistoryEntry>,
+        medications: List<com.d4vram.pillmate2.model.Medication>
+    ): List<Pair<String, Float>> {
+        val medsById = medications.associateBy { it.id }
+        val days = ChronoUnit.DAYS.between(startDate, endDate) + 1
+
+        return medications.filter { !it.isPrn }.map { med ->
+            val medHistory = history.filter { it.medicationId == med.id }
+            val medDays = medHistory.map { it.timestamp.toLocalDate() }.distinct().size
+            val totalTaken = medHistory.sumOf { it.quantity }
+            val expectedTotal = med.dailyGoal * days.toInt()
+            val effectiveness = if (expectedTotal > 0) {
+                (minOf(totalTaken, expectedTotal).toFloat() / expectedTotal * 100)
+            } else 0f
+
+            med.name to effectiveness
+        }.sortedByDescending { it.second }
+    }
+
+    private fun calculateStreakInfo(
+        history: List<com.d4vram.pillmate2.model.HistoryEntry>,
+        startDate: LocalDate,
+        endDate: LocalDate
+    ): StreakInfo {
+        val sortedDates = history.map { it.timestamp.toLocalDate() }.distinct().sorted()
+
+        if (sortedDates.isEmpty()) {
+            return StreakInfo(currentStreak = 0, longestStreak = 0, streakStatus = "Sin registros")
+        }
+
+        // Calcular racha actual (desde la fecha más reciente hacia atrás)
+        var currentStreak = 0
+        var checkDate = LocalDate.now()
+
+        while (sortedDates.contains(checkDate)) {
+            currentStreak++
+            checkDate = checkDate.minusDays(1)
+        }
+
+        // Calcular racha más larga
+        var longestStreak = 0
+        var tempStreak = 1
+
+        for (i in 1 until sortedDates.size) {
+            if (sortedDates[i].minusDays(1) == sortedDates[i - 1]) {
+                tempStreak++
+            } else {
+                longestStreak = maxOf(longestStreak, tempStreak)
+                tempStreak = 1
+            }
+        }
+        longestStreak = maxOf(longestStreak, tempStreak)
+
+        val streakStatus = when {
+            currentStreak >= 30 -> "¡Racha increíble!"
+            currentStreak >= 14 -> "¡Excelente racha!"
+            currentStreak >= 7 -> "¡Buena racha!"
+            currentStreak >= 3 -> "Racha en progreso"
+            currentStreak > 0 -> "Comenzando racha"
+            else -> "Sin racha actual"
+        }
+
+        return StreakInfo(
+            currentStreak = currentStreak,
+            longestStreak = longestStreak,
+            streakStatus = streakStatus
         )
     }
 
@@ -378,8 +570,16 @@ class StatisticsViewModel(
 
         return dayNames.associateWith { dayName ->
             val dayIndex = dayNames.indexOf(dayName) + 1 // DayOfWeek.MONDAY = 1
-            history.filter { it.timestamp.dayOfWeek.value == dayIndex }
-                   .sumOf { it.quantity }
+            val dayEntries = history.filter { it.timestamp.dayOfWeek.value == dayIndex }
+
+            if (dayEntries.isNotEmpty()) {
+                // Calcular promedio diario para este día de la semana
+                val totalQuantity = dayEntries.sumOf { it.quantity }
+                val uniqueDays = dayEntries.map { it.timestamp.toLocalDate() }.distinct().size
+                (totalQuantity.toFloat() / uniqueDays).roundToInt()
+            } else {
+                0
+            }
         }
     }
 
@@ -432,7 +632,13 @@ class StatisticsViewModel(
         val monthlyActivityData: List<MonthlyActivityPoint>,
         val loggingConsistency: String,
         val totalDaysWithRecords: Int,
-        val averageDosesPerActiveDay: Float
+        val averageDosesPerActiveDay: Float,
+        // 🔥 MÉTRICAS AVANZADAS 🔥
+        val adherenceRate: Float,
+        val hourlyPattern: Map<String, Int>,
+        val medicationEffectiveness: List<Pair<String, Float>>,
+        val streakData: StreakInfo,
+        val predictionAccuracy: Float
     )
 
     data class MonthlyActivityPoint(

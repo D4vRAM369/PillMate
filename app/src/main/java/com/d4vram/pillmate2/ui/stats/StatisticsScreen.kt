@@ -1,7 +1,7 @@
-// kotlin
 package com.d4vram.pillmate2.ui.stats
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,22 +18,31 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -43,18 +52,31 @@ import com.d4vram.pillmate2.ui.components.StatCard
 import com.d4vram.pillmate2.ui.stats.viewmodel.FilterRange
 import com.d4vram.pillmate2.ui.stats.viewmodel.StatisticsViewModel
 import com.d4vram.pillmate2.ui.stats.viewmodel.StatisticsUiState
+import com.d4vram.pillmate2.utils.StatsExporter
+import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
+import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
+import com.patrykandpatrick.vico.compose.chart.Chart
+import com.patrykandpatrick.vico.compose.chart.column.columnChart
+import com.patrykandpatrick.vico.compose.style.ProvideChartStyle
+import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
+import com.patrykandpatrick.vico.core.entry.entryOf
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatisticsScreen(
     onNavigateBack: () -> Unit,
-    repository: MedicationRepository
+    repository: MedicationRepository,
+    navController: androidx.navigation.NavController? = null
 ) {
     val viewModel: StatisticsViewModel = viewModel(
         factory = StatisticsViewModel.provideFactory(repository)
     )
 
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     Scaffold(
         topBar = {
@@ -82,9 +104,41 @@ fun StatisticsScreen(
                             contentDescription = "Volver"
                         )
                     }
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                val exporter = StatsExporter(context)
+                                if (exporter.isExternalStorageWritable()) {
+                                    val file = exporter.exportSummaryToCSV(
+                                        totalDoses = uiState.totalDosesLogged,
+                                        averageDaily = uiState.averageDailyDoses,
+                                        adherenceRate = uiState.adherenceRate,
+                                        currentStreak = uiState.streakData.currentStreak,
+                                        medications = uiState.availableMedications,
+                                        history = uiState.recentHistory
+                                    )
+                                    if (file != null) {
+                                        snackbarHostState.showSnackbar("Datos exportados: ${file.name}")
+                                    } else {
+                                        snackbarHostState.showSnackbar("Error al exportar datos")
+                                    }
+                                } else {
+                                    snackbarHostState.showSnackbar("Almacenamiento no disponible")
+                                }
+                            }
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Exportar datos"
+                        )
+                    }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -121,7 +175,7 @@ fun StatisticsScreen(
             // 🔥 DASHBOARD AVANZADO CON KPIs DESTACADOS 🔥
 
             // KPI Principal - Total de dosis
-            androidx.compose.material3.ElevatedCard(
+            ElevatedCard(
                 modifier = Modifier.fillMaxWidth(),
                 shape = MaterialTheme.shapes.large,
                 colors = CardDefaults.elevatedCardColors(
@@ -208,40 +262,68 @@ fun StatisticsScreen(
                 )
             }
 
+            // 🔥 GRÁFICA DE ADHERENCIA 🔥
+            if (uiState.adherenceData.isNotEmpty()) {
+                AdherenceChart(data = uiState.adherenceData)
+            }
+
             // Historial Reciente
             if (uiState.recentHistory.isNotEmpty()) {
                 RecentHistoryList(history = uiState.recentHistory)
             }
-                // Resumen de Actividad
-                ActivitySummaryCard(
-                    totalDosesLogged = uiState.totalDosesLogged,
-                    averageDailyDoses = uiState.averageDailyDoses,
-                    mostActiveDay = uiState.mostActiveDay,
-                    leastActiveDay = uiState.leastActiveDay,
-                    loggingConsistency = uiState.loggingConsistency,
-                    totalDaysWithRecords = uiState.totalDaysWithRecords,
-                    totalPeriodDays = calculateTotalDays(uiState.dateRangeText)
-                )
 
-                Spacer(modifier = Modifier.height(16.dp))
+            // Resumen de Actividad
+            ActivitySummaryCard(
+                totalDosesLogged = uiState.totalDosesLogged,
+                averageDailyDoses = uiState.averageDailyDoses,
+                mostActiveDay = uiState.mostActiveDay,
+                leastActiveDay = uiState.leastActiveDay,
+                loggingConsistency = uiState.loggingConsistency,
+                totalDaysWithRecords = uiState.totalDaysWithRecords,
+                totalPeriodDays = calculateTotalDays(uiState.dateRangeText)
+            )
 
-                if (uiState.weeklyActivityPattern.isNotEmpty()) {
-                    WeeklyActivityChart(weeklyActivity = uiState.weeklyActivityPattern)
-                }
+            Spacer(modifier = Modifier.height(16.dp))
 
+            if (uiState.weeklyActivityPattern.isNotEmpty()) {
+                WeeklyActivityChart(weeklyActivity = uiState.weeklyActivityPattern)
+            }
+
+            // Top Medicamentos
+            if (uiState.topMedications.isNotEmpty()) {
+                TopMedicationsList(medications = uiState.topMedications)
             }
         }
     }
+}
 
 @Composable
 fun WeeklyActivityChart(weeklyActivity: Map<String, Int>) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = "Actividad Semanal",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 4.dp)
+    val days = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
+    val chartEntryModelProducer = remember {
+        ChartEntryModelProducer(
+            days.mapIndexed { index, day ->
+                val activity = weeklyActivity[day] ?: 0
+                entryOf(index.toFloat(), activity.toFloat())
+            }
         )
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column {
+            Text(
+                text = "📊 Patrón Semanal Promedio",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+            Text(
+                text = "Promedio diario por día de la semana (todo el historial)",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+        }
 
         androidx.compose.material3.ElevatedCard(
             modifier = Modifier.fillMaxWidth(),
@@ -251,57 +333,26 @@ fun WeeklyActivityChart(weeklyActivity: Map<String, Int>) {
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                val days = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
-                val maxActivity = weeklyActivity.values.maxOrNull() ?: 1
-
-                days.forEach { day ->
-                    val activity = weeklyActivity[day] ?: 0
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 6.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = day,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.width(40.dp)
-                        )
-
-                        androidx.compose.foundation.layout.Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(10.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(5.dp)
-                                )
-                        ) {
-                            androidx.compose.foundation.layout.Box(
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .fillMaxWidth(if (maxActivity > 0) activity.toFloat() / maxActivity else 0f)
-                                    .background(
-                                        color = MaterialTheme.colorScheme.primary,
-                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(5.dp)
-                                    )
-                            )
+            ProvideChartStyle {
+                Chart(
+                    chart = columnChart(),
+                    chartModelProducer = chartEntryModelProducer,
+                    startAxis = rememberStartAxis(),
+                    bottomAxis = rememberBottomAxis(
+                        valueFormatter = { value, _ ->
+                            val index = value.toInt()
+                            if (index >= 0 && index < days.size) {
+                                days[index]
+                            } else {
+                                ""
+                            }
                         }
-
-                        Text(
-                            text = activity.toString(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.width(30.dp),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.End
-                        )
-                    }
-                }
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .padding(16.dp)
+                )
             }
         }
     }
@@ -491,7 +542,10 @@ private fun calculateTotalDays(dateRangeText: String): Int {
 }
 
 @Composable
-fun TopMedicationsList(medications: List<Pair<String, Int>>) {
+fun TopMedicationsList(
+    medications: List<Triple<String, Int, String>>,
+    onMedicationClick: ((String) -> Unit)? = null
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = "Más Tomados",
@@ -509,11 +563,16 @@ fun TopMedicationsList(medications: List<Pair<String, Int>>) {
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                medications.forEachIndexed { index, (name, count) ->
+                medications.forEachIndexed { index, (name, count, id) ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 8.dp)
+                            .let { modifier ->
+                                if (onMedicationClick != null) {
+                                    modifier.clickable { onMedicationClick(id) }
+                                } else modifier
+                            },
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -531,11 +590,22 @@ fun TopMedicationsList(medications: List<Pair<String, Int>>) {
                                 fontWeight = FontWeight.Medium
                             )
                         }
-                        Text(
-                            text = "$count tomas",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "$count tomas",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (onMedicationClick != null) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                androidx.compose.material3.Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = "Ver detalles",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
                     }
                     if (index < medications.lastIndex) {
                         androidx.compose.material3.HorizontalDivider(
