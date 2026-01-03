@@ -4,6 +4,7 @@ package com.d4vram.pillmate2.ui.screens
 
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -72,6 +73,17 @@ fun AddEditMedicationScreen(
     var photoPath by remember { mutableStateOf<String?>(null) }
     var usePhotoInstead by remember { mutableStateOf(false) }
     var isProcessingImage by remember { mutableStateOf(false) }
+    
+    // 🔗 Estados para combinar/vincular medicamentos
+    var otherMedications by remember { mutableStateOf<List<Medication>>(emptyList()) }
+    var parentMedicationId by remember { mutableStateOf<String?>(null) }
+    var expandedCombine by remember { mutableStateOf(false) }
+
+    LaunchedEffect(medicationId) {
+        val allMeds = repository.getMedicationsSnapshot()
+        // No podemos vincular a medicamentos que ya son hijos de otros
+        otherMedications = allMeds.filter { it.id != medicationId && it.parentMedicationId == null }
+    }
 
 
     LaunchedEffect(medicationId) {
@@ -148,7 +160,8 @@ fun AddEditMedicationScreen(
                             scheduleTime = baseMedication.scheduleTime,
                             scheduleDays = baseMedication.scheduleDays,
                             photoPath = photoPath, // 📸 Guardar ruta de foto
-                            usePhotoInstead = usePhotoInstead // 🖼️ Guardar preferencia de visualización
+                            usePhotoInstead = usePhotoInstead, // 🖼️ Guardar preferencia de visualización
+                            parentMedicationId = parentMedicationId // 🔗 Guardar vínculo
                         )
 
                         if (isEditing) {
@@ -312,6 +325,87 @@ fun AddEditMedicationScreen(
                 onUsePhotoToggled = { usePhotoInstead = it },
                 medicationId = medicationId ?: UUID.randomUUID().toString()
             )
+
+            LaunchedEffect(medicationId) {
+                medicationId?.let { id ->
+                    val med = repository.getMedicationById(id)
+                    parentMedicationId = med?.parentMedicationId
+                }
+            }
+
+            SectionCard(
+                title = "Combinar medicamento",
+                subtitle = "Vincular a otro para agrupar en estadísticas (ej: distintas dosis de Ibuprofeno)"
+            ) {
+                val selectedParent = otherMedications.find { it.id == parentMedicationId }
+                
+                OutlinedCard(
+                    onClick = { expandedCombine = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = if (selectedParent != null) "Viculado a: ${selectedParent.name}" else "Sin vincular (Independiente)",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null)
+                    }
+                }
+
+                if (expandedCombine) {
+                    AlertDialog(
+                        onDismissRequest = { expandedCombine = false },
+                        title = { Text("Selecciona medicamento principal") },
+                        text = {
+                            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                                // Opción para desvincular
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { 
+                                            parentMedicationId = null
+                                            expandedCombine = false 
+                                        }
+                                        .padding(12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    RadioButton(selected = parentMedicationId == null, onClick = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("No vincular (Mantener separado)")
+                                }
+                                
+                                otherMedications.forEach { med ->
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable { 
+                                                parentMedicationId = med.id
+                                                expandedCombine = false 
+                                            }
+                                            .padding(12.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(selected = parentMedicationId == med.id, onClick = null)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text("${med.name} (${med.dose})")
+                                    }
+                                }
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = { expandedCombine = false }) {
+                                Text("Cerrar")
+                            }
+                        }
+                    )
+                }
+            }
 
             SectionCard(
                 title = "Planificación",

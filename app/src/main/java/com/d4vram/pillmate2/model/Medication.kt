@@ -23,5 +23,6 @@ data class Medication(
     val createdAt: Long = 0L, // Timestamp de creación en millis
     val photoPath: String? = null, // 📸 Ruta de la foto del medicamento (opcional)
     val usePhotoInstead: Boolean = false, // 🖼️ Usar foto en lugar de emoji+color
-    val lastTakenTimestamp: Long? = null // 🕒 Timestamp real de la última toma (para ordenar)
+    val lastTakenTimestamp: Long? = null, // 🕒 Timestamp real de la última toma (para ordenar)
+    val parentMedicationId: String? = null // 🔗 ID del medicamento "padre" para agrupar en estadísticas
 )

@@ -63,8 +63,6 @@ class StatsExporter(private val context: Context) {
     fun exportSummaryToCSV(
         totalDoses: Int,
         averageDaily: String,
-        adherenceRate: String,
-        currentStreak: Int,
         medications: List<Medication>,
         history: List<HistoryEntry>,
         fileName: String = "pillmate_summary_${System.currentTimeMillis()}.csv"
@@ -74,20 +72,18 @@ class StatsExporter(private val context: Context) {
                 // Encabezados
                 appendLine("Métrica,Valor")
 
-                // Estadísticas generales
-                appendLine("Total de Dosis,$totalDoses")
-                appendLine("Promedio Diario,$averageDaily")
-                appendLine("Tasa de Adherencia,$adherenceRate")
-                appendLine("Racha Actual,$currentStreak días")
-                appendLine("Total de Medicamentos,${medications.size}")
-                appendLine("Total de Registros,${history.size}")
+                // Estadísticas generales (Foco en seguimiento)
+                appendLine("Total de Dosis Registradas,$totalDoses")
+                appendLine("Promedio Diario de Dosis,$averageDaily")
+                appendLine("Total de Medicamentos Activos,${medications.size}")
+                appendLine("Total de Eventos Registrados,${history.size}")
 
                 // Estadísticas por medicamento
                 appendLine("")
-                appendLine("Medicamento,Dosis Totales,Meta Diaria,Tipo")
+                appendLine("Medicamento,Dosis Totales Registradas,Tipo")
                 medications.forEach { med ->
                     val totalDosesForMed = history.filter { it.medicationId == med.id }.sumOf { it.quantity }
-                    appendLine("${med.name},$totalDosesForMed,${med.dailyGoal},${if (med.isPrn) "Según necesidad" else "Regular"}")
+                    appendLine("${med.name},$totalDosesForMed,${if (med.isPrn) "Según necesidad" else "Regular"}")
                 }
             }
 

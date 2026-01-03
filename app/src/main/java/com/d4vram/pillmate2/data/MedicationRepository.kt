@@ -197,7 +197,8 @@ class MedicationRepository(
                 dailyGoal = medication.dailyGoal,
                 isPrn = medication.isPrn,
                 photoPath = medication.photoPath,
-                usePhotoInstead = medication.usePhotoInstead
+                usePhotoInstead = medication.usePhotoInstead,
+                parentMedicationId = medication.parentMedicationId
             )
             medicationDao.upsertMedication(updated)
         }
@@ -266,6 +267,19 @@ class MedicationRepository(
                 timestampIso = newDateTime.toString()
             )
         }
+    }
+
+    fun getMedicationFamily(medicationId: String): List<Medication> {
+        val allMedications = medications.value
+        val medication = allMedications.find { it.id == medicationId } ?: return emptyList()
+        
+        val parentId = medication.parentMedicationId ?: medication.id
+        
+        return allMedications.filter { it.id == parentId || it.parentMedicationId == parentId }
+            .sortedBy { 
+                // Intentar ordenar por dosis numérica si es posible
+                it.dose.filter { c -> c.isDigit() || c == '.' }.toFloatOrNull() ?: 0f
+            }
     }
 
     suspend fun getMedicationsSnapshot(): List<Medication> {
@@ -368,7 +382,7 @@ class MedicationRepository(
         )
     }
 
-    fun getAdherenceLast7Days(medicationId: String? = null, weekOffset: Int = 0): Flow<List<com.d4vram.pillmate2.ui.stats.AdherenceDataPoint>> {
+    fun getActivityPatternLast7Days(medicationId: String? = null, weekOffset: Int = 0): Flow<List<com.d4vram.pillmate2.ui.stats.ActivityDataPoint>> {
         return combine(historyEntries, medicationsFlow) { history, medications ->
             val baseDate = LocalDate.now().minusWeeks(weekOffset.toLong())
             val last7Days = (0..6).map { baseDate.minusDays(it.toLong()) }.reversed()
@@ -423,13 +437,12 @@ class MedicationRepository(
                     unit = "tomas"
                 }
                 
-                com.d4vram.pillmate2.ui.stats.AdherenceDataPoint(
+                com.d4vram.pillmate2.ui.stats.ActivityDataPoint(
                     dayName = dayName,
-                    percentage = percentage.coerceIn(0f, 100f),
-                    taken = takenCount,
-                    goal = totalGoal,
                     totalValue = totalValue,
-                    unit = unit
+                    unit = unit,
+                    fullDate = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
+                    hasRecords = takenCount > 0
                 )
             }
         }
@@ -507,7 +520,8 @@ class MedicationRepository(
         scheduleDays = scheduleDays.toScheduleDaysList(),
         createdAt = createdAt,
         photoPath = photoPath,
-        usePhotoInstead = usePhotoInstead
+        usePhotoInstead = usePhotoInstead,
+        parentMedicationId = parentMedicationId
     )
 
     private fun Medication.toEntity(): MedicationEntity = MedicationEntity(
@@ -526,7 +540,8 @@ class MedicationRepository(
         scheduleDays = scheduleDays.toScheduleDaysString(),
         createdAt = createdAt,
         photoPath = photoPath,
-        usePhotoInstead = usePhotoInstead
+        usePhotoInstead = usePhotoInstead,
+        parentMedicationId = parentMedicationId
     )
 
     private fun HistoryEntryEntity.toDomain(

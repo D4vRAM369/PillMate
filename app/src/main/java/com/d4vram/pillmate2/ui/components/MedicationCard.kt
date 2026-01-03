@@ -248,11 +248,13 @@ fun MedicationCard(
     }
 
     if (showQuantityDialog) {
+        val family = remember(medication.id) { repository.getMedicationFamily(medication.id) }
         TakeMedicationDialog(
             medication = medication,
+            family = family,
             onDismiss = { showQuantityDialog = false },
-            onConfirm = { quantity ->
-                onTakeMedication(medication.id, quantity)
+            onConfirm = { finalId, quantity ->
+                onTakeMedication(finalId, quantity)
                 showQuantityDialog = false
             }
         )
@@ -380,87 +382,163 @@ private fun PillIcon(
 @Composable
 private fun TakeMedicationDialog(
     medication: Medication,
+    family: List<Medication>,
     onDismiss: () -> Unit,
-    onConfirm: (Int) -> Unit
+    onConfirm: (String, Int) -> Unit
 ) {
+    var selectedMedication by remember { mutableStateOf(medication) }
     var quantity by remember { mutableStateOf(1) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
+        tonalElevation = 6.dp,
+        containerColor = MaterialTheme.colorScheme.surface,
         title = {
-            Text(
-                text = "Registrar toma",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-            )
+            Column {
+                Text(
+                    text = "Registrar toma",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "¿Qué dosis de ${medication.name} vas a registrar?",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text(
-                    text = "¿Cuántas unidades de ${medication.name}?",
-                    style = MaterialTheme.typography.bodyMedium
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                // Selector de dosis (si hay familia)
+                if (family.size > 1) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Selecciona la dosis:",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            family.forEach { med ->
+                                val isSelected = selectedMedication.id == med.id
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = { selectedMedication = med },
+                                    label = { Text(med.dose) },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = med.color.copy(alpha = 0.2f),
+                                        selectedLabelColor = med.color,
+                                        selectedLeadingIconColor = med.color
+                                    ),
+                                    border = FilterChipDefaults.filterChipBorder(
+                                        enabled = true,
+                                        selected = isSelected,
+                                        borderColor = if(isSelected) med.color else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+                                        selectedBorderColor = med.color,
+                                        borderWidth = 1.dp,
+                                        selectedBorderWidth = 2.dp
+                                    )
+                                )
+                            }
+                        }
+                    }
+                    
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // Selector de cantidad
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            RoundedCornerShape(16.dp)
+                        )
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = medication.dose,
-                        style = MaterialTheme.typography.bodySmall,
+                        text = "Cantidad de unidades",
+                        style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         FilledIconButton(
                             onClick = { if (quantity > 1) quantity-- },
+                            modifier = Modifier.size(48.dp),
                             colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         ) {
-                            Text("-")
+                            Text("-", style = MaterialTheme.typography.headlineSmall)
                         }
 
                         Text(
                             text = quantity.toString(),
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.onSurface
                         )
 
                         FilledIconButton(
                             onClick = { quantity = (quantity + 1).coerceAtMost(999) },
+                            modifier = Modifier.size(48.dp),
                             colors = IconButtonDefaults.filledIconButtonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
+                                containerColor = selectedMedication.color.copy(alpha = 0.8f),
+                                contentColor = Color.White
                             )
                         ) {
-                            Text(
-                                text = "+",
-                                color = MaterialTheme.colorScheme.onPrimary
-                            )
+                            Text("+", style = MaterialTheme.typography.headlineSmall)
                         }
                     }
-                }
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf(1, 2, 5).forEach { quick ->
-                        AssistChip(
-                            onClick = { quantity = (quantity + quick).coerceAtMost(999) },
-                            label = { Text("+${quick}") }
-                        )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.padding(top = 8.dp)
+                    ) {
+                        listOf(1, 2, 5).forEach { quick ->
+                            SuggestionChip(
+                                onClick = { quantity = (quantity + quick).coerceAtMost(999) },
+                                label = { Text("+${quick}") },
+                                colors = SuggestionChipDefaults.suggestionChipColors(
+                                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            )
+                        }
                     }
                 }
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(quantity.coerceAtLeast(1)) }) {
-                Text("Registrar")
+            Button(
+                onClick = { onConfirm(selectedMedication.id, quantity.coerceAtLeast(1)) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = selectedMedication.color,
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp)
+            ) {
+                Text("Registrar", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+            TextButton(
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     )

@@ -10,7 +10,7 @@ import java.util.Locale
 
 @Database(
     entities = [MedicationEntity::class, HistoryEntryEntity::class, VoiceNoteEntity::class],
-    version = 12,
+    version = 13,
     exportSchema = false
 )
 abstract class PillMateDatabase : RoomDatabase() {
@@ -38,7 +38,8 @@ abstract class PillMateDatabase : RoomDatabase() {
                     MIGRATION_8_9,
                     MIGRATION_9_10,
                     MIGRATION_10_11,
-                    MIGRATION_11_12
+                    MIGRATION_11_12,
+                    MIGRATION_12_13
                 ).build().also { INSTANCE = it }
             }
         }
@@ -119,6 +120,13 @@ abstract class PillMateDatabase : RoomDatabase() {
                 // 📸 Añadir campos para fotografías de medicamentos
                 database.execSQL("ALTER TABLE medications ADD COLUMN photoPath TEXT DEFAULT NULL")
                 database.execSQL("ALTER TABLE medications ADD COLUMN usePhotoInstead INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        private val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 🔗 Añadir campo para vincular medicamentos (padre/hijo)
+                database.execSQL("ALTER TABLE medications ADD COLUMN parentMedicationId TEXT DEFAULT NULL")
             }
         }
 

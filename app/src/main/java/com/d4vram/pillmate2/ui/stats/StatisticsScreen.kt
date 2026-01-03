@@ -53,6 +53,7 @@ import com.d4vram.pillmate2.ui.stats.viewmodel.FilterRange
 import com.d4vram.pillmate2.ui.stats.viewmodel.StatisticsViewModel
 import com.d4vram.pillmate2.ui.stats.viewmodel.StatisticsUiState
 import com.d4vram.pillmate2.utils.StatsExporter
+import com.d4vram.pillmate2.ui.stats.ActivityPatternChart
 import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
 import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
 import com.patrykandpatrick.vico.compose.chart.Chart
@@ -114,8 +115,6 @@ fun StatisticsScreen(
                                     val file = exporter.exportSummaryToCSV(
                                         totalDoses = uiState.totalDosesLogged,
                                         averageDaily = uiState.averageDailyDoses,
-                                        adherenceRate = uiState.adherenceRate,
-                                        currentStreak = uiState.streakData.currentStreak,
                                         medications = uiState.availableMedications,
                                         history = uiState.recentHistory
                                     )
@@ -278,15 +277,20 @@ fun StatisticsScreen(
                     modifier = Modifier.weight(1f)
                 )
                 StatCard(
-                    number = uiState.mostActiveDay,
-                    label = "Día Más Activo",
+                    number = uiState.timeSinceLastRecord,
+                    label = "Último Registro",
                     modifier = Modifier.weight(1f)
                 )
             }
 
-            // 🔥 GRÁFICA DE ADHERENCIA 🔥
-            if (uiState.adherenceData.isNotEmpty()) {
-                AdherenceChart(data = uiState.adherenceData)
+            // 🔥 NARRATIVA HUMANA 🔥
+            if (uiState.narrativeSummary.isNotEmpty()) {
+                NarrativeSummaryCard(summary = uiState.narrativeSummary)
+            }
+
+            // 🔥 GRÁFICA DE PATRONES DE ACTIVIDAD 🔥
+            if (uiState.activityData.isNotEmpty()) {
+                ActivityPatternChart(data = uiState.activityData)
             }
 
             // Historial Reciente
@@ -391,6 +395,35 @@ fun HourlyDistributionChart(hourlyPattern: Map<String, Int>) {
                         .padding(16.dp)
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun NarrativeSummaryCard(summary: String) {
+    androidx.compose.material3.ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "💬",
+                style = MaterialTheme.typography.headlineSmall
+            )
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }
