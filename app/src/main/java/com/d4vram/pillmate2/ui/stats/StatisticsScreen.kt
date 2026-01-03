@@ -120,7 +120,29 @@ fun StatisticsScreen(
                                         history = uiState.recentHistory
                                     )
                                     if (file != null) {
-                                        snackbarHostState.showSnackbar("Datos exportados: ${file.name}")
+                                        try {
+                                            val uri = androidx.core.content.FileProvider.getUriForFile(
+                                                context,
+                                                "${context.packageName}.provider",
+                                                file
+                                            )
+                                            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                                type = "text/csv"
+                                                putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                putExtra(android.content.Intent.EXTRA_SUBJECT, "Estadísticas PillMate")
+                                                putExtra(
+                                                    android.content.Intent.EXTRA_TEXT,
+                                                    "Adjunto reporte de estadísticas de PillMate."
+                                                )
+                                            }
+                                            context.startActivity(
+                                                android.content.Intent.createChooser(intent, "Compartir reporte")
+                                            )
+                                        } catch (e: Exception) {
+                                            snackbarHostState.showSnackbar("Error al compartir: ${e.message}")
+                                            e.printStackTrace()
+                                        }
                                     } else {
                                         snackbarHostState.showSnackbar("Error al exportar datos")
                                     }
@@ -285,8 +307,8 @@ fun StatisticsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            if (uiState.weeklyActivityPattern.isNotEmpty()) {
-                WeeklyActivityChart(weeklyActivity = uiState.weeklyActivityPattern)
+            if (uiState.hourlyPattern.isNotEmpty()) {
+                HourlyDistributionChart(hourlyPattern = uiState.hourlyPattern)
             }
 
             // Top Medicamentos
@@ -298,27 +320,27 @@ fun StatisticsScreen(
 }
 
 @Composable
-fun WeeklyActivityChart(weeklyActivity: Map<String, Int>) {
-    val days = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
-    val chartEntryModelProducer = remember {
-        ChartEntryModelProducer(
-            days.mapIndexed { index, day ->
-                val activity = weeklyActivity[day] ?: 0
-                entryOf(index.toFloat(), activity.toFloat())
-            }
-        )
+fun HourlyDistributionChart(hourlyPattern: Map<String, Int>) {
+    val periods = listOf("Madrugada", "Mañana", "Tarde", "Noche")
+    // Mapear los datos al orden cronológico correcto y asegurar que existan todas las barras
+    val chartEntryModelProducer = remember(hourlyPattern) {
+        val entries = periods.mapIndexed { index, period ->
+            val count = hourlyPattern[period] ?: 0
+            entryOf(index.toFloat(), count.toFloat())
+        }
+        ChartEntryModelProducer(entries)
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Column {
             Text(
-                text = "📊 Patrón Semanal Promedio",
+                text = "⏰ Distribución Horaria",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(horizontal = 4.dp)
             )
             Text(
-                text = "Promedio diario por día de la semana (todo el historial)",
+                text = "Momentos del día con mayor actividad",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 4.dp)
@@ -335,14 +357,29 @@ fun WeeklyActivityChart(weeklyActivity: Map<String, Int>) {
         ) {
             ProvideChartStyle {
                 Chart(
-                    chart = columnChart(),
+                    chart = columnChart(
+                        columns = listOf(
+                            com.patrykandpatrick.vico.compose.component.lineComponent(
+                                color = MaterialTheme.colorScheme.tertiary,
+                                thickness = 16.dp,
+                                shape = com.patrykandpatrick.vico.core.component.shape.Shapes.roundedCornerShape(
+                                    topLeftPercent = 20,
+                                    topRightPercent = 20
+                                )
+                            )
+                        )
+                    ),
                     chartModelProducer = chartEntryModelProducer,
-                    startAxis = rememberStartAxis(),
+                    startAxis = rememberStartAxis(
+                        valueFormatter = { value, _ ->
+                            value.toInt().toString()
+                        }
+                    ),
                     bottomAxis = rememberBottomAxis(
                         valueFormatter = { value, _ ->
                             val index = value.toInt()
-                            if (index >= 0 && index < days.size) {
-                                days[index]
+                            if (index >= 0 && index < periods.size) {
+                                periods[index]
                             } else {
                                 ""
                             }
