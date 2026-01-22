@@ -1,8 +1,8 @@
 package com.d4vram.pillmate2.ui.stats
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -27,7 +29,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -41,6 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -48,19 +50,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d4vram.pillmate2.data.MedicationRepository
-import com.d4vram.pillmate2.ui.components.StatCard
 import com.d4vram.pillmate2.ui.stats.viewmodel.FilterRange
+import com.d4vram.pillmate2.ui.stats.viewmodel.HistoryEntryWithUnit
 import com.d4vram.pillmate2.ui.stats.viewmodel.StatisticsViewModel
-import com.d4vram.pillmate2.ui.stats.viewmodel.StatisticsUiState
 import com.d4vram.pillmate2.utils.StatsExporter
-import com.d4vram.pillmate2.ui.stats.ActivityPatternChart
-import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
-import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
-import com.patrykandpatrick.vico.compose.chart.Chart
-import com.patrykandpatrick.vico.compose.chart.column.columnChart
-import com.patrykandpatrick.vico.compose.style.ProvideChartStyle
-import com.patrykandpatrick.vico.core.entry.ChartEntryModelProducer
-import com.patrykandpatrick.vico.core.entry.entryOf
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,20 +76,11 @@ fun StatisticsScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Column {
-                        Text(
-                            text = "Estadísticas",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        if (uiState.dateRangeText.isNotEmpty()) {
-                            Text(
-                                text = uiState.dateRangeText,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    Text(
+                        text = "Estadísticas",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold
+                    )
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
@@ -130,17 +114,12 @@ fun StatisticsScreen(
                                                 putExtra(android.content.Intent.EXTRA_STREAM, uri)
                                                 addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                                 putExtra(android.content.Intent.EXTRA_SUBJECT, "Estadísticas PillMate")
-                                                putExtra(
-                                                    android.content.Intent.EXTRA_TEXT,
-                                                    "Adjunto reporte de estadísticas de PillMate."
-                                                )
                                             }
                                             context.startActivity(
                                                 android.content.Intent.createChooser(intent, "Compartir reporte")
                                             )
                                         } catch (e: Exception) {
                                             snackbarHostState.showSnackbar("Error al compartir: ${e.message}")
-                                            e.printStackTrace()
                                         }
                                     } else {
                                         snackbarHostState.showSnackbar("Error al exportar datos")
@@ -167,14 +146,15 @@ fun StatisticsScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            // Filtros de tiempo
             FilterButtons(
                 activeFilter = uiState.activeFilter,
                 onFilterSelected = { range -> viewModel.setFilter(range) }
             )
 
+            // Selector de medicamento
             if (uiState.availableMedications.isNotEmpty()) {
                 MedicationFilterDropdown(
                     medications = uiState.availableMedications,
@@ -183,386 +163,194 @@ fun StatisticsScreen(
                 )
             }
 
-            if (uiState.activeFilter != FilterRange.ALL_TIME) {
-                DateNavigation(
-                    dateRangeText = uiState.dateRangeText,
-                    onPrevious = { viewModel.previousPeriod() },
-                    onNext = { viewModel.nextPeriod() }
+            // KPIs principales
+            MainKpiSection(
+                totalValue = uiState.totalInUnit,
+                displayUnit = uiState.displayUnit,
+                averageValue = uiState.averageInUnit,
+                lastRecord = uiState.timeSinceLastRecord
+            )
+
+            // Gráfica de actividad horizontal
+            if (uiState.activityData.isNotEmpty()) {
+                HorizontalActivityChart(
+                    data = uiState.activityData,
+                    accentColor = uiState.selectedMedicationColor ?: MaterialTheme.colorScheme.primary
                 )
+
+                // Navegación de fechas
+                if (uiState.activeFilter != FilterRange.ALL_TIME) {
+                    DateNavigation(
+                        dateRangeText = uiState.dateRangeText,
+                        onPrevious = { viewModel.previousPeriod() },
+                        onNext = { viewModel.nextPeriod() }
+                    )
+                }
+            }
+
+            // Distribución horaria (6 franjas)
+            if (uiState.hourlyPattern.isNotEmpty() && uiState.hourlyPattern.values.any { it > 0 }) {
+                HourlyDistributionSection(
+                    hourlyPattern = uiState.hourlyPattern,
+                    accentColor = uiState.selectedMedicationColor ?: MaterialTheme.colorScheme.primary
+                )
+            }
+
+            // Historial reciente
+            if (uiState.recentHistoryWithUnits.isNotEmpty()) {
+                RecentHistorySection(
+                    history = uiState.recentHistoryWithUnits
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+@Composable
+fun MainKpiSection(
+    totalValue: String,
+    displayUnit: String,
+    averageValue: String,
+    lastRecord: String
+) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column {
+                    Text(
+                        text = totalValue,
+                        style = MaterialTheme.typography.displayMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = displayUnit,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                if (lastRecord.isNotEmpty()) {
+                    Text(
+                        text = "Último: $lastRecord",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 🔥 DASHBOARD AVANZADO CON KPIs DESTACADOS 🔥
-
-            // KPI Principal - Total de dosis
-            ElevatedCard(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.large,
-                colors = CardDefaults.elevatedCardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(20.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Total Registrado",
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            text = uiState.totalDosesLogged.toString(),
-                            style = MaterialTheme.typography.displayMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            text = "dosis en el período",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                        )
-                    }
-                    androidx.compose.foundation.layout.Box(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.primary,
-                                shape = androidx.compose.foundation.shape.CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "📊",
-                            style = MaterialTheme.typography.headlineMedium
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Grid de métricas principales
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                StatCard(
-                    number = uiState.averageDailyDoses,
-                    label = "Promedio Diario",
-                    modifier = Modifier.weight(1f)
-                )
-                StatCard(
-                    number = uiState.totalDaysWithRecords.toString(),
-                    label = "Días con Registros",
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                StatCard(
-                    number = uiState.loggingConsistency,
-                    label = "Consistencia",
-                    modifier = Modifier.weight(1f)
-                )
-                StatCard(
-                    number = uiState.timeSinceLastRecord,
-                    label = "Último Registro",
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            // 🔥 NARRATIVA HUMANA 🔥
-            if (uiState.narrativeSummary.isNotEmpty()) {
-                NarrativeSummaryCard(summary = uiState.narrativeSummary)
-            }
-
-            // 🔥 GRÁFICA DE PATRONES DE ACTIVIDAD 🔥
-            if (uiState.activityData.isNotEmpty()) {
-                ActivityPatternChart(data = uiState.activityData)
-            }
-
-            // Historial Reciente
-            if (uiState.recentHistory.isNotEmpty()) {
-                RecentHistoryList(history = uiState.recentHistory)
-            }
-
-            // Resumen de Actividad
-            ActivitySummaryCard(
-                totalDosesLogged = uiState.totalDosesLogged,
-                averageDailyDoses = uiState.averageDailyDoses,
-                mostActiveDay = uiState.mostActiveDay,
-                leastActiveDay = uiState.leastActiveDay,
-                loggingConsistency = uiState.loggingConsistency,
-                totalDaysWithRecords = uiState.totalDaysWithRecords,
-                totalPeriodDays = calculateTotalDays(uiState.dateRangeText)
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            if (uiState.hourlyPattern.isNotEmpty()) {
-                HourlyDistributionChart(hourlyPattern = uiState.hourlyPattern)
-            }
-
-            // Top Medicamentos
-            if (uiState.topMedications.isNotEmpty()) {
-                TopMedicationsList(medications = uiState.topMedications)
-            }
-        }
-    }
-}
-
-@Composable
-fun HourlyDistributionChart(hourlyPattern: Map<String, Int>) {
-    val periods = listOf("Madrugada", "Mañana", "Tarde", "Noche")
-    // Mapear los datos al orden cronológico correcto y asegurar que existan todas las barras
-    val chartEntryModelProducer = remember(hourlyPattern) {
-        val entries = periods.mapIndexed { index, period ->
-            val count = hourlyPattern[period] ?: 0
-            entryOf(index.toFloat(), count.toFloat())
-        }
-        ChartEntryModelProducer(entries)
-    }
-
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Column {
             Text(
-                text = "⏰ Distribución Horaria",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(horizontal = 4.dp)
-            )
-            Text(
-                text = "Momentos del día con mayor actividad",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 4.dp)
-            )
-        }
-
-        androidx.compose.material3.ElevatedCard(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            ProvideChartStyle {
-                Chart(
-                    chart = columnChart(
-                        columns = listOf(
-                            com.patrykandpatrick.vico.compose.component.lineComponent(
-                                color = MaterialTheme.colorScheme.tertiary,
-                                thickness = 16.dp,
-                                shape = com.patrykandpatrick.vico.core.component.shape.Shapes.roundedCornerShape(
-                                    topLeftPercent = 20,
-                                    topRightPercent = 20
-                                )
-                            )
-                        )
-                    ),
-                    chartModelProducer = chartEntryModelProducer,
-                    startAxis = rememberStartAxis(
-                        valueFormatter = { value, _ ->
-                            value.toInt().toString()
-                        }
-                    ),
-                    bottomAxis = rememberBottomAxis(
-                        valueFormatter = { value, _ ->
-                            val index = value.toInt()
-                            if (index >= 0 && index < periods.size) {
-                                periods[index]
-                            } else {
-                                ""
-                            }
-                        }
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(200.dp)
-                        .padding(16.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun NarrativeSummaryCard(summary: String) {
-    androidx.compose.material3.ElevatedCard(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "💬",
-                style = MaterialTheme.typography.headlineSmall
-            )
-            Text(
-                text = summary,
+                text = "$averageValue $displayUnit/día en promedio",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                fontWeight = FontWeight.Medium
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
 }
 
 @Composable
-fun ActivitySummaryCard(
-    totalDosesLogged: Int,
-    averageDailyDoses: String,
-    mostActiveDay: String,
-    leastActiveDay: String,
-    loggingConsistency: String,
-    totalDaysWithRecords: Int,
-    totalPeriodDays: Int
+fun HorizontalActivityChart(
+    data: List<ActivityDataPoint>,
+    accentColor: Color
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = "Resumen de Actividad",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 4.dp)
-        )
+    val maxValue = data.maxOfOrNull { it.totalValue } ?: 1f
+    val today = data.lastOrNull()
 
-        androidx.compose.material3.ElevatedCard(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                // 🔥 Indicador visual de actividad total 🔥
+            data.forEach { point ->
+                val isToday = point == today
+                val barColor = if (isToday) {
+                    MaterialTheme.colorScheme.tertiary
+                } else {
+                    accentColor
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    androidx.compose.foundation.layout.Box(
+                    // Día
+                    Text(
+                        text = point.dayName,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                        color = if (isToday) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.width(40.dp)
+                    )
+
+                    // Barra horizontal
+                    Box(
                         modifier = Modifier
-                            .size(80.dp)
-                            .background(
-                                color = MaterialTheme.colorScheme.primaryContainer,
-                                shape = androidx.compose.foundation.shape.CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
+                            .weight(1f)
+                            .height(20.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
                     ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = totalDosesLogged.toString(),
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Text(
-                                text = "dosis",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 🔥 Métricas de actividad 🔥
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    ActivityMetricItem(
-                        label = "Día Más Activo",
-                        value = mostActiveDay,
-                        icon = "📈",
-                        modifier = Modifier.weight(1f)
-                    )
-                    ActivityMetricItem(
-                        label = "Día Menos Activo",
-                        value = leastActiveDay,
-                        icon = "📉",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    ActivityMetricItem(
-                        label = "Consistencia",
-                        value = loggingConsistency,
-                        icon = "📊",
-                        modifier = Modifier.weight(1f)
-                    )
-                    ActivityMetricItem(
-                        label = "Promedio Diario",
-                        value = averageDailyDoses,
-                        icon = "📅",
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // 🔥 Barra de actividad del período 🔥
-                if (totalPeriodDays > 0) {
-                    Column {
-                        Text(
-                            text = "Actividad del Período",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        androidx.compose.foundation.layout.Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(8.dp)
-                                .background(
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
-                                )
-                        ) {
-                            androidx.compose.foundation.layout.Box(
+                        val fraction = if (maxValue > 0) (point.totalValue / maxValue).coerceIn(0f, 1f) else 0f
+                        if (fraction > 0) {
+                            Box(
                                 modifier = Modifier
                                     .fillMaxHeight()
-                                    .fillMaxWidth(totalDaysWithRecords.toFloat() / totalPeriodDays)
-                                    .background(
-                                        color = MaterialTheme.colorScheme.primary,
-                                        shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
-                                    )
+                                    .fillMaxWidth(fraction)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(barColor)
                             )
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "$totalDaysWithRecords de $totalPeriodDays días con registros",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+
+                    // Valor
+                    Text(
+                        text = if (point.totalValue > 0) point.totalValue.toInt().toString() else "-",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.width(24.dp)
+                    )
+
+                    // Indicador de hoy
+                    if (isToday) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(MaterialTheme.colorScheme.tertiary, CircleShape)
                         )
+                    } else {
+                        Spacer(modifier = Modifier.width(8.dp))
                     }
                 }
             }
@@ -571,115 +359,84 @@ fun ActivitySummaryCard(
 }
 
 @Composable
-fun ActivityMetricItem(
-    label: String,
-    value: String,
-    icon: String,
-    modifier: Modifier = Modifier
+fun HourlyDistributionSection(
+    hourlyPattern: Map<String, Int>,
+    accentColor: Color
 ) {
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = icon,
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-    }
-}
+    val slots = listOf("Madrugada", "Mañana", "Mediodía", "Tarde", "Noche", "Nocturno")
+    val slotRanges = listOf("00-06", "06-12", "12-15", "15-19", "19-23", "23-00")
+    val maxValue = hourlyPattern.values.maxOrNull()?.toFloat() ?: 1f
 
-private fun calculateTotalDays(dateRangeText: String): Int {
-    // Estimación simple basada en el texto del rango
-    return when {
-        dateRangeText.contains("7") -> 7
-        dateRangeText.contains("15") -> 15
-        dateRangeText.contains("30") -> 30
-        else -> 30 // Default para "Todos"
-    }
-}
-
-@Composable
-fun TopMedicationsList(
-    medications: List<Triple<String, Int, String>>,
-    onMedicationClick: ((String) -> Unit)? = null
-) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            text = "Más Tomados",
+            text = "Distribución por horario",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 4.dp)
         )
 
-        androidx.compose.material3.ElevatedCard(
+        ElevatedCard(
             modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
+            shape = MaterialTheme.shapes.large,
             colors = CardDefaults.elevatedCardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                medications.forEachIndexed { index, (name, count, id) ->
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                slots.forEachIndexed { index, slot ->
+                    val value = hourlyPattern[slot] ?: 0
+                    val fraction = if (maxValue > 0) (value.toFloat() / maxValue).coerceIn(0f, 1f) else 0f
+
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                            .let { modifier ->
-                                if (onMedicationClick != null) {
-                                    modifier.clickable { onMedicationClick(id) }
-                                } else modifier
-                            },
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Nombre del slot
+                        Column(modifier = Modifier.width(72.dp)) {
                             Text(
-                                text = "${index + 1}.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                text = slot,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = name,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "$count tomas",
-                                style = MaterialTheme.typography.bodyMedium,
+                                text = slotRanges[index],
+                                style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            if (onMedicationClick != null) {
-                                Spacer(modifier = Modifier.width(8.dp))
-                                androidx.compose.material3.Icon(
-                                    imageVector = androidx.compose.material.icons.Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = "Ver detalles",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
+                        }
+
+                        // Barra horizontal
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(16.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            if (fraction > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .fillMaxWidth(fraction)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(accentColor.copy(alpha = 0.8f))
                                 )
                             }
                         }
-                    }
-                    if (index < medications.lastIndex) {
-                        androidx.compose.material3.HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+
+                        // Valor
+                        Text(
+                            text = value.toString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.width(28.dp)
                         )
                     }
                 }
@@ -689,64 +446,60 @@ fun TopMedicationsList(
 }
 
 @Composable
-fun RecentHistoryList(history: List<com.d4vram.pillmate2.model.HistoryEntry>) {
+fun RecentHistorySection(
+    history: List<HistoryEntryWithUnit>
+) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            text = "Historial Reciente",
+            text = "Historial reciente",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 4.dp)
         )
 
-        androidx.compose.material3.ElevatedCard(
+        ElevatedCard(
             modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
+            shape = MaterialTheme.shapes.large,
             colors = CardDefaults.elevatedCardColors(
                 containerColor = MaterialTheme.colorScheme.surface
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                history.forEachIndexed { index, entry ->
+                history.forEachIndexed { index, item ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
+                            .padding(vertical = 10.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = entry.medicationName,
+                                text = item.entry.medicationName,
                                 style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "${entry.date} • ${entry.time}",
-                                style = MaterialTheme.typography.labelSmall,
+                                text = "${item.entry.date} · ${item.entry.time}",
+                                style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
-                        androidx.compose.foundation.layout.Box(
-                            modifier = Modifier
-                                .background(
-                                    color = MaterialTheme.colorScheme.secondaryContainer,
-                                    shape = androidx.compose.foundation.shape.RoundedCornerShape(4.dp)
-                                )
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        ) {
-                            Text(
-                                text = "${entry.quantity}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        Text(
+                            text = "${item.displayValue} ${item.displayUnit}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
+
                     if (index < history.lastIndex) {
-                        androidx.compose.material3.HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                            modifier = Modifier.padding(vertical = 2.dp)
                         )
                     }
                 }

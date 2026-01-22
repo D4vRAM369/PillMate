@@ -31,8 +31,8 @@ enum class FilterRange {
 }
 
 data class StatisticsUiState(
-    val dailyAverage: String = "0", 
-    val dosesTaken: Int = 0, 
+    val dailyAverage: String = "0",
+    val dosesTaken: Int = 0,
     val lastTaken: String = "Nunca",
     val selectedMedicationName: String = "Todos",
     val activityData: List<ActivityDataPoint> = emptyList(),
@@ -43,23 +43,39 @@ data class StatisticsUiState(
     val availableMedications: List<com.d4vram.pillmate2.model.Medication> = emptyList(),
     val selectedMedicationId: String? = null,
     val selectedMedicationColor: androidx.compose.ui.graphics.Color? = null,
-    
-    // 🔥 MÉTRICAS DE SEGUIMIENTO (Sin juicios)
-    val narrativeSummary: String = "", // Resumen textual neutral
+
+    // Métricas principales
     val totalDosesLogged: Int = 0,
     val averageDailyDoses: String = "0",
+    val timeSinceLastRecord: String = "",
+
+    // Unidades dinámicas según tipo de medicamento
+    val displayUnit: String = "tomas",
+    val totalInUnit: String = "0",
+    val averageInUnit: String = "0",
+
+    // Datos para historial con unidades
+    val recentHistoryWithUnits: List<HistoryEntryWithUnit> = emptyList(),
+
+    // Patrones temporales (6 franjas)
+    val hourlyPattern: Map<String, Int> = emptyMap(),
+
+    // Campos legacy (mantener por compatibilidad temporal)
+    val narrativeSummary: String = "",
     val mostActiveDay: String = "",
     val leastActiveDay: String = "",
     val loggingTrend: String = "0%",
     val weeklyActivityPattern: Map<String, Int> = emptyMap(),
     val monthlyActivityData: List<StatisticsViewModel.MonthlyActivityPoint> = emptyList(),
-    val loggingConsistency: String = "", 
+    val loggingConsistency: String = "",
     val totalDaysWithRecords: Int = 0,
-    val averageDosesPerActiveDay: String = "0",
-    val timeSinceLastRecord: String = "", // Tiempo transcurrido desde el último registro
-    
-    // 🔥 PATRONES TEMPORALES
-    val hourlyPattern: Map<String, Int> = emptyMap()
+    val averageDosesPerActiveDay: String = "0"
+)
+
+data class HistoryEntryWithUnit(
+    val entry: com.d4vram.pillmate2.model.HistoryEntry,
+    val displayValue: String,
+    val displayUnit: String
 )
 
 
@@ -199,6 +215,29 @@ class StatisticsViewModel(
 
             val selectedMed = selectedMedicationId?.let { id -> allMedications.find { it.id == id } }
 
+            // Calcular unidades dinámicas
+            val displayUnit = getDisplayUnitForMedication(selectedMed)
+            val totalInUnit = calculateTotalInUnit(filteredHistory, selectedMed, displayUnit)
+            val averageInUnit = if (totalDays > 0) totalInUnit / totalDays else 0f
+
+            // Generar historial con unidades
+            val recentHistoryWithUnits = recentHistoryList.map { entry ->
+                val entryMed = allMedications.find { it.id == entry.medicationId }
+                val entryUnit = getDisplayUnitForMedication(entryMed)
+                val entryValue = when (entryUnit) {
+                    "mg" -> {
+                        val doseValue = entryMed?.dose?.let { extractDoseValue(it) } ?: 1f
+                        entry.quantity * doseValue
+                    }
+                    else -> entry.quantity.toFloat()
+                }
+                HistoryEntryWithUnit(
+                    entry = entry,
+                    displayValue = formatValueWithUnit(entryValue, entryUnit),
+                    displayUnit = entryUnit
+                )
+            }
+
             // Generar Narrativa Humana
             val narrative = generateNarrativeSummary(
                 history = filteredHistory,
@@ -221,12 +260,20 @@ class StatisticsViewModel(
                     dateRangeText = dateRangeText,
                     recentHistory = recentHistoryList,
                     topMedications = topMedicationsList,
-                    availableMedications = allMedications.filter { it.parentMedicationId == null }, // Solo mostrar padres
+                    availableMedications = allMedications.filter { med -> med.parentMedicationId == null },
                     selectedMedicationId = selectedMedicationId,
                     selectedMedicationColor = selectedMed?.color,
-                    narrativeSummary = narrative,
+                    // Unidades dinámicas
+                    displayUnit = displayUnit,
+                    totalInUnit = formatValueWithUnit(totalInUnit, displayUnit),
+                    averageInUnit = formatValueWithUnit(averageInUnit, displayUnit),
+                    recentHistoryWithUnits = recentHistoryWithUnits,
+                    // Métricas principales
                     totalDosesLogged = trackingMetrics.totalDosesLogged,
                     averageDailyDoses = String.format("%.1f", trackingMetrics.averageDailyDoses),
+                    timeSinceLastRecord = trackingMetrics.timeSinceLastRecord,
+                    // Legacy (mantener por compatibilidad)
+                    narrativeSummary = narrative,
                     mostActiveDay = trackingMetrics.mostActiveDay,
                     leastActiveDay = trackingMetrics.leastActiveDay,
                     loggingTrend = if (trackingMetrics.loggingTrend > 0) "+${trackingMetrics.loggingTrend}%" else "${trackingMetrics.loggingTrend}%",
@@ -235,7 +282,6 @@ class StatisticsViewModel(
                     loggingConsistency = trackingMetrics.loggingConsistency,
                     totalDaysWithRecords = trackingMetrics.totalDaysWithRecords,
                     averageDosesPerActiveDay = String.format("%.1f", trackingMetrics.averageDosesPerActiveDay),
-                    timeSinceLastRecord = trackingMetrics.timeSinceLastRecord,
                     hourlyPattern = trackingMetrics.hourlyPattern
                 )
             }
@@ -456,21 +502,75 @@ class StatisticsViewModel(
         }
     }
     private fun calculateHourlyPattern(history: List<com.d4vram.pillmate2.model.HistoryEntry>): Map<String, Int> {
-        val hourlyMap = mutableMapOf<String, Int>()
-        // Inicializar todas las franjas horarias
-        listOf("Madrugada", "Mañana", "Tarde", "Noche").forEach { hourlyMap[it] = 0 }
-        
+        // 6 franjas horarias con nombres descriptivos
+        val slots = listOf("Madrugada", "Mañana", "Mediodía", "Tarde", "Noche", "Nocturno")
+        val hourlyMap = slots.associateWith { 0 }.toMutableMap()
+
         history.forEach { entry ->
             val hour = entry.timestamp.hour
             val slot = when (hour) {
-                in 0..5 -> "Madrugada"
-                in 6..11 -> "Mañana"
-                in 12..18 -> "Tarde"
-                else -> "Noche"
+                in 0..5 -> "Madrugada"    // 00:00 - 05:59
+                in 6..11 -> "Mañana"       // 06:00 - 11:59
+                in 12..14 -> "Mediodía"    // 12:00 - 14:59
+                in 15..18 -> "Tarde"       // 15:00 - 18:59
+                in 19..22 -> "Noche"       // 19:00 - 22:59
+                else -> "Nocturno"         // 23:00 - 23:59
             }
             hourlyMap[slot] = (hourlyMap[slot] ?: 0) + entry.quantity
         }
         return hourlyMap
+    }
+
+    // Determina la unidad de display según el tipo de medicamento
+    private fun getDisplayUnitForMedication(medication: com.d4vram.pillmate2.model.Medication?): String {
+        if (medication == null) return "tomas"
+        return when {
+            medication.type.equals("Gota", ignoreCase = true) ||
+            medication.type.equals("Gotas", ignoreCase = true) -> "gotas"
+            medication.type.equals("Jarabe", ignoreCase = true) -> "ml"
+            medication.type.equals("Pastilla", ignoreCase = true) ||
+            medication.type.equals("Cápsula", ignoreCase = true) ||
+            medication.type.equals("Comprimido", ignoreCase = true) -> "mg"
+            else -> "tomas"
+        }
+    }
+
+    // Extrae el valor numérico de la dosis (ej: "10mg" -> 10.0)
+    private fun extractDoseValue(dose: String): Float {
+        val regex = Regex("([0-9]+\\.?[0-9]*)")
+        val match = regex.find(dose)
+        return match?.groupValues?.get(1)?.toFloatOrNull() ?: 1f
+    }
+
+    // Calcula el total en la unidad correcta
+    private fun calculateTotalInUnit(
+        history: List<com.d4vram.pillmate2.model.HistoryEntry>,
+        medication: com.d4vram.pillmate2.model.Medication?,
+        unit: String
+    ): Float {
+        return when (unit) {
+            "mg" -> {
+                // Para mg, multiplicamos cantidad por el valor de dosis del medicamento
+                val doseValue = medication?.dose?.let { extractDoseValue(it) } ?: 1f
+                history.sumOf { it.quantity }.toFloat() * doseValue
+            }
+            "gotas", "ml" -> {
+                // Para gotas/ml, sumamos directamente las cantidades
+                history.sumOf { it.quantity }.toFloat()
+            }
+            else -> {
+                // Para tomas, sumamos las cantidades
+                history.sumOf { it.quantity }.toFloat()
+            }
+        }
+    }
+
+    // Formatea el valor para mostrar
+    private fun formatValueWithUnit(value: Float, unit: String): String {
+        return when {
+            value == value.toInt().toFloat() -> "${value.toInt()}"
+            else -> String.format("%.1f", value)
+        }
     }
 
     private fun formatDate(date: LocalDate): String {
