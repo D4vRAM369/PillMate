@@ -116,6 +116,8 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:0.34.0")
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
+    implementation("androidx.documentfile:documentfile:1.0.1")
+
 
     // Vico Charts
     implementation("com.patrykandpatrick.vico:compose:1.15.0")

@@ -69,6 +69,22 @@ object BackupZipManager {
                 }
             }
 
+            // 2.5. Copiar audios del historial
+            val audioNotesDir = File(tempDir, "audio_notes")
+            audioNotesDir.mkdirs()
+
+            var audioCopiedCount = 0
+            history.forEach { entry ->
+                entry.audioNoteUri?.let { audioUri ->
+                    val sourceFile = File(audioUri)
+                    if (sourceFile.exists()) {
+                        val destFile = File(audioNotesDir, sourceFile.name)
+                        sourceFile.copyTo(destFile, overwrite = true)
+                        audioCopiedCount++
+                    }
+                }
+            }
+
             // 3. Crear ZIP
             val zipFile = ZipFile(outputZipFile)
             val zipParams = ZipParameters()
@@ -79,6 +95,11 @@ object BackupZipManager {
             // Añadir carpeta de fotos si hay alguna
             if (photoCopiedCount > 0) {
                 zipFile.addFolder(photosDir, zipParams)
+            }
+
+            // Añadir carpeta de audios si hay alguna
+            if (audioCopiedCount > 0) {
+                zipFile.addFolder(audioNotesDir, zipParams)
             }
 
             outputZipFile
@@ -130,6 +151,22 @@ object BackupZipManager {
                 }
             }
 
+            // 2.5. Copiar audios del historial
+            val audioNotesDir = File(tempDir, "audio_notes")
+            audioNotesDir.mkdirs()
+
+            var audioCopiedCount = 0
+            history.forEach { entry ->
+                entry.audioNoteUri?.let { audioUri ->
+                    val sourceFile = File(audioUri)
+                    if (sourceFile.exists()) {
+                        val destFile = File(audioNotesDir, sourceFile.name)
+                        sourceFile.copyTo(destFile, overwrite = true)
+                        audioCopiedCount++
+                    }
+                }
+            }
+
             // 3. Crear ZIP con cifrado AES-256
             val zipFile = ZipFile(outputZipFile, password.toCharArray())
             val zipParams = ZipParameters().apply {
@@ -144,6 +181,11 @@ object BackupZipManager {
             // Añadir carpeta de fotos si hay alguna
             if (photoCopiedCount > 0) {
                 zipFile.addFolder(photosDir, zipParams)
+            }
+
+            // Añadir carpeta de audios si hay alguna
+            if (audioCopiedCount > 0) {
+                zipFile.addFolder(audioNotesDir, zipParams)
             }
 
             outputZipFile
@@ -215,7 +257,35 @@ object BackupZipManager {
                 }
             }
 
-            ParsedBackup(medicationsWithPhotos, parsed.history)
+            // 5. Restaurar audios del historial
+            val audioNotesDir = File(tempExtractDir, "audio_notes")
+            val historyAudioDir = File(context.filesDir, "history_audio_notes")
+            historyAudioDir.mkdirs()
+
+            val audioPathMap = mutableMapOf<String, String>() // nombre_archivo -> ruta_nueva
+
+            if (audioNotesDir.exists() && audioNotesDir.isDirectory) {
+                audioNotesDir.listFiles()?.forEach { audioFile ->
+                    if (audioFile.isFile) {
+                        // Copiar audio al directorio de la app
+                        val destFile = File(historyAudioDir, audioFile.name)
+                        audioFile.copyTo(destFile, overwrite = true)
+                        audioPathMap[audioFile.name] = destFile.absolutePath
+                    }
+                }
+            }
+
+            // 6. Reconstruir rutas de audios en historial
+            val historyWithAudios = parsed.history.map { entry ->
+                val audioFileName = entry.audioNoteUri // Viene solo el nombre del archivo
+                if (!audioFileName.isNullOrBlank() && audioPathMap.containsKey(audioFileName)) {
+                    entry.copy(audioNoteUri = audioPathMap[audioFileName])
+                } else {
+                    entry
+                }
+            }
+
+            ParsedBackup(medicationsWithPhotos, historyWithAudios)
         } finally {
             // Limpiar directorio temporal
             tempExtractDir.deleteRecursively()

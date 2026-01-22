@@ -42,9 +42,10 @@ class StatsExporter(private val context: Context) {
                 }
             }
 
-            // Crear archivo
-            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            val file = File(downloadsDir, fileName)
+            // 📦 Guardar en cache para compartir con FileProvider
+            // (FileProvider ya tiene configurado <cache-path> en file_paths.xml)
+            val cacheDir = context.cacheDir
+            val file = File(cacheDir, fileName)
 
             FileWriter(file).use { writer ->
                 writer.write(csvContent)
@@ -56,6 +57,7 @@ class StatsExporter(private val context: Context) {
             null
         }
     }
+
 
     /**
      * Exporta resumen estadístico a CSV
@@ -87,9 +89,10 @@ class StatsExporter(private val context: Context) {
                 }
             }
 
-            // Crear archivo
-            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-            val file = File(downloadsDir, fileName)
+            // 📦 Guardar en cache para compartir con FileProvider
+            // (FileProvider ya tiene configurado <cache-path> en file_paths.xml)
+            val cacheDir = context.cacheDir
+            val file = File(cacheDir, fileName)
 
             FileWriter(file).use { writer ->
                 writer.write(csvContent)
@@ -101,6 +104,7 @@ class StatsExporter(private val context: Context) {
             null
         }
     }
+
 
     /**
      * Verifica si el almacenamiento externo está disponible para escritura

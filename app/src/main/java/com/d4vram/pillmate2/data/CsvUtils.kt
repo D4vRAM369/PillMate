@@ -50,7 +50,7 @@ object CsvUtils {
 
         builder.appendLine()
         builder.appendLine(SECTION_HISTORY)
-        builder.appendLine("id,medicationId,medicationName,dose,time,date,colorArgb,emoji,quantity,notes,timestampIso")
+        builder.appendLine("id,medicationId,medicationName,dose,time,date,colorArgb,emoji,quantity,notes,timestampIso,audioNoteUri")
         history.forEach { entry ->
             builder.appendLine(
                 listOf(
@@ -64,7 +64,8 @@ object CsvUtils {
                     entry.emoji,
                     entry.quantity.toString(),
                     entry.notes.replace("\n", "\\n"),
-                    entry.timestamp.toString()
+                    entry.timestamp.toString(),
+                    entry.audioNoteUri?.let { File(it).name } ?: "" // 🎤 Solo el nombre del archivo
                 ).joinToCsv()
             )
         }
@@ -144,6 +145,7 @@ object CsvUtils {
             val notes = tokens.getOrNull(9)?.replace("\\n", "\n") ?: ""
             val timestampStr = tokens.getOrNull(10)
             val timestamp = timestampStr?.let { runCatching { LocalDateTime.parse(it) }.getOrNull() } ?: LocalDateTime.now()
+            val audioNoteUri = tokens.getOrNull(11)?.ifBlank { null } // 🎤 Será reconstruida al restaurar
 
             history.add(
                 HistoryEntry(
@@ -157,7 +159,8 @@ object CsvUtils {
                     quantity = quantity,
                     notes = notes,
                     timestamp = timestamp,
-                    dose = dose
+                    dose = dose,
+                    audioNoteUri = audioNoteUri // 🎤 Ruta del audio
                 )
             )
             index++

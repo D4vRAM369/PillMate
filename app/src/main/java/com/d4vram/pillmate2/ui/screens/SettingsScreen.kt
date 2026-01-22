@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.BackupManager
+import com.d4vram.pillmate2.data.BackupSafManager
 import com.d4vram.pillmate2.data.BackupZipManager
 import com.d4vram.pillmate2.data.CsvUtils
 import com.d4vram.pillmate2.ui.security.SecurityManager
@@ -43,6 +44,8 @@ import androidx.core.content.FileProvider
 import java.io.File
 import java.text.DateFormat
 import java.util.Date
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.first
 
 /**
  * ⚙️ Pantalla de configuración
@@ -71,6 +74,8 @@ fun SettingsScreen(
     var showTimeoutPicker by remember { mutableStateOf(false) }
     var pendingEnableLock by remember { mutableStateOf(false) }
     var showVoiceNotePasswordDialog by remember { mutableStateOf(false) }
+    var showVoiceNoteResetDialog by remember { mutableStateOf(false) }
+    var showPinVerificationForReset by remember { mutableStateOf(false) }
     var showHistoryExportDialog by remember { mutableStateOf(false) }
     var showBackupExportDialog by remember { mutableStateOf(false) }
     var showBackupPasswordDialog by remember { mutableStateOf(false) }
@@ -89,12 +94,17 @@ fun SettingsScreen(
     }
 
     val backupManager = remember { BackupManager(context.applicationContext, repository) }
+    val backupSafManager = remember { BackupSafManager(context.applicationContext, repository) }
     val lastBackupMillis by backupManager.lastBackupFlow.collectAsState(initial = null)
+    val autoBackupFolderName by backupSafManager.autoBackupFolderUri.collectAsState(initial = null)
     val voiceNoteSecurityManager = rememberVoiceNoteSecurityManager()
     val lastBackupText = remember(lastBackupMillis) {
         lastBackupMillis?.let { millis ->
             DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(millis))
         } ?: "Sin copias"
+    }
+    val autoBackupFolderText = remember(autoBackupFolderName) {
+        if (autoBackupFolderName != null) "Configurada" else "No configurada"
     }
 
     LaunchedEffect(snackbarMessage) {
@@ -106,12 +116,55 @@ fun SettingsScreen(
 
     LaunchedEffect(Unit) {
         try {
-            val file = backupManager.createAutomaticBackupIfNeeded()
-            if (file != null) {
-                snackbarMessage = "Copia automática guardada: ${file.name}"
+            // Intentar crear auto-backup con SAF si está configurado
+            val safSuccess = backupSafManager.createAutoBackupToFolder()
+            if (safSuccess) {
+                snackbarMessage = "Copia automática guardada en carpeta configurada"
+            } else {
+                // Fallback al método antiguo
+                val file = backupManager.createAutomaticBackupIfNeeded()
+                if (file != null) {
+                    snackbarMessage = "Copia automática guardada: ${file.name}"
+                }
             }
         } catch (e: Exception) {
             snackbarMessage = "Error en copia automática: ${e.message ?: "desconocido"}"
+        }
+    }
+
+    // 📦 Launcher para crear backup manual con SAF
+    val createBackupSafLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                try {
+                    val success = backupSafManager.createManualBackupToUri(it)
+                    if (success) {
+                        snackbarMessage = "✅ Backup creado correctamente"
+                    } else {
+                        snackbarMessage = "❌ Error al crear backup"
+                    }
+                } catch (e: Exception) {
+                    snackbarMessage = "❌ Error: ${e.message}"
+                }
+            }
+        }
+    }
+
+    // 📁 Launcher para elegir carpeta de auto-backups
+    val selectAutoBackupFolderLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let {
+            scope.launch {
+                try {
+                    backupSafManager.saveAutoBackupFolderUri(it)
+                    snackbarMessage = "✅ Carpeta de auto-backup configurada"
+                } catch (e: Exception) {
+                    snackbarMessage = "❌ Error al configurar carpeta: ${e.message}"
+                }
+            }
         }
     }
 
@@ -483,18 +536,66 @@ fun SettingsScreen(
                         }
                     )
 
-                    // 💾 AutoBackup (cada 24h)
+                    // 💾 Crear Backup Manual con SAF
                     SettingsItem(
-                        title = "Copia de seguridad automática",
-                        description = "Última copia: $lastBackupText",
+                        title = "Crear Backup",
+                        description = "Elegir dónde guardar backup completo",
+                        icon = Icons.Default.Save,
+                        onClick = {
+                            val timestamp = System.currentTimeMillis()
+                            createBackupSafLauncher.launch("pillmate_backup_$timestamp.zip")
+                        }
+                    )
+
+                    // 📁 Configurar carpeta de auto-backup
+                    SettingsItem(
+                        title = "Carpeta de auto-backup",
+                        description = autoBackupFolderText,
+                        icon = Icons.Default.FolderOpen,
+                        onClick = {
+                            selectAutoBackupFolderLauncher.launch(null)
+                        }
+                    )
+
+                    // 🧹 Limpiar configuración (solo si hay carpeta configurada)
+                    if (autoBackupFolderName != null) {
+                        SettingsItem(
+                            title = "Limpiar configuración de carpeta",
+                            description = "Resetear carpeta de auto-backup",
+                            icon = Icons.Default.Clear,
+                            onClick = {
+                                scope.launch {
+                                    backupSafManager.clearAutoBackupFolder()
+                                    snackbarMessage = "✅ Configuración limpiada. Configura nuevamente."
+                                }
+                            }
+                        )
+                    }
+
+                    // 💾 Info de último backup automático
+                    SettingsItem(
+                        title = "Último auto-backup",
+                        description = lastBackupText,
+                        icon = Icons.Default.Info,
+                        onClick = {}
+                    )
+
+                    // 🚀 Crear auto-backup ahora
+                    SettingsItem(
+                        title = "Crear backup de seguridad ahora",
+                        description = "Guardar backup en carpeta configurada",
                         icon = Icons.Default.Backup,
                         onClick = {
                             scope.launch {
                                 try {
-                                    val file = backupManager.createManualBackup()
-                                    snackbarMessage = "✅ Copia guardada: ${file.name}"
+                                    val success = backupSafManager.createAutoBackupToFolder()
+                                    if (success) {
+                                        snackbarMessage = "✅ Backup creado en carpeta configurada"
+                                    } else {
+                                        snackbarMessage = "⚠️ Configura primero una carpeta de auto-backup"
+                                    }
                                 } catch (e: Exception) {
-                                    snackbarMessage = "❌ Error en copia: ${e.message}"
+                                    snackbarMessage = "❌ Error al crear backup: ${e.message}"
                                 }
                             }
                         }
@@ -516,9 +617,10 @@ fun SettingsScreen(
                         description = "Abrir ubicación de copias de seguridad",
                         icon = Icons.Default.Folder,
                         onClick = {
-                            openBackupsFolder(context)
+                            openBackupsFolder(context, scope, backupSafManager)
                         }
                     )
+
                 }
             }
 
@@ -530,6 +632,18 @@ fun SettingsScreen(
                         icon = Icons.Default.Lock,
                         onClick = { showVoiceNotePasswordDialog = true }
                     )
+
+                    // 🔄 Restablecer contraseña (requiere PIN de la app)
+                    if (securitySettings.isPinConfigured) {
+                        SettingsItem(
+                            title = "Restablecer contraseña de notas",
+                            description = "Crear nueva contraseña (requiere PIN de la app)",
+                            icon = Icons.Default.RestartAlt,
+                            onClick = {
+                                showPinVerificationForReset = true
+                            }
+                        )
+                    }
                 }
             }
 
@@ -775,6 +889,36 @@ fun SettingsScreen(
                         }
                     } catch (e: Exception) {
                         snackbarMessage = e.localizedMessage ?: "Error al cambiar contraseña"
+                    }
+                }
+            }
+        )
+    }
+
+    // 🔐 Diálogo de verificación de PIN para restablecer contraseña
+    if (showPinVerificationForReset) {
+        PinVerificationDialog(
+            onDismiss = { showPinVerificationForReset = false },
+            onPinVerified = {
+                showPinVerificationForReset = false
+                showVoiceNoteResetDialog = true
+            },
+            securityManager = securityManager
+        )
+    }
+
+    // 🔄 Diálogo para crear nueva contraseña de notas
+    if (showVoiceNoteResetDialog) {
+        VoiceNoteResetDialog(
+            onDismiss = { showVoiceNoteResetDialog = false },
+            onConfirm = { newPassword, newHint ->
+                scope.launch {
+                    try {
+                        voiceNoteSecurityManager.setPassword(newPassword, newHint)
+                        snackbarMessage = "✅ Contraseña de notas restablecida"
+                        showVoiceNoteResetDialog = false
+                    } catch (e: Exception) {
+                        snackbarMessage = e.localizedMessage ?: "Error al restablecer contraseña"
                     }
                 }
             }
@@ -1231,51 +1375,85 @@ private fun shareFile(context: Context, file: File) {
 }
 
 /**
- * Abre la carpeta de backups en el explorador de archivos
- * Ruta accesible sin root: /Android/data/com.d4vram.pillmate2/files/backups/
+ * Abre la carpeta de auto-backups configurada con SAF
+ * Si no hay carpeta configurada, muestra mensaje al usuario
  */
-private fun openBackupsFolder(context: Context) {
-    try {
-        val backupsDir = context.getExternalFilesDir("backups")
-
-        if (backupsDir == null || !backupsDir.exists()) {
-            android.widget.Toast.makeText(
-                context,
-                "⚠️ No hay backups todavía. Crea uno primero.",
-                android.widget.Toast.LENGTH_SHORT
-            ).show()
-            return
-        }
-
-        // Intent para abrir la carpeta
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            val uri = FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.provider",
-                backupsDir
-            )
-            setDataAndType(uri, "resource/folder")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-
+private fun openBackupsFolder(
+    context: Context,
+    scope: CoroutineScope,
+    backupSafManager: BackupSafManager
+) {
+    scope.launch {
         try {
-            context.startActivity(Intent.createChooser(intent, "Abrir carpeta de backups"))
+            // 1. Obtener URI de la carpeta configurada
+            val folderUriString = backupSafManager.autoBackupFolderUri.first()
+            
+            // Validar que no sea null o vacío
+            if (folderUriString.isNullOrBlank()) {
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(
+                        context,
+                        "⚠️ Configura primero una carpeta de auto-backup",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+                return@launch
+            }
+
+            // 2. Parsear URI con validación
+            val folderUri = try {
+                Uri.parse(folderUriString)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(
+                        context,
+                        "❌ URI guardado inválido. Reconfigura la carpeta de auto-backup.",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+                return@launch
+            }
+
+            // Verificar que el URI no esté vacío
+            if (folderUri.toString().isEmpty()) {
+                withContext(Dispatchers.Main) {
+                    android.widget.Toast.makeText(
+                        context,
+                        "❌ URI vacío. Reconfigura la carpeta de auto-backup.",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+                return@launch
+            }
+
+            // 3. Crear Intent para abrir la carpeta
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(folderUri, "vnd.android.document/directory")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+
+            // 4. Intentar abrir carpeta
+            withContext(Dispatchers.Main) {
+                try {
+                    context.startActivity(intent)
+                } catch (e: Exception) {
+                    android.widget.Toast.makeText(
+                        context,
+                        "❌ No se pudo abrir la carpeta. Intenta reconfigurarla.",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
         } catch (e: Exception) {
-            // Fallback: Mostrar la ruta en un Toast largo
-            val path = backupsDir.absolutePath
-            android.widget.Toast.makeText(
-                context,
-                "📂 Carpeta de backups:\n$path\n\nAbre tu explorador de archivos y navega a esta ruta.",
-                android.widget.Toast.LENGTH_LONG
-            ).show()
+            withContext(Dispatchers.Main) {
+                android.widget.Toast.makeText(
+                    context,
+                    "❌ Error: ${e.message}",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+            }
         }
-    } catch (e: Exception) {
-        android.widget.Toast.makeText(
-            context,
-            "❌ Error al abrir carpeta: ${e.message}",
-            android.widget.Toast.LENGTH_SHORT
-        ).show()
     }
 }
 
@@ -1377,6 +1555,162 @@ private fun VoiceNotePasswordChangeDialog(
                 enabled = isValid
             ) {
                 Text("Cambiar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+private fun PinVerificationDialog(
+    onDismiss: () -> Unit,
+    onPinVerified: () -> Unit,
+    securityManager: SecurityManager
+) {
+    var pin by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Verificar PIN") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("Ingresa el PIN de la app para continuar")
+                
+                OutlinedTextField(
+                    value = pin,
+                    onValueChange = { 
+                        pin = it
+                        errorMessage = null
+                    },
+                    label = { Text("PIN") },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    singleLine = true,
+                    isError = errorMessage != null,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                errorMessage?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                        if (securityManager.verifyPin(pin)) {
+                            onPinVerified()
+                        } else {
+                            errorMessage = "PIN incorrecto"
+                        }
+                    }
+                }
+            ) {
+                Text("Verificar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+private fun VoiceNoteResetDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (newPassword: String, newHint: String) -> Unit
+) {
+    var newPassword by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var newHint by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Restablecer Contraseña de Notas") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "⚠️ Esto creará una nueva contraseña. Las notas antiguas NO se podrán recuperar.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+
+                OutlinedTextField(
+                    value = newPassword,
+                    onValueChange = { 
+                        newPassword = it
+                        errorMessage = null
+                    },
+                    label = { Text("Nueva contraseña") },
+                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { showPassword = !showPassword }) {
+                            Icon(
+                                imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                contentDescription = if (showPassword) "Ocultar" else "Mostrar"
+                            )
+                        }
+                    },
+                    singleLine = true,
+                    isError = errorMessage != null,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = confirmPassword,
+                    onValueChange = { 
+                        confirmPassword = it
+                        errorMessage = null
+                    },
+                    label = { Text("Confirmar contraseña") },
+                    visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                    singleLine = true,
+                    isError = errorMessage != null,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = newHint,
+                    onValueChange = { newHint = it },
+                    label = { Text("Pista (opcional)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                errorMessage?.let {
+                    Text(
+                        text = it,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    when {
+                        newPassword.isBlank() -> errorMessage = "La contraseña no puede estar vacía"
+                        newPassword != confirmPassword -> errorMessage = "Las contraseñas no coinciden"
+                        else -> onConfirm(newPassword, newHint)
+                    }
+                }
+            ) {
+                Text("Restablecer")
             }
         },
         dismissButton = {
