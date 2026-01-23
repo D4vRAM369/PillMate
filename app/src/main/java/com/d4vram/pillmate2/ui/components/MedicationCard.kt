@@ -521,11 +521,16 @@ private fun TakeMedicationDialog(
             }
         },
         confirmButton = {
+            // Calcular si el color es claro para usar texto con buen contraste
+            val buttonColor = selectedMedication.color
+            val luminance = (0.299f * buttonColor.red + 0.587f * buttonColor.green + 0.114f * buttonColor.blue)
+            val textColor = if (luminance > 0.5f) Color.Black else Color.White
+
             Button(
                 onClick = { onConfirm(selectedMedication.id, quantity.coerceAtLeast(1)) },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = selectedMedication.color,
-                    contentColor = Color.White
+                    containerColor = buttonColor,
+                    contentColor = textColor
                 ),
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth().height(50.dp)

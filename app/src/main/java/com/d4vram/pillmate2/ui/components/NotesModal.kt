@@ -705,7 +705,7 @@ fun NotesModal(
 
                                     onSaveChanges(historyEntry.id, notesText, selectedDateTime, audioId)
                                     isEditing = false
-                                    onDismiss()
+                                    // Modal permanece abierto después de guardar (modo borrador)
                                 },
                                 enabled = hasChanges
                             ) {
