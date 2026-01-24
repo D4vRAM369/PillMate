@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.HistoryEntry
+import java.time.LocalDateTime
 import com.d4vram.pillmate2.model.SortMode
 import com.d4vram.pillmate2.ui.components.HistoryItem
 import com.d4vram.pillmate2.ui.components.ReorderableMedicationGrid
@@ -116,8 +117,8 @@ fun HomeScreen(
                     medications = medications,
                     repository = repository,
                     chipCountPeriod = chipCountPeriod,
-                    onTakeMedication = { medicationId, quantity ->
-                        repository.takeMedication(medicationId, quantity)
+                    onTakeMedication = { medicationId, quantity, timestamp ->
+                        repository.takeMedication(medicationId, quantity, timestamp)
                     },
                     onAddMedication = onAddMedication,
                     onEditMedication = onEditMedication,

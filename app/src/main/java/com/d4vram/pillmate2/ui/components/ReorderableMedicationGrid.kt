@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.d4vram.pillmate2.model.Medication
 import kotlinx.coroutines.Job
+import java.time.LocalDateTime
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -37,7 +38,7 @@ fun ReorderableMedicationGrid(
     medications: List<Medication>,
     repository: com.d4vram.pillmate2.data.MedicationRepository,
     chipCountPeriod: com.d4vram.pillmate2.ui.theme.ChipCountPeriod,
-    onTakeMedication: (String, Int) -> Unit,
+    onTakeMedication: (String, Int, LocalDateTime?) -> Unit,
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {},
     onAddMedication: () -> Unit,
@@ -224,7 +225,7 @@ fun ReorderableMedicationGrid(
                 medication = medication,
                 repository = repository,
                 chipCountPeriod = chipCountPeriod,
-                onTakeMedication = if (isDragging) { { _, _ -> } } else { onTakeMedication },
+                onTakeMedication = if (isDragging) { { _, _, _ -> } } else { onTakeMedication },
                 onEditMedication = if (isDragging) { {} } else { onEditMedication },
                 onDeleteMedication = if (isDragging) { {} } else { onDeleteMedication },
                 enabled = !isDragging,

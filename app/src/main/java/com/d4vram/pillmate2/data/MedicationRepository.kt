@@ -138,11 +138,22 @@ class MedicationRepository(
         val dailyAverage: Float = 0f
     )
 
-    fun takeMedication(medicationId: String, quantity: Int = 1) {
+    /**
+     * Registra una toma de medicamento.
+     * @param medicationId ID del medicamento
+     * @param quantity Cantidad de unidades tomadas
+     * @param customTimestamp Timestamp personalizado (null = ahora)
+     */
+    fun takeMedication(
+        medicationId: String,
+        quantity: Int = 1,
+        customTimestamp: LocalDateTime? = null
+    ) {
         scope.launch {
             val medication = medicationDao.getMedicationById(medicationId) ?: return@launch
             val safeQuantity = quantity.coerceAtLeast(1)
-            val now = LocalDateTime.now().withSecond(0).withNano(0)
+            // Usar timestamp personalizado o la hora actual
+            val now = (customTimestamp ?: LocalDateTime.now()).withSecond(0).withNano(0)
             val formattedTime = formatTime(now)
             val formattedLastTaken = formatDateTime(now)
             val updated = medication.copy(

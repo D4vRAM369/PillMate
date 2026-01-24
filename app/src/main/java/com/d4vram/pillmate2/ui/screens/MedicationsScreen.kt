@@ -10,6 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.ui.components.ReorderableMedicationGrid
+import java.time.LocalDateTime
 
 /**
  * 💊 Pantalla de gestión de medicamentos
@@ -71,8 +72,8 @@ fun MedicationsScreen(
                     medications = medications,
                     repository = repository,
                     chipCountPeriod = chipCountPeriod,
-                    onTakeMedication = { medicationId, quantity ->
-                        repository.takeMedication(medicationId, quantity)
+                    onTakeMedication = { medicationId, quantity, timestamp ->
+                        repository.takeMedication(medicationId, quantity, timestamp)
                     },
                     onEditMedication = onEditMedication,
                     onDeleteMedication = onDeleteMedication,

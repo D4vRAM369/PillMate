@@ -21,3 +21,6 @@ keystore.properties
 
 # Notas PBL (documentación de aprendizaje)
 Notas PBL/
+
+# Planning docs (local only)
+docs/plans/

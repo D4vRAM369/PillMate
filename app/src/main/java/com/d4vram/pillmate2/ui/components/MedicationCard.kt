@@ -17,8 +17,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -28,6 +32,9 @@ import coil.compose.AsyncImage
 import com.d4vram.pillmate2.model.Medication
 import kotlinx.coroutines.delay
 import java.io.File
+import java.time.LocalDateTime
+import java.time.LocalDate
+import java.util.Calendar
 
 /**
  * 💊 Card de medicamento clickeable
@@ -39,7 +46,7 @@ fun MedicationCard(
     medication: Medication,
     repository: com.d4vram.pillmate2.data.MedicationRepository,
     chipCountPeriod: com.d4vram.pillmate2.ui.theme.ChipCountPeriod,
-    onTakeMedication: (String, Int) -> Unit,
+    onTakeMedication: (String, Int, LocalDateTime?) -> Unit,  // Añadido: timestamp opcional
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {},
     enabled: Boolean = true,
@@ -68,15 +75,11 @@ fun MedicationCard(
     val isTakenToday = takenCount > 0
 
     val combinedModifier = modifier
-        .then(
-            if (isTakenToday) {
-                Modifier.shadow(
-                    elevation = 4.dp,
-                    shape = MaterialTheme.shapes.medium,
-                    ambientColor = medication.color.copy(alpha = 0.3f),
-                    spotColor = medication.color.copy(alpha = 0.3f)
-                )
-            } else Modifier
+        .shadow(
+            elevation = if (isTakenToday) 4.dp else 2.dp,
+            shape = MaterialTheme.shapes.medium,
+            ambientColor = if (isTakenToday) medication.color.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.1f),
+            spotColor = if (isTakenToday) medication.color.copy(alpha = 0.2f) else Color.Black.copy(alpha = 0.1f)
         )
 
     Card(
@@ -88,19 +91,17 @@ fun MedicationCard(
             },
         shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
-            containerColor = if (isTakenToday) {
-                medication.color.copy(alpha = 0.12f)
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
+            // Fondo sólido blanco/surface
+            containerColor = MaterialTheme.colorScheme.surface
         ),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isTakenToday) 0.dp else 2.dp
+            defaultElevation = 0.dp
         ),
+        // Borde completo alrededor de la card cuando está tomado
         border = if (isTakenToday) {
             BorderStroke(
                 width = 2.dp,
-                color = medication.color.copy(alpha = 0.4f)
+                color = medication.color  // Color sólido, sin transparencia
             )
         } else null
     ) {
@@ -253,8 +254,8 @@ fun MedicationCard(
             medication = medication,
             family = family,
             onDismiss = { showQuantityDialog = false },
-            onConfirm = { finalId, quantity ->
-                onTakeMedication(finalId, quantity)
+            onConfirm = { finalId, quantity, timestamp ->
+                onTakeMedication(finalId, quantity, timestamp)
                 showQuantityDialog = false
             }
         )
@@ -379,15 +380,32 @@ private fun PillIcon(
     }
 }
 
+/**
+ * 🕐 Dialog para registrar toma de medicamento
+ * Incluye selector de dosis (si hay familia), hora y cantidad
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun TakeMedicationDialog(
     medication: Medication,
     family: List<Medication>,
     onDismiss: () -> Unit,
-    onConfirm: (String, Int) -> Unit
+    onConfirm: (String, Int, LocalDateTime?) -> Unit  // Añadido: timestamp
 ) {
     var selectedMedication by remember { mutableStateOf(medication) }
     var quantity by remember { mutableStateOf(1) }
+
+    // Estado para el selector de hora
+    var useCurrentTime by remember { mutableStateOf(true) }
+    val currentTime = remember { Calendar.getInstance() }
+    var selectedHour by remember { mutableStateOf(currentTime.get(Calendar.HOUR_OF_DAY)) }
+    var selectedMinute by remember { mutableStateOf(currentTime.get(Calendar.MINUTE)) }
+    var showTimePicker by remember { mutableStateOf(false) }
+
+    // Formatear la hora seleccionada para mostrar
+    val formattedTime = remember(selectedHour, selectedMinute) {
+        String.format("%02d:%02d", selectedHour, selectedMinute)
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -409,7 +427,7 @@ private fun TakeMedicationDialog(
             }
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 // Selector de dosis (si hay familia)
                 if (family.size > 1) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -419,7 +437,7 @@ private fun TakeMedicationDialog(
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
                         )
-                        
+
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxWidth()
@@ -447,9 +465,53 @@ private fun TakeMedicationDialog(
                             }
                         }
                     }
-                    
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                 }
+
+                // ⏰ Selector de hora
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = "Hora de la toma:",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Chip "Ahora"
+                        FilterChip(
+                            selected = useCurrentTime,
+                            onClick = { useCurrentTime = true },
+                            label = { Text("Ahora") },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        )
+
+                        // Chip para hora personalizada
+                        FilterChip(
+                            selected = !useCurrentTime,
+                            onClick = {
+                                useCurrentTime = false
+                                showTimePicker = true
+                            },
+                            label = {
+                                Text(if (!useCurrentTime) formattedTime else "Otra hora")
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        )
+                    }
+                }
+
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
                 // Selector de cantidad
                 Column(
@@ -468,7 +530,7 @@ private fun TakeMedicationDialog(
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -527,7 +589,17 @@ private fun TakeMedicationDialog(
             val textColor = if (luminance > 0.5f) Color.Black else Color.White
 
             Button(
-                onClick = { onConfirm(selectedMedication.id, quantity.coerceAtLeast(1)) },
+                onClick = {
+                    // Crear timestamp si se seleccionó hora personalizada
+                    val timestamp = if (useCurrentTime) {
+                        null  // null = usar hora actual en el repository
+                    } else {
+                        LocalDateTime.now()
+                            .withHour(selectedHour)
+                            .withMinute(selectedMinute)
+                    }
+                    onConfirm(selectedMedication.id, quantity.coerceAtLeast(1), timestamp)
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = buttonColor,
                     contentColor = textColor
@@ -544,6 +616,70 @@ private fun TakeMedicationDialog(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+    )
+
+    // TimePicker Dialog
+    if (showTimePicker) {
+        TimePickerDialog(
+            initialHour = selectedHour,
+            initialMinute = selectedMinute,
+            onDismiss = { showTimePicker = false },
+            onConfirm = { hour, minute ->
+                selectedHour = hour
+                selectedMinute = minute
+                showTimePicker = false
+            }
+        )
+    }
+}
+
+/**
+ * 🕐 Dialog con TimePicker de Material3
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimePickerDialog(
+    initialHour: Int,
+    initialMinute: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int, Int) -> Unit
+) {
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialHour,
+        initialMinute = initialMinute,
+        is24Hour = true
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        shape = RoundedCornerShape(28.dp),
+        containerColor = MaterialTheme.colorScheme.surface,
+        title = {
+            Text(
+                text = "Seleccionar hora",
+                style = MaterialTheme.typography.titleLarge
+            )
+        },
+        text = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                TimePicker(state = timePickerState)
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(timePickerState.hour, timePickerState.minute) }
+            ) {
+                Text("Aceptar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
             }
         }
     )
