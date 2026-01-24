@@ -32,8 +32,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.d4vram.pillmate2.data.AudioNoteManager
+import com.d4vram.pillmate2.data.DraftNote
+import com.d4vram.pillmate2.data.DraftNoteManager
 import com.d4vram.pillmate2.model.HistoryEntry
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
 import java.time.Instant
 import java.time.LocalDateTime
@@ -64,13 +67,18 @@ fun NotesModal(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val audioNoteManager = remember { AudioNoteManager(context) }
+    val draftNoteManager = remember { DraftNoteManager(context) }
 
     val originalDateTime = remember(historyEntry.id) {
         historyEntry.timestamp.withSecond(0).withNano(0)
     }
+
+    // Estado inicial: se cargará desde borrador si existe
     var notesText by remember(historyEntry.id) { mutableStateOf(historyEntry.notes) }
     var isEditing by remember(historyEntry.id) { mutableStateOf(historyEntry.notes.isEmpty()) }
     var selectedDateTime by remember(historyEntry.id) { mutableStateOf(originalDateTime) }
+    var draftLoaded by remember(historyEntry.id) { mutableStateOf(false) }
+    var hasDraftChanges by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
 
@@ -94,6 +102,36 @@ fun NotesModal(
             audioNoteManager.decryptAudioForPlayback(audioId)?.let { decryptedFile ->
                 audioFile = decryptedFile
             }
+        }
+    }
+
+    // 📥 Cargar borrador si existe (persistencia tras cerrar app/bloqueo PIN)
+    LaunchedEffect(historyEntry.id) {
+        if (!draftLoaded) {
+            draftNoteManager.getDraft(historyEntry.id)?.let { draft ->
+                // Restaurar estado desde el borrador
+                notesText = draft.notesText
+                selectedDateTime = LocalDateTime.parse(draft.dateTimeIso)
+                draft.audioNoteUri?.let { existingAudioId = it }
+                isEditing = true  // Si hay borrador, estaba editando
+                hasDraftChanges = true
+            }
+            draftLoaded = true
+        }
+    }
+
+    // 💾 Auto-guardar borrador cuando hay cambios (con debounce de 500ms)
+    LaunchedEffect(notesText, selectedDateTime, existingAudioId) {
+        if (draftLoaded && isEditing) {
+            delay(500)  // Debounce: esperar 500ms sin cambios antes de guardar
+            val draft = DraftNote(
+                entryId = historyEntry.id,
+                notesText = notesText,
+                dateTimeIso = selectedDateTime.toString(),
+                audioNoteUri = existingAudioId
+            )
+            draftNoteManager.saveDraft(draft)
+            hasDraftChanges = true
         }
     }
 
@@ -675,9 +713,14 @@ fun NotesModal(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             TextButton(onClick = {
+                                // Descartar cambios y eliminar borrador
+                                scope.launch {
+                                    draftNoteManager.deleteDraft(historyEntry.id)
+                                }
                                 notesText = historyEntry.notes
                                 selectedDateTime = originalDateTime
                                 isEditing = false
+                                hasDraftChanges = false
                             }) {
                                 Text("Cancelar")
                             }
@@ -704,8 +747,15 @@ fun NotesModal(
                                     }
 
                                     onSaveChanges(historyEntry.id, notesText, selectedDateTime, audioId)
+
+                                    // 🗑️ Eliminar borrador después de guardar definitivamente
+                                    scope.launch {
+                                        draftNoteManager.deleteDraft(historyEntry.id)
+                                    }
+
                                     isEditing = false
-                                    // Modal permanece abierto después de guardar (modo borrador)
+                                    hasDraftChanges = false
+                                    // Modal permanece abierto después de guardar
                                 },
                                 enabled = hasChanges
                             ) {
