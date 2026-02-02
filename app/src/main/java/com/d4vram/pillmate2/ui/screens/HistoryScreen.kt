@@ -17,6 +17,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -24,6 +28,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -129,32 +134,12 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
-                // Resumen de estadísticas
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Text(
-                            text = "📈 Resumen",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Tomadas hoy: ${stats.takenToday} • Esta semana: ${stats.takenThisWeek} • Adherencia: ${stats.adherencePercentage}%",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                }
+                // Card clickeable para ir a estadísticas
+                StatisticsQuickCard(
+                    takenToday = stats.takenToday,
+                    takenThisWeek = stats.takenThisWeek,
+                    onClick = { navController.navigate("global_stats") }
+                )
             }
 
             item {
@@ -412,5 +397,77 @@ private fun groupEntriesByPeriod(entries: List<HistoryEntry>): List<Pair<String,
             else -> dateFormatter.format(entryDate).replaceFirstChar { it.titlecase(locale) }
         }
         label to groupedByDate.getValue(entryDate).sortedByDescending { it.timestamp }
+    }
+}
+
+/**
+ * 📊 Card clickeable para acceder a estadísticas desde el historial
+ * Muestra un resumen rápido y permite navegar a la pantalla completa
+ */
+@Composable
+private fun StatisticsQuickCard(
+    takenToday: Int,
+    takenThisWeek: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // Icono con fondo circular
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "📊",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column {
+                    Text(
+                        text = "Ver Estadísticas",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    Text(
+                        text = "Hoy: $takenToday • Semana: $takenThisWeek",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    )
+                }
+            }
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = "Ver estadísticas",
+                tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+            )
+        }
     }
 }

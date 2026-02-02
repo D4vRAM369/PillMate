@@ -1,6 +1,7 @@
 package com.d4vram.pillmate2.ui.stats
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -50,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d4vram.pillmate2.data.MedicationRepository
+import com.d4vram.pillmate2.ui.stats.viewmodel.DoseBreakdownItem
 import com.d4vram.pillmate2.ui.stats.viewmodel.FilterRange
 import com.d4vram.pillmate2.ui.stats.viewmodel.HistoryEntryWithUnit
 import com.d4vram.pillmate2.ui.stats.viewmodel.StatisticsViewModel
@@ -171,12 +174,24 @@ fun StatisticsScreen(
                 lastRecord = uiState.timeSinceLastRecord
             )
 
+            // Desglose por variantes de dosis (solo si hay familia seleccionada)
+            if (uiState.showingFamilyStats && uiState.doseBreakdown.isNotEmpty()) {
+                DoseBreakdownSection(
+                    familyName = uiState.familyName,
+                    breakdown = uiState.doseBreakdown
+                )
+            }
+
             // Gráfica de actividad horizontal
             if (uiState.activityData.isNotEmpty()) {
                 HorizontalActivityChart(
                     data = uiState.activityData,
-                    accentColor = uiState.selectedMedicationColor ?: MaterialTheme.colorScheme.primary
+                    accentColor = uiState.selectedMedicationColor ?: MaterialTheme.colorScheme.primary,
+                    onDaySelected = { date -> viewModel.selectDay(date) },
+                    selectedDate = uiState.selectedDate
                 )
+                
+
 
                 // Navegación de fechas
                 if (uiState.activeFilter != FilterRange.ALL_TIME) {
@@ -205,8 +220,226 @@ fun StatisticsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
         }
+
+        // BottomSheet para detalles diarios
+        if (uiState.selectedDate != null) {
+            androidx.compose.material3.ModalBottomSheet(
+                onDismissRequest = { viewModel.selectDay(null) },
+                containerColor = androidx.compose.ui.graphics.Color(0xFF1E2124), // Tono oscuro similar a capturas
+                contentColor = androidx.compose.ui.graphics.Color.White
+            ) {
+                DailyDetailSheetContent(
+                    date = uiState.selectedDate!!,
+                    history = uiState.selectedDateHistory,
+                    onViewFullHistory = { 
+                        // Navegar al historial completo o cerrar sheet
+                        viewModel.selectDay(null)
+                        // Si hubiera navegación directa: navController?.navigate("history")
+                    }
+                )
+            }
+        }
     }
 }
+
+@Composable
+fun DailyDetailSheetContent(
+    date: java.time.LocalDate,
+    history: List<HistoryEntryWithUnit>,
+    onViewFullHistory: () -> Unit
+) {
+    val dateFormatter = java.time.format.DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM")
+    val spanishLocale = java.util.Locale.forLanguageTag("es")
+    
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Cabecera
+        Column {
+            Text(
+                text = date.format(dateFormatter.withLocale(spanishLocale)).replaceFirstChar { it.uppercase() },
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = androidx.compose.ui.graphics.Color.White // Título claro
+            )
+            Text(
+                text = "${history.sumOf { it.entry.quantity }} dosis",
+                style = MaterialTheme.typography.bodyMedium,
+                color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.7f)
+            )
+        }
+
+        HorizontalDivider(color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.1f))
+
+        // Lista de medicamentos
+        history.forEach { item ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Dot indicador con el color del medicamento
+                    Box(
+                        modifier = Modifier
+                            .size(10.dp)
+                            .clip(CircleShape)
+                            .background(item.medicationColor ?: MaterialTheme.colorScheme.primary)
+                    )
+                    
+                    Text(
+                        text = "${item.entry.medicationName} • ${item.displayValue}${item.displayUnit}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = androidx.compose.ui.graphics.Color.White
+                    )
+                }
+
+                Text(
+                    text = item.entry.time,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.7f)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Botón de ver historial completo
+        androidx.compose.material3.Button(
+            onClick = onViewFullHistory,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = androidx.compose.ui.graphics.Color(0xFF4ADE80), // Verde vibrante tipo capturas
+                contentColor = androidx.compose.ui.graphics.Color.Black
+            ),
+            shape = RoundedCornerShape(25.dp) // Redondeado completo
+        ) {
+            Text(
+                text = "Ver historial completo",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+
+@Composable
+fun DoseBreakdownSection(
+    familyName: String,
+    breakdown: List<DoseBreakdownItem>
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Desglose por dosis",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 4.dp)
+        )
+
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.large,
+            colors = CardDefaults.elevatedCardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Mostrar nombre de la familia si hay distintos nombres
+                if (familyName.contains("/")) {
+                    Text(
+                        text = "Familia: $familyName",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                breakdown.forEach { item ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Color del medicamento
+                        Box(
+                            modifier = Modifier
+                                .size(12.dp)
+                                .clip(CircleShape)
+                                .background(item.color)
+                        )
+
+                        // Nombre y dosis
+                        Column(modifier = Modifier.width(100.dp)) {
+                            Text(
+                                text = item.medicationName,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1
+                            )
+                            Text(
+                                text = item.dose,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        // Barra de progreso
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(16.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            if (item.percentage > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .fillMaxWidth(item.percentage)
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(item.color.copy(alpha = 0.8f))
+                                )
+                            }
+                        }
+
+                        // Valor total
+                        Text(
+                            text = "${formatBreakdownValue(item.totalValue)}${item.displayUnit}",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.width(60.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun formatBreakdownValue(value: Float): String {
+    return if (value == value.toInt().toFloat()) {
+        value.toInt().toString()
+    } else {
+        String.format("%.1f", value)
+    }
+}
+
+
+
 
 @Composable
 fun MainKpiSection(
@@ -274,7 +507,9 @@ fun MainKpiSection(
 @Composable
 fun HorizontalActivityChart(
     data: List<ActivityDataPoint>,
-    accentColor: Color
+    accentColor: Color,
+    onDaySelected: (java.time.LocalDate?) -> Unit,
+    selectedDate: java.time.LocalDate?
 ) {
     val maxValue = data.maxOfOrNull { it.totalValue } ?: 1f
     val today = data.lastOrNull()
@@ -295,12 +530,18 @@ fun HorizontalActivityChart(
                 val isToday = point == today
                 val barColor = if (isToday) {
                     MaterialTheme.colorScheme.tertiary
+                } else if (point.date != null && point.date == selectedDate) {
+                    accentColor // Color fuerte para selección
                 } else {
-                    accentColor
+                    accentColor.copy(alpha = 0.6f) // Un poco apagado si no es hoy ni seleccionado
                 }
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(enabled = point.hasRecords) { 
+                             onDaySelected(if (point.date == selectedDate) null else point.date) 
+                        },
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {

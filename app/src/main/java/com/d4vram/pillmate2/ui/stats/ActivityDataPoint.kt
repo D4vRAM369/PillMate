@@ -9,5 +9,6 @@ data class ActivityDataPoint(
     val totalValue: Float = 0f,
     val unit: String = "",
     val fullDate: String = "",
-    val hasRecords: Boolean = false
+    val hasRecords: Boolean = false,
+    val date: java.time.LocalDate? = null
 )

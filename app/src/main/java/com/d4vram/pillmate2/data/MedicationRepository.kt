@@ -267,6 +267,75 @@ class MedicationRepository(
         }
     }
 
+    /**
+     * Guarda un medicamento (nuevo o editado) gestionando la lógica de familias.
+     * Si el medicamento que se guarda tiene mayor dosis que su supuesto padre,
+     * este se convierte en el nuevo padre y reorganiza la familia.
+     */
+    fun saveMedicationWithSmartFamilyLogic(
+        medication: Medication,
+        intendedParentId: String?
+    ) {
+        scope.launch {
+            // Preparar el medicamento (asignar fecha y orden si es nuevo)
+            val medToSave = if (medicationDao.getMedicationById(medication.id) == null) {
+                val order = medicationDao.getMaxSortOrder() + 1
+                val createdTimestamp = if (medication.createdAt == 0L) System.currentTimeMillis() else medication.createdAt
+                medication.copy(sortOrder = order, createdAt = createdTimestamp)
+            } else {
+                medication
+            }
+
+            // Si no hay intención de vincular, guardar normal
+            if (intendedParentId == null) {
+                // Si tenía padre antes y ahora no (romper vínculo), guardar como independiente
+                if (medToSave.parentMedicationId != null) {
+                     medicationDao.upsertMedication(medToSave.copy(parentMedicationId = null).toEntity())
+                } else {
+                     medicationDao.upsertMedication(medToSave.toEntity())
+                }
+                return@launch
+            }
+
+            val intendedParent = medicationDao.getMedicationById(intendedParentId)?.toDomain() ?: return@launch
+            
+            // Extraer dosis
+            val newMedDose = extractNumericDose(medToSave.dose)
+            val parentDose = extractNumericDose(intendedParent.dose)
+
+            if (newMedDose > parentDose) {
+                // CASO: El nuevo medicamento es el mayor (Nuevo Padre)
+                // 1. El nuevo medicamento se guarda sin padre (es la cabeza de familia)
+                val newParent = medToSave.copy(parentMedicationId = null)
+                medicationDao.upsertMedication(newParent.toEntity())
+
+                // 2. El antiguo padre ahora es hijo del nuevo
+                val oldParentAsChild = intendedParent.copy(parentMedicationId = newParent.id)
+                medicationDao.upsertMedication(oldParentAsChild.toEntity())
+
+                // 3. Todos los hermanos (hijos del antiguo padre) se mueven al nuevo padre
+                val siblings = medicationDao.getAllMedications().filter { it.parentMedicationId == intendedParent.id }
+                siblings.forEach { sibling ->
+                    // Evitar auto-referencia si estamos editando uno de los hijos
+                    if (sibling.id != newParent.id) {
+                         medicationDao.upsertMedication(sibling.copy(parentMedicationId = newParent.id))
+                    }
+                }
+            } else {
+                // CASO: El nuevo medicamento es menor o igual (Hijo normal)
+                // Simplemente guardar apuntando al padre
+                val child = medToSave.copy(parentMedicationId = intendedParent.id)
+                medicationDao.upsertMedication(child.toEntity())
+            }
+        }
+    }
+
+    private fun extractNumericDose(dose: String): Float {
+        val regex = Regex("([0-9]+[.,]?[0-9]*)")
+        val match = regex.find(dose)
+        return match?.groupValues?.get(1)?.replace(",", ".")?.toFloatOrNull() ?: 0f
+    }
+
     fun updateHistoryTimestamp(entryId: String, newDateTime: LocalDateTime) {
         scope.launch {
             val formattedTime = formatTime(newDateTime)
@@ -374,13 +443,8 @@ class MedicationRepository(
                 daysDiff in 0..6
             }
 
-        val totalGoals = medications.filterNot { it.isPrn }.sumOf { it.dailyGoal }
-        val adherencePercentage = if (totalGoals > 0) {
-            (takenThisWeek.toFloat() / totalGoals.toFloat()) * 100f
-        } else {
-            0f
-        }
-        
+        // Adherencia removida: esta app es puramente tracking sin metas
+
         val dailyAverage = (takenThisWeek.toFloat() / 7f).let {
             kotlin.math.round(it * 10) / 10f
         }
@@ -388,7 +452,7 @@ class MedicationRepository(
         return Stats(
             takenToday = takenToday,
             takenThisWeek = takenThisWeek,
-            adherencePercentage = adherencePercentage.toInt(),
+            adherencePercentage = 0, // Campo deprecado, no se usa
             dailyAverage = dailyAverage
         )
     }

@@ -60,6 +60,11 @@ data class StatisticsUiState(
     // Patrones temporales (6 franjas)
     val hourlyPattern: Map<String, Int> = emptyMap(),
 
+    // Desglose por variantes de dosis (para familias de medicamentos)
+    val doseBreakdown: List<DoseBreakdownItem> = emptyList(),
+    val showingFamilyStats: Boolean = false, // true si se está mostrando una familia
+    val familyName: String = "", // Nombre de la familia (ej: "Ibuprofeno/Paracetamol")
+
     // Campos legacy (mantener por compatibilidad temporal)
     val narrativeSummary: String = "",
     val mostActiveDay: String = "",
@@ -69,13 +74,30 @@ data class StatisticsUiState(
     val monthlyActivityData: List<StatisticsViewModel.MonthlyActivityPoint> = emptyList(),
     val loggingConsistency: String = "",
     val totalDaysWithRecords: Int = 0,
-    val averageDosesPerActiveDay: String = "0"
+    val averageDosesPerActiveDay: String = "0",
+
+    // --- Daily Details Selection ---
+    val selectedDate: LocalDate? = null,
+    val selectedDateHistory: List<HistoryEntryWithUnit> = emptyList()
 )
 
 data class HistoryEntryWithUnit(
     val entry: com.d4vram.pillmate2.model.HistoryEntry,
     val displayValue: String,
-    val displayUnit: String
+    val displayUnit: String,
+    val medicationColor: androidx.compose.ui.graphics.Color? = null
+)
+
+/**
+ * Desglose de dosis por variante de medicamento (para familias)
+ */
+data class DoseBreakdownItem(
+    val medicationName: String,
+    val dose: String,
+    val color: androidx.compose.ui.graphics.Color,
+    val totalValue: Float,
+    val displayUnit: String,
+    val percentage: Float // 0-1 para la barra de progreso
 )
 
 
@@ -142,6 +164,55 @@ class StatisticsViewModel(
         loadStatistics()
     }
 
+    fun selectDay(date: LocalDate?) {
+        val currentState = _uiState.value
+        // Si ya está seleccionado, deseleccionar (toggle)
+        if (currentState.selectedDate == date) {
+             _uiState.update { it.copy(selectedDate = null, selectedDateHistory = emptyList()) }
+             return
+        }
+
+        if (date == null) {
+            _uiState.update { it.copy(selectedDate = null, selectedDateHistory = emptyList()) }
+            return
+        }
+
+        // Filtrar historial para ese día
+        viewModelScope.launch {
+            val history = medicationRepository.getHistorySnapshot() 
+            val allMedications = medicationRepository.getMedicationsSnapshot()
+            
+            val entriesOnDate = history.filter { it.timestamp.toLocalDate() == date }
+                .sortedByDescending { it.timestamp }
+
+            val historyWithUnits = entriesOnDate.map { entry ->
+                val entryMed = allMedications.find { it.id == entry.medicationId }
+                val entryUnit = getDisplayUnitForMedication(entryMed)
+                // Usamos lógica similar a calculateTotalInUnit pero para una entrada
+                val entryValue = when (entryUnit) {
+                    "mg" -> {
+                        val doseValue = entryMed?.dose?.let { extractDoseValue(it) } ?: 1f
+                        entry.quantity * doseValue
+                    }
+                    else -> entry.quantity.toFloat()
+                }
+                HistoryEntryWithUnit(
+                    entry = entry,
+                    displayValue = formatValueWithUnit(entryValue, entryUnit),
+                    displayUnit = entryUnit,
+                    medicationColor = entryMed?.color
+                )
+            }
+
+            _uiState.update { 
+                it.copy(
+                    selectedDate = date,
+                    selectedDateHistory = historyWithUnits
+                )
+            }
+        }
+    }
+
     // --- Lógica Principal de Cálculo ---
 
     private fun loadStatistics() {
@@ -164,13 +235,34 @@ class StatisticsViewModel(
                 medicationRepository.getHistoryBetween(queryStartDate.toEpochDay(), endDate.toEpochDay())
             }
             val allMedications = medicationRepository.getMedicationsSnapshot()
-            
+
+            // Capturar una copia local para evitar problemas de smart cast
+            val currentSelectedId = selectedMedicationId
+
+            // Determinar la familia del medicamento seleccionado
+            val selectedMed = currentSelectedId?.let { id -> allMedications.find { it.id == id } }
+            val familyIds = if (currentSelectedId != null) {
+                getFamilyMedicationIds(currentSelectedId, allMedications)
+            } else {
+                emptySet()
+            }
+
             val filteredHistory = allHistory.filter { entry ->
-                if (selectedMedicationId == null) true
+                if (currentSelectedId == null) true
                 else {
-                    val med = allMedications.find { it.id == entry.medicationId }
-                    entry.medicationId == selectedMedicationId || med?.parentMedicationId == selectedMedicationId
+                    // Incluir entradas de cualquier miembro de la familia
+                    entry.medicationId in familyIds
                 }
+            }
+
+            // Calcular desglose por variante si hay familia seleccionada
+            val (doseBreakdown, showingFamily, familyName) = if (currentSelectedId != null && familyIds.size > 1) {
+                val familyMeds = allMedications.filter { it.id in familyIds }
+                val breakdown = calculateDoseBreakdown(filteredHistory, familyMeds, selectedMed)
+                val names = familyMeds.map { it.name }.distinct()
+                Triple(breakdown, true, names.joinToString("/"))
+            } else {
+                Triple(emptyList<DoseBreakdownItem>(), false, "")
             }
 
             val effectiveStartDate = if (range == FilterRange.ALL_TIME && allHistory.isNotEmpty()) {
@@ -188,7 +280,7 @@ class StatisticsViewModel(
                 endDate = endDate,
                 history = filteredHistory,
                 medications = allMedications,
-                selectedMedicationId = selectedMedicationId,
+                selectedMedicationId = currentSelectedId,
                 weeklyPatternHistory = allHistory.filter { it.timestamp.toLocalDate() in endDate.minusDays(27)..endDate }
             )
 
@@ -213,8 +305,6 @@ class StatisticsViewModel(
 
             val recentHistoryList = filteredHistory.take(5)
 
-            val selectedMed = selectedMedicationId?.let { id -> allMedications.find { it.id == id } }
-
             // Calcular unidades dinámicas
             val displayUnit = getDisplayUnitForMedication(selectedMed)
             val totalInUnit = calculateTotalInUnit(filteredHistory, selectedMed, displayUnit)
@@ -234,7 +324,8 @@ class StatisticsViewModel(
                 HistoryEntryWithUnit(
                     entry = entry,
                     displayValue = formatValueWithUnit(entryValue, entryUnit),
-                    displayUnit = entryUnit
+                    displayUnit = entryUnit,
+                    medicationColor = entryMed?.color
                 )
             }
 
@@ -260,8 +351,8 @@ class StatisticsViewModel(
                     dateRangeText = dateRangeText,
                     recentHistory = recentHistoryList,
                     topMedications = topMedicationsList,
-                    availableMedications = allMedications.filter { med -> med.parentMedicationId == null },
-                    selectedMedicationId = selectedMedicationId,
+                    availableMedications = allMedications, // Incluir todos (padres e hijos) para mostrar familias completas
+                    selectedMedicationId = currentSelectedId,
                     selectedMedicationColor = selectedMed?.color,
                     // Unidades dinámicas
                     displayUnit = displayUnit,
@@ -282,10 +373,72 @@ class StatisticsViewModel(
                     loggingConsistency = trackingMetrics.loggingConsistency,
                     totalDaysWithRecords = trackingMetrics.totalDaysWithRecords,
                     averageDosesPerActiveDay = String.format("%.1f", trackingMetrics.averageDosesPerActiveDay),
-                    hourlyPattern = trackingMetrics.hourlyPattern
+                    hourlyPattern = trackingMetrics.hourlyPattern,
+                    // Desglose por variantes de dosis
+                    doseBreakdown = doseBreakdown,
+                    showingFamilyStats = showingFamily,
+                    familyName = familyName
                 )
             }
         }
+    }
+
+    /**
+     * Obtiene todos los IDs de medicamentos que pertenecen a la misma familia
+     */
+    private fun getFamilyMedicationIds(medicationId: String, allMedications: List<Medication>): Set<String> {
+        val medication = allMedications.find { it.id == medicationId } ?: return setOf(medicationId)
+
+        // Determinar el ID del padre
+        val parentId = medication.parentMedicationId ?: medication.id
+
+        // Encontrar todos los miembros de la familia (padre + hijos)
+        val familyIds = mutableSetOf(parentId)
+        allMedications.filter { it.parentMedicationId == parentId }.forEach {
+            familyIds.add(it.id)
+        }
+
+        return familyIds
+    }
+
+    /**
+     * Calcula el desglose de dosis por cada variante de la familia
+     */
+    private fun calculateDoseBreakdown(
+        history: List<com.d4vram.pillmate2.model.HistoryEntry>,
+        familyMeds: List<Medication>,
+        selectedMed: Medication?
+    ): List<DoseBreakdownItem> {
+        val unit = getDisplayUnitForMedication(selectedMed)
+
+        // Calcular total por cada medicamento
+        val totals = familyMeds.map { med ->
+            val medHistory = history.filter { it.medicationId == med.id }
+            val totalValue = when (unit) {
+                "mg" -> {
+                    val doseValue = extractDoseValue(med.dose)
+                    medHistory.sumOf { it.quantity } * doseValue
+                }
+                else -> medHistory.sumOf { it.quantity }.toFloat()
+            }
+            med to totalValue
+        }
+
+        val maxTotal = totals.maxOfOrNull { it.second } ?: 1f
+
+        // Ordenar por dosis descendente
+        return totals
+            .sortedByDescending { extractDoseValue(it.first.dose) }
+            .map { (med, total) ->
+                DoseBreakdownItem(
+                    medicationName = med.name,
+                    dose = med.dose,
+                    color = med.color,
+                    totalValue = total,
+                    displayUnit = unit,
+                    percentage = if (maxTotal > 0) total / maxTotal else 0f
+                )
+            }
     }
 
     private fun generateNarrativeSummary(
@@ -497,7 +650,8 @@ class StatisticsViewModel(
                 totalValue = takenCount.toFloat(),
                 unit = "dosis",
                 fullDate = fullDate,
-                hasRecords = takenCount > 0
+                hasRecords = takenCount > 0,
+                date = date
             )
         }
     }

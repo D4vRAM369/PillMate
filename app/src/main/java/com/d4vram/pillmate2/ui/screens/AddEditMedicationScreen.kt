@@ -161,14 +161,12 @@ fun AddEditMedicationScreen(
                             scheduleDays = baseMedication.scheduleDays,
                             photoPath = photoPath, // 📸 Guardar ruta de foto
                             usePhotoInstead = usePhotoInstead, // 🖼️ Guardar preferencia de visualización
-                            parentMedicationId = parentMedicationId // 🔗 Guardar vínculo
+                            parentMedicationId = parentMedicationId // 🔗 Guardar vínculo (se pasa como argumento, pero también en el objeto por si acaso)
                         )
 
-                        if (isEditing) {
-                            repository.updateMedication(medication)
-                        } else {
-                            repository.addMedication(medication)
-                        }
+                        // Usar la nueva lógica inteligente de familias
+                        repository.saveMedicationWithSmartFamilyLogic(medication, parentMedicationId)
+                        
                         onNavigateBack()
                     }
                 },
