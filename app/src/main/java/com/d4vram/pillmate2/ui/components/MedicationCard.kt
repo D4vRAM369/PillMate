@@ -66,8 +66,12 @@ fun MedicationCard(
         label = "card_scale"
     )
 
+    // Observar el historial para reactividad - cuando cambia, se recalcula el contador
+    val historyEntries by repository.historyEntries.collectAsState()
+
     // Calcular el contador según el período configurado
-    val takenCount = remember(medication.id, medication.name, chipCountPeriod) {
+    // Ahora incluye historyEntries como key para que se recalcule cuando registres una toma
+    val takenCount = remember(medication.id, medication.name, chipCountPeriod, historyEntries) {
         repository.calculateTakenCount(medication.id, medication.name, chipCountPeriod)
     }
 
