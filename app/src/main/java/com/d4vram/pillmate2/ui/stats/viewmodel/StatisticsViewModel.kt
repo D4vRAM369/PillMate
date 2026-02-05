@@ -284,10 +284,16 @@ class StatisticsViewModel(
                 weeklyPatternHistory = allHistory.filter { it.timestamp.toLocalDate() in endDate.minusDays(27)..endDate }
             )
 
+            // Calcular unidades dinámicas (mover antes para usar en activityChartData)
+            val displayUnit = getDisplayUnitForMedication(selectedMed)
+
             val activityChartData = generateActivityData(
                 start = effectiveStartDate,
                 end = endDate,
-                history = filteredHistory
+                history = filteredHistory,
+                allMedications = allMedications,
+                selectedMedication = selectedMed,
+                displayUnit = displayUnit
             )
 
             val topMedicationsList = filteredHistory.groupBy { entry ->
@@ -304,9 +310,6 @@ class StatisticsViewModel(
                 }
 
             val recentHistoryList = filteredHistory.take(5)
-
-            // Calcular unidades dinámicas
-            val displayUnit = getDisplayUnitForMedication(selectedMed)
             val totalInUnit = calculateTotalInUnit(filteredHistory, selectedMed, displayUnit)
             val averageInUnit = if (totalDays > 0) totalInUnit / totalDays else 0f
 
@@ -619,7 +622,10 @@ class StatisticsViewModel(
     private fun generateActivityData(
         start: LocalDate,
         end: LocalDate,
-        history: List<com.d4vram.pillmate2.model.HistoryEntry>
+        history: List<com.d4vram.pillmate2.model.HistoryEntry>,
+        allMedications: List<Medication> = emptyList(),
+        selectedMedication: Medication? = null,
+        displayUnit: String = "tomas"
     ): List<ActivityDataPoint> {
         val days = ChronoUnit.DAYS.between(start, end).toInt() + 1
 
@@ -645,13 +651,28 @@ class StatisticsViewModel(
             val entriesOnDate = history.filter { it.timestamp.toLocalDate() == date }
             val takenCount = entriesOnDate.sumOf { it.quantity }
 
+            // Calcular valor en la unidad correcta
+            val valueInUnit = when (displayUnit) {
+                "mg" -> {
+                    // Sumar mg de cada entrada según la dosis del medicamento
+                    entriesOnDate.sumOf { entry ->
+                        val entryMed = allMedications.find { it.id == entry.medicationId }
+                        val doseValue = entryMed?.dose?.let { extractDoseValue(it) } ?: 1f
+                        entry.quantity * doseValue.toDouble()
+                    }.toFloat()
+                }
+                "gotas", "ml" -> takenCount.toFloat()
+                else -> takenCount.toFloat() // tomas
+            }
+
             ActivityDataPoint(
                 dayName = dayName,
                 totalValue = takenCount.toFloat(),
-                unit = "dosis",
+                unit = displayUnit,
                 fullDate = fullDate,
                 hasRecords = takenCount > 0,
-                date = date
+                date = date,
+                valueInUnit = valueInUnit
             )
         }
     }

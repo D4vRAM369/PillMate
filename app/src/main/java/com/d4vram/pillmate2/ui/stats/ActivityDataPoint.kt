@@ -10,5 +10,6 @@ data class ActivityDataPoint(
     val unit: String = "",
     val fullDate: String = "",
     val hasRecords: Boolean = false,
-    val date: java.time.LocalDate? = null
+    val date: java.time.LocalDate? = null,
+    val valueInUnit: Float = 0f // Valor convertido a la unidad del medicamento (mg, gotas, tomas)
 )

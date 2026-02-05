@@ -174,6 +174,19 @@ fun StatisticsScreen(
                 lastRecord = uiState.timeSinceLastRecord
             )
 
+            // Gráfica lineal semanal (nueva, con protagonismo)
+            if (uiState.activityData.isNotEmpty()) {
+                WeeklyLineChart(
+                    data = uiState.activityData,
+                    unit = uiState.displayUnit,
+                    accentColor = uiState.selectedMedicationColor ?: MaterialTheme.colorScheme.primary,
+                    dateRangeText = uiState.dateRangeText,
+                    onPrevious = { viewModel.previousPeriod() },
+                    onNext = { viewModel.nextPeriod() },
+                    showNavigation = uiState.activeFilter != FilterRange.ALL_TIME
+                )
+            }
+
             // Desglose por variantes de dosis (solo si hay familia seleccionada)
             if (uiState.showingFamilyStats && uiState.doseBreakdown.isNotEmpty()) {
                 DoseBreakdownSection(
@@ -182,7 +195,7 @@ fun StatisticsScreen(
                 )
             }
 
-            // Gráfica de actividad horizontal
+            // Gráfica de actividad horizontal (barras por día)
             if (uiState.activityData.isNotEmpty()) {
                 HorizontalActivityChart(
                     data = uiState.activityData,
@@ -190,17 +203,6 @@ fun StatisticsScreen(
                     onDaySelected = { date -> viewModel.selectDay(date) },
                     selectedDate = uiState.selectedDate
                 )
-                
-
-
-                // Navegación de fechas
-                if (uiState.activeFilter != FilterRange.ALL_TIME) {
-                    DateNavigation(
-                        dateRangeText = uiState.dateRangeText,
-                        onPrevious = { viewModel.previousPeriod() },
-                        onNext = { viewModel.nextPeriod() }
-                    )
-                }
             }
 
             // Distribución horaria (6 franjas)
