@@ -45,12 +45,14 @@ fun AppLockScreen(
     val focusRequester = remember { FocusRequester() }
 
     // Efecto que se lanza una sola vez cuando la pantalla aparece.
-    // 1. Pone el foco en el campo del PIN (como respaldo).
-    // 2. Si la biometría está activada, lanza el diálogo de autenticación automáticamente.
+    // Prioridad: biometría primero (privacidad), PIN como respaldo.
     LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
         if (isBiometricEnabled) {
+            // Lanzar biometría directamente, sin mostrar teclado de PIN
             onUseBiometric()
+        } else {
+            // Solo PIN disponible, poner foco en el campo
+            focusRequester.requestFocus()
         }
     }
 
