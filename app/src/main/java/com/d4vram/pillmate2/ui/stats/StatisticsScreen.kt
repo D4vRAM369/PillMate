@@ -25,6 +25,8 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -40,8 +42,11 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import com.d4vram.pillmate2.ui.export.PdfExportSheet
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,6 +80,21 @@ fun StatisticsScreen(
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Estado para el menú de exportación y el sheet de PDF
+    var showExportMenu by remember { mutableStateOf(false) }
+    var showPdfExportSheet by remember { mutableStateOf(false) }
+
+    // Calcular fechas del periodo actual para pasar al PDF
+    val currentStartDate = remember(uiState.activeFilter, uiState.dateRangeText) {
+        when (uiState.activeFilter) {
+            FilterRange.WEEK -> java.time.LocalDate.now().minusDays(6)
+            FilterRange.DAYS_15 -> java.time.LocalDate.now().minusDays(14)
+            FilterRange.DAYS_30 -> java.time.LocalDate.now().minusDays(29)
+            FilterRange.ALL_TIME -> java.time.LocalDate.now().minusYears(1)
+        }
+    }
+    val currentEndDate = java.time.LocalDate.now()
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -94,49 +114,68 @@ fun StatisticsScreen(
                     }
                 },
                 actions = {
-                    IconButton(
-                        onClick = {
-                            coroutineScope.launch {
-                                val exporter = StatsExporter(context)
-                                if (exporter.isExternalStorageWritable()) {
-                                    val file = exporter.exportSummaryToCSV(
-                                        totalDoses = uiState.totalDosesLogged,
-                                        averageDaily = uiState.averageDailyDoses,
-                                        medications = uiState.availableMedications,
-                                        history = uiState.recentHistory
-                                    )
-                                    if (file != null) {
-                                        try {
-                                            val uri = androidx.core.content.FileProvider.getUriForFile(
-                                                context,
-                                                "${context.packageName}.provider",
-                                                file
-                                            )
-                                            val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
-                                                type = "text/csv"
-                                                putExtra(android.content.Intent.EXTRA_STREAM, uri)
-                                                addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                                putExtra(android.content.Intent.EXTRA_SUBJECT, "Estadísticas PillMate")
-                                            }
-                                            context.startActivity(
-                                                android.content.Intent.createChooser(intent, "Compartir reporte")
-                                            )
-                                        } catch (e: Exception) {
-                                            snackbarHostState.showSnackbar("Error al compartir: ${e.message}")
-                                        }
-                                    } else {
-                                        snackbarHostState.showSnackbar("Error al exportar datos")
-                                    }
-                                } else {
-                                    snackbarHostState.showSnackbar("Almacenamiento no disponible")
-                                }
-                            }
+                    Box {
+                        IconButton(onClick = { showExportMenu = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = "Exportar datos"
+                            )
                         }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = "Exportar datos"
-                        )
+
+                        // Menú desplegable con opciones CSV y PDF
+                        DropdownMenu(
+                            expanded = showExportMenu,
+                            onDismissRequest = { showExportMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Exportar CSV") },
+                                onClick = {
+                                    showExportMenu = false
+                                    coroutineScope.launch {
+                                        val exporter = StatsExporter(context)
+                                        if (exporter.isExternalStorageWritable()) {
+                                            val file = exporter.exportSummaryToCSV(
+                                                totalDoses = uiState.totalDosesLogged,
+                                                averageDaily = uiState.averageDailyDoses,
+                                                medications = uiState.availableMedications,
+                                                history = uiState.recentHistory
+                                            )
+                                            if (file != null) {
+                                                try {
+                                                    val uri = androidx.core.content.FileProvider.getUriForFile(
+                                                        context,
+                                                        "${context.packageName}.provider",
+                                                        file
+                                                    )
+                                                    val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                                                        type = "text/csv"
+                                                        putExtra(android.content.Intent.EXTRA_STREAM, uri)
+                                                        addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                                        putExtra(android.content.Intent.EXTRA_SUBJECT, "Estadísticas PillMate")
+                                                    }
+                                                    context.startActivity(
+                                                        android.content.Intent.createChooser(intent, "Compartir reporte")
+                                                    )
+                                                } catch (e: Exception) {
+                                                    snackbarHostState.showSnackbar("Error al compartir: ${e.message}")
+                                                }
+                                            } else {
+                                                snackbarHostState.showSnackbar("Error al exportar datos")
+                                            }
+                                        } else {
+                                            snackbarHostState.showSnackbar("Almacenamiento no disponible")
+                                        }
+                                    }
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Exportar PDF") },
+                                onClick = {
+                                    showExportMenu = false
+                                    showPdfExportSheet = true
+                                }
+                            )
+                        }
                     }
                 }
             )
@@ -233,13 +272,23 @@ fun StatisticsScreen(
                 DailyDetailSheetContent(
                     date = uiState.selectedDate!!,
                     history = uiState.selectedDateHistory,
-                    onViewFullHistory = { 
+                    onViewFullHistory = {
                         // Navegar al historial completo o cerrar sheet
                         viewModel.selectDay(null)
                         // Si hubiera navegación directa: navController?.navigate("history")
                     }
                 )
             }
+        }
+
+        // BottomSheet para exportar PDF
+        if (showPdfExportSheet) {
+            PdfExportSheet(
+                repository = repository,
+                initialStartDate = currentStartDate,
+                initialEndDate = currentEndDate,
+                onDismiss = { showPdfExportSheet = false }
+            )
         }
     }
 }
