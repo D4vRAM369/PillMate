@@ -184,9 +184,13 @@ class PdfExportViewModel(
             medicationTotals.first().displayUnit
         } else "tomas"
 
-        // Total general
+        // Total general (en unidades - mantener para gráficas)
         val totalValue = grandTotal
         val averageDaily = if (totalDays > 0) totalValue / totalDays else 0f
+
+        // Métricas de tomas (más útiles clínicamente)
+        val totalTomas = history.sumOf { it.quantity }
+        val averageDailyTomas = if (totalDays > 0) totalTomas.toFloat() / totalDays else 0f
 
         // Datos diarios para gráfica
         val dailyData = (0 until totalDays).map { offset ->
@@ -214,6 +218,8 @@ class PdfExportViewModel(
             averageDaily = averageDaily,
             daysWithRecords = daysWithRecords,
             totalDays = totalDays,
+            totalTomas = totalTomas,
+            averageDailyTomas = averageDailyTomas,
             medicationTotals = medicationTotalsWithPercentage,
             dailyData = dailyData,
             hourlyPattern = hourlyPattern

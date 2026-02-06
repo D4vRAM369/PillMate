@@ -28,6 +28,9 @@ data class PdfReportData(
     val averageDaily: Float,
     val daysWithRecords: Int,
     val totalDays: Int,
+    // Métricas de tomas (más útiles clínicamente)
+    val totalTomas: Int,
+    val averageDailyTomas: Float,
     // Datos por medicamento
     val medicationTotals: List<MedicationTotal>,
     // Datos para gráficas
@@ -237,8 +240,8 @@ class PdfGenerator(private val context: Context) {
         val accentPaint = style.accentPaint()
 
         val items = listOf(
-            "Total registrado:" to "${formatValue(data.totalValue)} ${data.displayUnit}",
-            "Promedio diario:" to "${formatValue(data.averageDaily)} ${data.displayUnit}/día",
+            "Total de tomas:" to "${data.totalTomas} tomas",
+            "Promedio diario:" to "${formatValue(data.averageDailyTomas)} tomas/día",
             "Días con registro:" to "${data.daysWithRecords} de ${data.totalDays}",
             "Medicamentos activos:" to "${data.medications.size}"
         )
@@ -314,7 +317,7 @@ class PdfGenerator(private val context: Context) {
             )
 
             // Valor y porcentaje
-            val valueText = "${formatValue(medTotal.totalValue)}${medTotal.displayUnit} (${(medTotal.percentage * 100).toInt()}%)"
+            val valueText = "${formatValue(medTotal.totalValue)} ${medTotal.displayUnit} (${(medTotal.percentage * 100).toInt()}%)"
             canvas.drawText(
                 valueText,
                 pageWidth - style.pageMargin,
@@ -352,8 +355,8 @@ class PdfGenerator(private val context: Context) {
         }
 
         val col1 = leftMargin
-        val col2 = leftMargin + 80f
-        val col3 = leftMargin + 160f
+        val col2 = leftMargin + 95f   // Más espacio para fecha DD/MM/YYYY
+        val col3 = leftMargin + 155f  // Espacio ajustado para hora HH:mm
         val col4 = pageWidth - style.pageMargin
 
         if (style.showTableBorders) {
