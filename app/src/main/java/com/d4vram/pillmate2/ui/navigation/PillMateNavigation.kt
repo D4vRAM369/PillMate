@@ -22,6 +22,7 @@ import com.d4vram.pillmate2.data.local.PillMateDatabase
 import com.d4vram.pillmate2.data.voice.VoiceNoteRepository
 import com.d4vram.pillmate2.ui.screens.*
 import com.d4vram.pillmate2.ui.stats.StatisticsScreen
+import com.d4vram.pillmate2.ui.export.PdfExportScreen
 import com.d4vram.pillmate2.ui.theme.ThemeManager
 import com.d4vram.pillmate2.ui.security.SecurityManager
 import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
@@ -183,7 +184,20 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
                 SettingsScreen(
                     themeManager = themeManager,
                     repository = repository,
-                    securityManager = securityManager
+                    securityManager = securityManager,
+                    onNavigateToPdfExport = {
+                        navController.navigate(Screen.PdfExport.route)
+                    }
+                )
+            }
+
+            // Pantalla de exportación PDF (accesible desde Ajustes)
+            composable(Screen.PdfExport.route) {
+                PdfExportScreen(
+                    repository = repository,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
                 )
             }
             
@@ -245,6 +259,7 @@ sealed class Screen(val route: String, val label: String? = null, val icon: Imag
     object Settings : Screen("settings", "Ajustes", Icons.Default.Settings)
     object MedicationStats : Screen("medication_stats/{medicationId}")
     object GlobalStats : Screen("global_stats")
+    object PdfExport : Screen("pdf_export")
 }
 
 private val bottomNavItems = listOf(

@@ -27,6 +27,7 @@ import com.d4vram.pillmate2.data.CsvUtils
 import com.d4vram.pillmate2.ui.security.SecurityManager
 import com.d4vram.pillmate2.ui.security.SecuritySettings
 import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
+import com.d4vram.pillmate2.ui.export.PdfExportSheet
 import com.d4vram.pillmate2.ui.theme.AppUiStyle
 import com.d4vram.pillmate2.ui.theme.ThemeManager
 import androidx.biometric.BiometricManager
@@ -55,7 +56,8 @@ import kotlinx.coroutines.flow.first
 fun SettingsScreen(
     themeManager: ThemeManager,
     repository: MedicationRepository,
-    securityManager: SecurityManager
+    securityManager: SecurityManager,
+    onNavigateToPdfExport: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -80,6 +82,7 @@ fun SettingsScreen(
     var showBackupExportDialog by remember { mutableStateOf(false) }
     var showBackupPasswordDialog by remember { mutableStateOf(false) }
     var pendingEncryptedBackupFile by remember { mutableStateOf<File?>(null) }
+    var showPdfExportSheet by remember { mutableStateOf(false) }
 
     val biometricManager = remember { BiometricManager.from(context) }
     val canAuthenticateBiometric = remember(biometricManager) {
@@ -493,6 +496,14 @@ fun SettingsScreen(
                                 }
                             }
                         }
+                    )
+
+                    // 📑 Exportar PDF (reporte visual)
+                    SettingsItem(
+                        title = "Exportar PDF",
+                        description = "Generar reporte visual para médico o archivo",
+                        icon = Icons.Default.PictureAsPdf,
+                        onClick = onNavigateToPdfExport
                     )
 
                     // 🎙️ Exportar historial con audios
@@ -1776,11 +1787,12 @@ private fun HistoryExportDialog(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Solo texto (CSV)")
                 }
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cancelar")
+                }
             }
         }
     )
@@ -1855,11 +1867,12 @@ private fun BackupExportDialog(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Sin cifrar")
                     }
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = onDismiss) {
-                    Text("Cancelar")
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Cancelar")
+                    }
                 }
             }
         )
