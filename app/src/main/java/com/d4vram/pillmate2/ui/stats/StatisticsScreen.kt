@@ -330,32 +330,33 @@ fun DailyDetailSheetContent(
         history.forEach { item ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Dot indicador con el color del medicamento
-                    Box(
-                        modifier = Modifier
-                            .size(10.dp)
-                            .clip(CircleShape)
-                            .background(item.medicationColor ?: MaterialTheme.colorScheme.primary)
-                    )
-                    
-                    Text(
-                        text = "${item.entry.medicationName} • ${item.displayValue}${item.displayUnit}",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = androidx.compose.ui.graphics.Color.White
-                    )
-                }
+                // Dot indicador con el color del medicamento
+                Box(
+                    modifier = Modifier
+                        .size(10.dp)
+                        .clip(CircleShape)
+                        .background(item.medicationColor ?: MaterialTheme.colorScheme.primary)
+                )
 
+                // Nombre del medicamento (ocupa espacio disponible, sin romper línea)
+                Text(
+                    text = "${item.entry.medicationName} • ${item.displayValue} ${item.displayUnit}",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = androidx.compose.ui.graphics.Color.White,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Hora (ancho fijo, nunca se rompe)
                 Text(
                     text = item.entry.time,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.7f)
+                    color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.7f),
+                    maxLines = 1
                 )
             }
         }
@@ -688,13 +689,14 @@ fun HourlyDistributionSection(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        // Nombre del slot
-                        Column(modifier = Modifier.width(72.dp)) {
+                        // Nombre del slot (ancho suficiente para "Madrugada")
+                        Column(modifier = Modifier.width(85.dp)) {
                             Text(
                                 text = slot,
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1
                             )
                             Text(
                                 text = slotRanges[index],
