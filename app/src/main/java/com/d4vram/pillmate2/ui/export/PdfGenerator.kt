@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.RectF
+import android.graphics.Typeface
 import android.graphics.pdf.PdfDocument
 import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.model.Medication
@@ -12,6 +13,8 @@ import java.io.FileOutputStream
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.time.temporal.ChronoUnit
+import kotlin.math.min
 
 /**
  * Datos necesarios para generar el PDF.
@@ -51,14 +54,46 @@ data class DailyDataPoint(
 )
 
 /**
- * Generador de reportes PDF.
- * Usa la API nativa de Android (android.graphics.pdf.PdfDocument).
+ * Generador de reportes PDF profesional.
+ *
+ * Características:
+ * - Paginación automática para contenido largo
+ * - Layout basado en medición real de texto
+ * - Todas las secciones implementadas
+ * - Soporte para múltiples estilos
  */
 class PdfGenerator(private val context: Context) {
+
+    // ===========================================
+    // CONSTANTES DE PÁGINA
+    // ===========================================
 
     // Dimensiones de página A4 en puntos (72 puntos = 1 pulgada)
     private val pageWidth = 595  // ~210mm
     private val pageHeight = 842 // ~297mm
+
+    // Área útil de contenido (descontando márgenes)
+    private fun contentWidth(style: PdfStyle) = pageWidth - (style.pageMargin * 2)
+    private fun contentBottom(style: PdfStyle) = pageHeight - style.pageMargin
+
+    // ===========================================
+    // ESTADO DE PAGINACIÓN
+    // ===========================================
+
+    private var currentPageNumber = 1
+    private lateinit var document: PdfDocument
+    private lateinit var currentPage: PdfDocument.Page
+    private lateinit var canvas: Canvas
+    private var yPosition = 0f
+    private lateinit var style: PdfStyle
+
+    // ===========================================
+    // FORMATEADORES
+    // ===========================================
+
+    private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+    private val dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
 
     /**
      * Genera el PDF con la configuración especificada.
@@ -68,79 +103,77 @@ class PdfGenerator(private val context: Context) {
         config: PdfExportConfig,
         data: PdfReportData
     ): File? {
-        val style = PdfStyle.fromType(config.style)
-        val document = PdfDocument()
+        style = PdfStyle.fromType(config.style)
+        document = PdfDocument()
+        currentPageNumber = 1
 
         try {
-            var currentPageNumber = 1
-            var yPosition = style.pageMargin
-
             // Crear primera página
-            var pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, currentPageNumber).create()
-            var page = document.startPage(pageInfo)
-            var canvas = page.canvas
+            startNewPage()
 
-            // Dibujar fondo
-            canvas.drawColor(style.backgroundColor)
-
-            // --- PORTADA ---
-            yPosition = drawHeader(canvas, style, data, yPosition)
+            // === PORTADA ===
+            drawHeader(data)
             yPosition += style.sectionSpacing
 
-            // --- SECCIONES SELECCIONADAS ---
+            // === SECCIONES SELECCIONADAS ===
 
-            // Resumen general
+            // 1. Resumen general
             if (PdfSection.SUMMARY in config.sections) {
-                yPosition = drawSummarySection(canvas, style, data, yPosition)
+                ensureSpace(120f)
+                drawSummarySection(data)
                 yPosition += style.sectionSpacing
             }
 
-            // Lista de medicamentos
+            // 2. Lista de medicamentos
             if (PdfSection.MEDICATIONS in config.sections) {
-                // Verificar si hay espacio, si no, nueva página
-                if (yPosition > pageHeight - 200) {
-                    document.finishPage(page)
-                    currentPageNumber++
-                    pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, currentPageNumber).create()
-                    page = document.startPage(pageInfo)
-                    canvas = page.canvas
-                    canvas.drawColor(style.backgroundColor)
-                    yPosition = style.pageMargin
-                }
-                yPosition = drawMedicationsSection(canvas, style, data, yPosition)
+                ensureSpace(100f)
+                drawMedicationsSection(data)
                 yPosition += style.sectionSpacing
             }
 
-            // Historial de tomas
-            if (PdfSection.HISTORY in config.sections) {
-                if (yPosition > pageHeight - 200) {
-                    document.finishPage(page)
-                    currentPageNumber++
-                    pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, currentPageNumber).create()
-                    page = document.startPage(pageInfo)
-                    canvas = page.canvas
-                    canvas.drawColor(style.backgroundColor)
-                    yPosition = style.pageMargin
-                }
-                yPosition = drawHistorySection(canvas, style, data, yPosition, document, currentPageNumber)
+            // 3. Gráfica semanal
+            if (PdfSection.WEEKLY_CHART in config.sections) {
+                ensureSpace(180f)
+                drawWeeklyChartSection(data)
+                yPosition += style.sectionSpacing
             }
 
-            // Distribución horaria
+            // 4. Historial de tomas (con paginación)
+            if (PdfSection.HISTORY in config.sections) {
+                ensureSpace(100f)
+                drawHistorySection(data)
+                yPosition += style.sectionSpacing
+            }
+
+            // 5. Distribución horaria
             if (PdfSection.HOURLY_DISTRIBUTION in config.sections) {
-                if (yPosition > pageHeight - 180) {
-                    document.finishPage(page)
-                    currentPageNumber++
-                    pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, currentPageNumber).create()
-                    page = document.startPage(pageInfo)
-                    canvas = page.canvas
-                    canvas.drawColor(style.backgroundColor)
-                    yPosition = style.pageMargin
-                }
-                yPosition = drawHourlySection(canvas, style, data, yPosition)
+                ensureSpace(180f)
+                drawHourlyDistributionSection(data)
+                yPosition += style.sectionSpacing
+            }
+
+            // 6. Desglose por dosis
+            if (PdfSection.DOSE_BREAKDOWN in config.sections) {
+                ensureSpace(150f)
+                drawDoseBreakdownSection(data)
+                yPosition += style.sectionSpacing
+            }
+
+            // 7. Tendencias mensuales
+            if (PdfSection.MONTHLY_TRENDS in config.sections) {
+                ensureSpace(150f)
+                drawMonthlyTrendsSection(data)
+                yPosition += style.sectionSpacing
+            }
+
+            // 8. Notas de voz
+            if (PdfSection.VOICE_NOTES in config.sections) {
+                ensureSpace(100f)
+                drawVoiceNotesSection(data)
             }
 
             // Finalizar última página
-            document.finishPage(page)
+            document.finishPage(currentPage)
 
             // Guardar archivo
             val fileName = generateFileName(data.startDate, data.endDate)
@@ -159,85 +192,163 @@ class PdfGenerator(private val context: Context) {
         }
     }
 
+    // ===========================================
+    // GESTIÓN DE PÁGINAS
+    // ===========================================
+
     /**
-     * Dibuja la cabecera del reporte (título y periodo)
+     * Inicia una nueva página en el documento
      */
-    private fun drawHeader(
-        canvas: Canvas,
-        style: PdfStyle,
-        data: PdfReportData,
-        startY: Float
-    ): Float {
-        var y = startY
-        val centerX = pageWidth / 2f
-
-        // Título principal
-        val titlePaint = style.titlePaint().apply {
-            textAlign = Paint.Align.CENTER
-        }
-        canvas.drawText("PillMate", centerX, y + style.titleSize, titlePaint)
-        y += style.titleSize + style.lineSpacing
-
-        // Subtítulo
-        val subtitlePaint = style.subtitlePaint().apply {
-            textAlign = Paint.Align.CENTER
-            color = style.textSecondary
-        }
-        canvas.drawText("Reporte de Medicación", centerX, y + style.subtitleSize, subtitlePaint)
-        y += style.subtitleSize + style.sectionSpacing
-
-        // Periodo
-        val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-        val periodText = "Periodo: ${data.startDate.format(dateFormatter)} - ${data.endDate.format(dateFormatter)}"
-        val secondaryPaint = style.secondaryPaint().apply {
-            textAlign = Paint.Align.CENTER
-        }
-        canvas.drawText(periodText, centerX, y + style.bodySize, secondaryPaint)
-        y += style.bodySize + style.lineSpacing
-
-        // Fecha de generación
-        val nowFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
-        val generatedText = "Generado: ${LocalDateTime.now().format(nowFormatter)}"
-        canvas.drawText(generatedText, centerX, y + style.smallSize, style.smallPaint().apply {
-            textAlign = Paint.Align.CENTER
-        })
-        y += style.smallSize + style.lineSpacing
-
-        // Línea separadora
-        y += 10f
-        val linePaint = Paint().apply {
-            color = style.borderColor
-            strokeWidth = 1f
-        }
-        canvas.drawLine(style.pageMargin, y, pageWidth - style.pageMargin, y, linePaint)
-        y += 10f
-
-        return y
+    private fun startNewPage() {
+        val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, currentPageNumber).create()
+        currentPage = document.startPage(pageInfo)
+        canvas = currentPage.canvas
+        canvas.drawColor(style.backgroundColor)
+        yPosition = style.pageMargin
+        currentPageNumber++
     }
 
     /**
-     * Dibuja la sección de resumen general
+     * Verifica si hay espacio suficiente; si no, crea nueva página
      */
-    private fun drawSummarySection(
-        canvas: Canvas,
-        style: PdfStyle,
-        data: PdfReportData,
-        startY: Float
-    ): Float {
-        var y = startY
+    private fun ensureSpace(neededHeight: Float) {
+        if (yPosition + neededHeight > contentBottom(style)) {
+            document.finishPage(currentPage)
+            startNewPage()
+        }
+    }
+
+    // ===========================================
+    // PAINTS DEDICADOS (sin mutación)
+    // ===========================================
+
+    private fun titlePaint(): Paint {
+        val s = style
+        return Paint().apply {
+            color = s.textPrimary
+            textSize = s.titleSize
+            typeface = Typeface.create(s.titleTypeface, Typeface.BOLD)
+            isAntiAlias = true
+        }
+    }
+
+    private fun subtitlePaint(): Paint {
+        val s = style
+        return Paint().apply {
+            color = s.textPrimary
+            textSize = s.subtitleSize
+            typeface = Typeface.create(s.titleTypeface, Typeface.BOLD)
+            isAntiAlias = true
+        }
+    }
+
+    private fun bodyPaint(): Paint {
+        val s = style
+        return Paint().apply {
+            color = s.textPrimary
+            textSize = s.bodySize
+            typeface = s.bodyTypeface
+            isAntiAlias = true
+        }
+    }
+
+    private fun bodyBoldPaint(): Paint {
+        val s = style
+        return Paint().apply {
+            color = s.textPrimary
+            textSize = s.bodySize
+            typeface = Typeface.create(s.bodyTypeface, Typeface.BOLD)
+            isAntiAlias = true
+        }
+    }
+
+    private fun secondaryPaint(): Paint {
+        val s = style
+        return Paint().apply {
+            color = s.textSecondary
+            textSize = s.bodySize
+            typeface = s.bodyTypeface
+            isAntiAlias = true
+        }
+    }
+
+    private fun smallPaint(): Paint {
+        val s = style
+        return Paint().apply {
+            color = s.textSecondary
+            textSize = s.smallSize
+            typeface = s.bodyTypeface
+            isAntiAlias = true
+        }
+    }
+
+    private fun accentPaint(): Paint {
+        val s = style
+        return Paint().apply {
+            color = s.accentColor
+            textSize = s.bodySize
+            typeface = Typeface.create(s.bodyTypeface, Typeface.BOLD)
+            isAntiAlias = true
+        }
+    }
+
+    // ===========================================
+    // SECCIÓN: CABECERA
+    // ===========================================
+
+    private fun drawHeader(data: PdfReportData) {
+        val s = style
+        val centerX = pageWidth / 2f
+
+        // Título principal
+        val title = titlePaint().apply { textAlign = Paint.Align.CENTER }
+        canvas.drawText("PillMate", centerX, yPosition + s.titleSize, title)
+        yPosition += s.titleSize + s.lineSpacing
+
+        // Subtítulo
+        val subtitle = subtitlePaint().apply {
+            textAlign = Paint.Align.CENTER
+            color = s.textSecondary
+        }
+        canvas.drawText("Reporte de Medicación", centerX, yPosition + s.subtitleSize, subtitle)
+        yPosition += s.subtitleSize + s.sectionSpacing
+
+        // Periodo
+        val periodText = "Periodo: ${data.startDate.format(dateFormatter)} - ${data.endDate.format(dateFormatter)}"
+        val secondary = secondaryPaint().apply { textAlign = Paint.Align.CENTER }
+        canvas.drawText(periodText, centerX, yPosition + s.bodySize, secondary)
+        yPosition += s.bodySize + s.lineSpacing
+
+        // Fecha de generación
+        val generatedText = "Generado: ${LocalDateTime.now().format(dateTimeFormatter)}"
+        val small = smallPaint().apply { textAlign = Paint.Align.CENTER }
+        canvas.drawText(generatedText, centerX, yPosition + s.smallSize, small)
+        yPosition += s.smallSize + s.lineSpacing
+
+        // Línea separadora
+        yPosition += 10f
+        val linePaint = Paint().apply {
+            color = s.borderColor
+            strokeWidth = 1f
+        }
+        canvas.drawLine(s.pageMargin, yPosition, pageWidth - s.pageMargin, yPosition, linePaint)
+        yPosition += 10f
+    }
+
+    // ===========================================
+    // SECCIÓN: RESUMEN
+    // ===========================================
+
+    private fun drawSummarySection(data: PdfReportData) {
         val leftMargin = style.pageMargin
+        val rightMargin = pageWidth - style.pageMargin
 
-        // Título de sección
-        canvas.drawText("RESUMEN", leftMargin, y + style.subtitleSize, style.subtitlePaint())
-        y += style.subtitleSize + style.lineSpacing * 2
+        // Título
+        canvas.drawText("RESUMEN", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        yPosition += style.subtitleSize + style.lineSpacing * 2
 
-        // Card/contenedor
-        val cardTop = y
+        val cardTop = yPosition
         val cardPadding = 12f
-
-        // Datos del resumen
-        val bodyPaint = style.bodyPaint()
-        val accentPaint = style.accentPaint()
 
         val items = listOf(
             "Total de tomas:" to "${data.totalTomas} tomas",
@@ -246,244 +357,475 @@ class PdfGenerator(private val context: Context) {
             "Medicamentos activos:" to "${data.medications.size}"
         )
 
-        y += cardPadding
-        items.forEach { (label, value) ->
-            canvas.drawText(label, leftMargin + cardPadding, y + style.bodySize, bodyPaint)
-            canvas.drawText(
-                value,
-                pageWidth - style.pageMargin - cardPadding,
-                y + style.bodySize,
-                accentPaint.apply { textAlign = Paint.Align.RIGHT }
-            )
-            y += style.bodySize + style.lineSpacing
-        }
-        y += cardPadding
+        yPosition += cardPadding
+        val body = bodyPaint()
+        val accent = accentPaint().apply { textAlign = Paint.Align.RIGHT }
 
-        // Dibujar borde del card si el estilo lo requiere
+        items.forEach { (label, value) ->
+            canvas.drawText(label, leftMargin + cardPadding, yPosition + style.bodySize, body)
+            canvas.drawText(value, rightMargin - cardPadding, yPosition + style.bodySize, accent)
+            yPosition += style.bodySize + style.lineSpacing
+        }
+        yPosition += cardPadding
+
+        // Borde del card
         if (style.showCardBorders) {
-            val cardRect = RectF(
-                leftMargin,
-                cardTop,
-                pageWidth - style.pageMargin,
-                y
-            )
+            val cardRect = RectF(leftMargin, cardTop, rightMargin, yPosition)
+            val s = style
             val borderPaint = Paint().apply {
-                color = style.borderColor
+                color = s.borderColor
                 this.style = Paint.Style.STROKE
                 strokeWidth = 1f
             }
             canvas.drawRoundRect(cardRect, 4f, 4f, borderPaint)
         }
-
-        return y
     }
 
-    /**
-     * Dibuja la sección de lista de medicamentos
-     */
-    private fun drawMedicationsSection(
-        canvas: Canvas,
-        style: PdfStyle,
-        data: PdfReportData,
-        startY: Float
-    ): Float {
-        var y = startY
+    // ===========================================
+    // SECCIÓN: MEDICAMENTOS
+    // ===========================================
+
+    private fun drawMedicationsSection(data: PdfReportData) {
         val leftMargin = style.pageMargin
+        val rightMargin = pageWidth - style.pageMargin
 
-        // Título de sección
-        canvas.drawText("MEDICAMENTOS", leftMargin, y + style.subtitleSize, style.subtitlePaint())
-        y += style.subtitleSize + style.lineSpacing * 2
+        // Título
+        canvas.drawText("MEDICAMENTOS", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        yPosition += style.subtitleSize + style.lineSpacing * 2
 
-        // Lista de medicamentos
-        val bodyPaint = style.bodyPaint()
+        val body = bodyPaint()
+        val secondary = secondaryPaint().apply { textAlign = Paint.Align.RIGHT }
+
+        // Ancho para nombre: dejamos 130pt para el valor a la derecha
+        val nameStartX = if (style.useColoredMedications) leftMargin + 18f else leftMargin
+        val maxNameWidth = rightMargin - nameStartX - 130f
 
         data.medicationTotals.forEach { medTotal ->
-            // Indicador de color (si el estilo lo permite)
+            ensureSpace(style.bodySize + style.lineSpacing)
+
+            // Indicador de color
             if (style.useColoredMedications) {
                 val colorPaint = Paint().apply {
                     color = medTotal.medication.color.toArgb()
                 }
-                canvas.drawCircle(leftMargin + 6f, y + style.bodySize / 2, 4f, colorPaint)
+                canvas.drawCircle(leftMargin + 6f, yPosition + style.bodySize / 2, 4f, colorPaint)
             }
 
-            val nameX = if (style.useColoredMedications) leftMargin + 18f else leftMargin
-
-            // Nombre del medicamento
-            canvas.drawText(
-                "${medTotal.medication.name} ${medTotal.medication.dose}",
-                nameX,
-                y + style.bodySize,
-                bodyPaint
-            )
+            // Nombre truncado
+            val fullName = "${medTotal.medication.name} ${medTotal.medication.dose}"
+            val truncatedName = truncateText(fullName, maxNameWidth, body)
+            canvas.drawText(truncatedName, nameStartX, yPosition + style.bodySize, body)
 
             // Valor y porcentaje
             val valueText = "${formatValue(medTotal.totalValue)} ${medTotal.displayUnit} (${(medTotal.percentage * 100).toInt()}%)"
-            canvas.drawText(
-                valueText,
-                pageWidth - style.pageMargin,
-                y + style.bodySize,
-                style.secondaryPaint().apply { textAlign = Paint.Align.RIGHT }
-            )
+            canvas.drawText(valueText, rightMargin, yPosition + style.bodySize, secondary)
 
-            y += style.bodySize + style.lineSpacing
+            yPosition += style.bodySize + style.lineSpacing
         }
-
-        return y
     }
 
-    /**
-     * Dibuja la sección de historial de tomas
-     */
-    private fun drawHistorySection(
-        canvas: Canvas,
-        style: PdfStyle,
-        data: PdfReportData,
-        startY: Float,
-        document: PdfDocument,
-        pageNumber: Int
-    ): Float {
-        var y = startY
-        val leftMargin = style.pageMargin
+    // ===========================================
+    // SECCIÓN: GRÁFICA SEMANAL
+    // ===========================================
 
-        // Título de sección
-        canvas.drawText("HISTORIAL DE TOMAS", leftMargin, y + style.subtitleSize, style.subtitlePaint())
-        y += style.subtitleSize + style.lineSpacing * 2
+    private fun drawWeeklyChartSection(data: PdfReportData) {
+        val leftMargin = style.pageMargin
+        val rightMargin = pageWidth - style.pageMargin
+
+        // Título
+        canvas.drawText("GRÁFICA SEMANAL", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        yPosition += style.subtitleSize + style.lineSpacing * 2
+
+        // Agrupar datos por semana
+        val weeklyData = data.dailyData.groupBy { entry ->
+            // Obtener el lunes de la semana
+            entry.date.minusDays(entry.date.dayOfWeek.value.toLong() - 1)
+        }.mapValues { (_, days) -> days.sumOf { it.value.toDouble() }.toFloat() }
+            .toList()
+            .sortedBy { it.first }
+            .takeLast(8) // Últimas 8 semanas
+
+        if (weeklyData.isEmpty()) {
+            val noData = secondaryPaint()
+            canvas.drawText("No hay datos suficientes para la gráfica", leftMargin, yPosition + style.bodySize, noData)
+            yPosition += style.bodySize
+            return
+        }
+
+        val maxValue = weeklyData.maxOfOrNull { it.second } ?: 1f
+        val chartHeight = 120f
+        val barWidth = (contentWidth(style) - 40f) / weeklyData.size
+        val chartTop = yPosition
+        val chartBottom = yPosition + chartHeight
+
+        val s = style
+        val barPaint = Paint().apply { color = s.accentColor }
+        val labelPaint = smallPaint().apply { textAlign = Paint.Align.CENTER }
+
+        weeklyData.forEachIndexed { index, (weekStart, value) ->
+            val barX = leftMargin + 20f + (index * barWidth)
+            val barHeight = if (maxValue > 0) (value / maxValue) * (chartHeight - 20f) else 0f
+
+            // Barra
+            if (barHeight > 0) {
+                canvas.drawRoundRect(
+                    RectF(barX + 4f, chartBottom - barHeight - 15f, barX + barWidth - 4f, chartBottom - 15f),
+                    4f, 4f, barPaint
+                )
+            }
+
+            // Etiqueta de semana (dd/MM)
+            val label = weekStart.format(DateTimeFormatter.ofPattern("dd/MM"))
+            canvas.drawText(label, barX + barWidth / 2, chartBottom, labelPaint)
+        }
+
+        yPosition = chartBottom + 10f
+    }
+
+    // ===========================================
+    // SECCIÓN: HISTORIAL (con paginación)
+    // ===========================================
+
+    private fun drawHistorySection(data: PdfReportData) {
+        val leftMargin = style.pageMargin
+        val rightMargin = pageWidth - style.pageMargin
+
+        // Título
+        canvas.drawText("HISTORIAL DE TOMAS", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        yPosition += style.subtitleSize + style.lineSpacing * 2
+
+        // === DEFINIR COLUMNAS CON ANCHOS FIJOS ===
+        // Medimos el texto más largo esperado para cada columna
+        val body = bodyPaint()
+        val header = bodyBoldPaint()
+
+        // Anchos calculados basados en contenido esperado
+        val dateWidth = body.measureText("00/00/0000") + 10f      // ~72pt
+        val timeWidth = body.measureText("00:00") + 10f           // ~35pt
+        val doseWidth = body.measureText("10x 500mg") + 10f       // ~65pt
+        val medWidth = rightMargin - leftMargin - dateWidth - timeWidth - doseWidth - 20f // resto
+
+        // Posiciones de columnas
+        val col1 = leftMargin                    // Fecha
+        val col2 = col1 + dateWidth + 5f         // Hora
+        val col3 = col2 + timeWidth + 5f         // Medicamento
+        val col4 = rightMargin                   // Dosis (alineado derecha)
 
         // Cabecera de tabla
-        val headerPaint = style.bodyPaint().apply {
-            typeface = android.graphics.Typeface.create(typeface, android.graphics.Typeface.BOLD)
+        if (style.showTableBorders) {
+            drawTableLine(leftMargin, rightMargin)
         }
+        yPosition += 4f
 
-        val col1 = leftMargin
-        val col2 = leftMargin + 95f   // Más espacio para fecha DD/MM/YYYY
-        val col3 = leftMargin + 155f  // Espacio ajustado para hora HH:mm
-        val col4 = pageWidth - style.pageMargin
+        canvas.drawText("Fecha", col1, yPosition + style.bodySize, header)
+        canvas.drawText("Hora", col2, yPosition + style.bodySize, header)
+        canvas.drawText("Medicamento", col3, yPosition + style.bodySize, header)
+        canvas.drawText("Dosis", col4, yPosition + style.bodySize, header.apply { textAlign = Paint.Align.RIGHT })
+        yPosition += style.bodySize + style.lineSpacing
 
         if (style.showTableBorders) {
-            canvas.drawLine(leftMargin, y, pageWidth - style.pageMargin, y, Paint().apply {
-                color = style.borderColor
-            })
+            drawTableLine(leftMargin, rightMargin)
         }
-        y += 4f
+        yPosition += 4f
 
-        canvas.drawText("Fecha", col1, y + style.bodySize, headerPaint)
-        canvas.drawText("Hora", col2, y + style.bodySize, headerPaint)
-        canvas.drawText("Medicamento", col3, y + style.bodySize, headerPaint)
-        canvas.drawText("Dosis", col4, y + style.bodySize, headerPaint.apply {
-            textAlign = Paint.Align.RIGHT
-        })
-        y += style.bodySize + style.lineSpacing
+        // Todas las filas con paginación
+        val rowHeight = style.bodySize + style.lineSpacing
 
-        if (style.showTableBorders) {
-            canvas.drawLine(leftMargin, y, pageWidth - style.pageMargin, y, Paint().apply {
-                color = style.borderColor
-            })
-        }
-        y += 4f
+        data.history.forEach { entry ->
+            // Verificar espacio y paginar si es necesario
+            if (yPosition + rowHeight > contentBottom(style) - 20f) {
+                document.finishPage(currentPage)
+                startNewPage()
 
-        // Filas de historial (limitado a 50 para no hacer el PDF muy largo)
-        val bodyPaint = style.bodyPaint()
-        val limitedHistory = data.history.take(50)
+                // Repetir cabecera en nueva página
+                canvas.drawText("HISTORIAL DE TOMAS (continuación)", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+                yPosition += style.subtitleSize + style.lineSpacing
 
-        limitedHistory.forEach { entry ->
-            canvas.drawText(entry.date, col1, y + style.bodySize, bodyPaint)
-            canvas.drawText(entry.time, col2, y + style.bodySize, bodyPaint)
-            canvas.drawText(entry.medicationName, col3, y + style.bodySize, bodyPaint)
+                if (style.showTableBorders) {
+                    drawTableLine(leftMargin, rightMargin)
+                }
+                yPosition += 4f
+
+                canvas.drawText("Fecha", col1, yPosition + style.bodySize, bodyBoldPaint())
+                canvas.drawText("Hora", col2, yPosition + style.bodySize, bodyBoldPaint())
+                canvas.drawText("Medicamento", col3, yPosition + style.bodySize, bodyBoldPaint())
+                val headerRight = bodyBoldPaint().apply { textAlign = Paint.Align.RIGHT }
+                canvas.drawText("Dosis", col4, yPosition + style.bodySize, headerRight)
+                yPosition += style.bodySize + style.lineSpacing
+
+                if (style.showTableBorders) {
+                    drawTableLine(leftMargin, rightMargin)
+                }
+                yPosition += 4f
+            }
+
+            // Dibujar fila
+            val formattedDate = entry.timestamp.format(dateFormatter)
+            val formattedTime = entry.timestamp.format(timeFormatter)
+            val truncatedMed = truncateText(entry.medicationName, medWidth - 10f, body)
 
             val med = data.medications.find { it.id == entry.medicationId }
             val doseText = if (med != null) {
                 "${entry.quantity}x ${med.dose}"
             } else {
-                "${entry.quantity} tomas"
+                "${entry.quantity}x"
             }
-            canvas.drawText(doseText, col4, y + style.bodySize, bodyPaint.apply {
-                textAlign = Paint.Align.RIGHT
-            })
 
-            y += style.bodySize + style.lineSpacing
+            val bodyLeft = bodyPaint()
+            val bodyRight = bodyPaint().apply { textAlign = Paint.Align.RIGHT }
+
+            canvas.drawText(formattedDate, col1, yPosition + style.bodySize, bodyLeft)
+            canvas.drawText(formattedTime, col2, yPosition + style.bodySize, bodyLeft)
+            canvas.drawText(truncatedMed, col3, yPosition + style.bodySize, bodyLeft)
+            canvas.drawText(doseText, col4, yPosition + style.bodySize, bodyRight)
+
+            yPosition += rowHeight
         }
-
-        if (data.history.size > 50) {
-            y += style.lineSpacing
-            canvas.drawText(
-                "... y ${data.history.size - 50} registros más",
-                leftMargin,
-                y + style.smallSize,
-                style.smallPaint()
-            )
-            y += style.smallSize
-        }
-
-        return y
     }
 
-    /**
-     * Dibuja la sección de distribución horaria
-     */
-    private fun drawHourlySection(
-        canvas: Canvas,
-        style: PdfStyle,
-        data: PdfReportData,
-        startY: Float
-    ): Float {
-        var y = startY
-        val leftMargin = style.pageMargin
+    private fun drawTableLine(left: Float, right: Float) {
+        val s = style
+        val linePaint = Paint().apply {
+            color = s.borderColor
+            strokeWidth = 0.5f
+        }
+        canvas.drawLine(left, yPosition, right, yPosition, linePaint)
+    }
 
-        // Título de sección
-        canvas.drawText("DISTRIBUCIÓN HORARIA", leftMargin, y + style.subtitleSize, style.subtitlePaint())
-        y += style.subtitleSize + style.lineSpacing * 2
+    // ===========================================
+    // SECCIÓN: DISTRIBUCIÓN HORARIA
+    // ===========================================
+
+    private fun drawHourlyDistributionSection(data: PdfReportData) {
+        val leftMargin = style.pageMargin
+        val rightMargin = pageWidth - style.pageMargin
+
+        // Título
+        canvas.drawText("DISTRIBUCIÓN HORARIA", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        yPosition += style.subtitleSize + style.lineSpacing * 2
 
         val slots = listOf(
-            "Madrugada" to "00-06",
-            "Mañana" to "06-12",
-            "Mediodía" to "12-15",
-            "Tarde" to "15-19",
-            "Noche" to "19-23",
-            "Nocturno" to "23-00"
+            "Madrugada" to "00:00 - 06:00",
+            "Mañana" to "06:00 - 12:00",
+            "Mediodía" to "12:00 - 15:00",
+            "Tarde" to "15:00 - 19:00",
+            "Noche" to "19:00 - 23:00",
+            "Nocturno" to "23:00 - 00:00"
         )
 
         val maxValue = data.hourlyPattern.values.maxOrNull()?.toFloat() ?: 1f
-        val barMaxWidth = pageWidth - style.pageMargin * 2 - 120f
+        val barMaxWidth = contentWidth(style) - 160f
 
-        val bodyPaint = style.bodyPaint()
-        val barPaint = Paint().apply {
-            color = style.accentColor
-        }
+        val body = bodyPaint()
+        val small = smallPaint()
+        val s = style
+        val barPaint = Paint().apply { color = s.accentColor }
+        val valueRight = secondaryPaint().apply { textAlign = Paint.Align.RIGHT }
 
         slots.forEach { (name, range) ->
             val value = data.hourlyPattern[name] ?: 0
             val barWidth = if (maxValue > 0) (value / maxValue) * barMaxWidth else 0f
 
             // Nombre del slot
-            canvas.drawText(name, leftMargin, y + style.bodySize, bodyPaint)
+            canvas.drawText(name, leftMargin, yPosition + style.bodySize, body)
 
             // Rango horario
-            canvas.drawText(range, leftMargin + 70f, y + style.bodySize, style.smallPaint())
+            canvas.drawText(range, leftMargin + 80f, yPosition + style.bodySize, small)
 
             // Barra
-            val barLeft = leftMargin + 110f
-            val barTop = y + 2f
-            val barBottom = y + style.bodySize - 2f
+            val barLeft = leftMargin + 150f
+            val barTop = yPosition + 2f
+            val barBottom = yPosition + style.bodySize - 2f
             if (barWidth > 0) {
                 canvas.drawRoundRect(
                     RectF(barLeft, barTop, barLeft + barWidth, barBottom),
-                    3f, 3f,
-                    barPaint
+                    3f, 3f, barPaint
                 )
             }
 
             // Valor
-            canvas.drawText(
-                value.toString(),
-                pageWidth - style.pageMargin,
-                y + style.bodySize,
-                style.secondaryPaint().apply { textAlign = Paint.Align.RIGHT }
-            )
+            canvas.drawText(value.toString(), rightMargin, yPosition + style.bodySize, valueRight)
 
-            y += style.bodySize + style.lineSpacing + 4f
+            yPosition += style.bodySize + style.lineSpacing + 4f
+        }
+    }
+
+    // ===========================================
+    // SECCIÓN: DESGLOSE POR DOSIS
+    // ===========================================
+
+    private fun drawDoseBreakdownSection(data: PdfReportData) {
+        val leftMargin = style.pageMargin
+        val rightMargin = pageWidth - style.pageMargin
+
+        // Título
+        canvas.drawText("DESGLOSE POR DOSIS", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        yPosition += style.subtitleSize + style.lineSpacing * 2
+
+        // Agrupar por medicamento y dosis
+        val doseBreakdown = data.history
+            .groupBy { "${it.medicationName}|${it.dose ?: "N/A"}" }
+            .map { (key, entries) ->
+                val parts = key.split("|")
+                Triple(parts[0], parts[1], entries.sumOf { it.quantity })
+            }
+            .sortedByDescending { it.third }
+
+        if (doseBreakdown.isEmpty()) {
+            val noData = secondaryPaint()
+            canvas.drawText("No hay datos de dosis disponibles", leftMargin, yPosition + style.bodySize, noData)
+            yPosition += style.bodySize
+            return
         }
 
-        return y
+        val body = bodyPaint()
+        val valueRight = secondaryPaint().apply { textAlign = Paint.Align.RIGHT }
+        val maxNameWidth = contentWidth(style) - 100f
+
+        doseBreakdown.take(20).forEach { (medName, dose, count) ->
+            ensureSpace(style.bodySize + style.lineSpacing)
+
+            val displayName = truncateText("$medName ($dose)", maxNameWidth, body)
+            canvas.drawText(displayName, leftMargin, yPosition + style.bodySize, body)
+            canvas.drawText("$count tomas", rightMargin, yPosition + style.bodySize, valueRight)
+
+            yPosition += style.bodySize + style.lineSpacing
+        }
+
+        if (doseBreakdown.size > 20) {
+            val more = smallPaint()
+            canvas.drawText("... y ${doseBreakdown.size - 20} más", leftMargin, yPosition + style.smallSize, more)
+            yPosition += style.smallSize
+        }
+    }
+
+    // ===========================================
+    // SECCIÓN: TENDENCIAS MENSUALES
+    // ===========================================
+
+    private fun drawMonthlyTrendsSection(data: PdfReportData) {
+        val leftMargin = style.pageMargin
+        val rightMargin = pageWidth - style.pageMargin
+
+        // Título
+        canvas.drawText("TENDENCIAS MENSUALES", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        yPosition += style.subtitleSize + style.lineSpacing * 2
+
+        // Agrupar por mes
+        val monthlyData = data.dailyData
+            .groupBy { it.date.withDayOfMonth(1) }
+            .mapValues { (_, days) -> days.sumOf { it.value.toDouble() }.toFloat() }
+            .toList()
+            .sortedBy { it.first }
+
+        if (monthlyData.isEmpty()) {
+            val noData = secondaryPaint()
+            canvas.drawText("No hay datos mensuales disponibles", leftMargin, yPosition + style.bodySize, noData)
+            yPosition += style.bodySize
+            return
+        }
+
+        val maxValue = monthlyData.maxOfOrNull { it.second } ?: 1f
+        val barMaxWidth = contentWidth(style) - 120f
+
+        val body = bodyPaint()
+        val s = style
+        val barPaint = Paint().apply { color = s.accentColor }
+        val valueRight = secondaryPaint().apply { textAlign = Paint.Align.RIGHT }
+
+        monthlyData.takeLast(12).forEach { (month, value) ->
+            ensureSpace(style.bodySize + style.lineSpacing + 4f)
+
+            val barWidth = if (maxValue > 0) (value / maxValue) * barMaxWidth else 0f
+
+            // Mes
+            val monthLabel = month.format(DateTimeFormatter.ofPattern("MMM yyyy"))
+            canvas.drawText(monthLabel, leftMargin, yPosition + style.bodySize, body)
+
+            // Barra
+            val barLeft = leftMargin + 80f
+            val barTop = yPosition + 2f
+            val barBottom = yPosition + style.bodySize - 2f
+            if (barWidth > 0) {
+                canvas.drawRoundRect(
+                    RectF(barLeft, barTop, barLeft + barWidth, barBottom),
+                    3f, 3f, barPaint
+                )
+            }
+
+            // Valor
+            canvas.drawText(formatValue(value), rightMargin, yPosition + style.bodySize, valueRight)
+
+            yPosition += style.bodySize + style.lineSpacing + 4f
+        }
+    }
+
+    // ===========================================
+    // SECCIÓN: NOTAS DE VOZ
+    // ===========================================
+
+    private fun drawVoiceNotesSection(data: PdfReportData) {
+        val leftMargin = style.pageMargin
+
+        // Título
+        canvas.drawText("NOTAS DE VOZ", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        yPosition += style.subtitleSize + style.lineSpacing * 2
+
+        // Filtrar entradas con notas de voz
+        val entriesWithVoice = data.history.filter { !it.audioNoteUri.isNullOrBlank() }
+
+        if (entriesWithVoice.isEmpty()) {
+            val noData = secondaryPaint()
+            canvas.drawText("No hay notas de voz en este periodo", leftMargin, yPosition + style.bodySize, noData)
+            yPosition += style.bodySize
+            return
+        }
+
+        val body = bodyPaint()
+        val small = smallPaint()
+
+        entriesWithVoice.take(20).forEach { entry ->
+            ensureSpace(style.bodySize * 2 + style.lineSpacing)
+
+            // Fecha y medicamento
+            val header = "${entry.timestamp.format(dateTimeFormatter)} - ${entry.medicationName}"
+            canvas.drawText(header, leftMargin, yPosition + style.bodySize, body)
+            yPosition += style.bodySize + style.lineSpacing / 2
+
+            // Indicador de audio (no podemos mostrar la transcripción sin procesarla)
+            canvas.drawText("  [Audio adjunto]", leftMargin, yPosition + style.smallSize, small)
+            yPosition += style.smallSize + style.lineSpacing
+        }
+
+        if (entriesWithVoice.size > 20) {
+            val more = smallPaint()
+            canvas.drawText("... y ${entriesWithVoice.size - 20} notas más", leftMargin, yPosition + style.smallSize, more)
+            yPosition += style.smallSize
+        }
+    }
+
+    // ===========================================
+    // UTILIDADES
+    // ===========================================
+
+    /**
+     * Trunca el texto para que quepa en el ancho máximo especificado
+     */
+    private fun truncateText(text: String, maxWidth: Float, paint: Paint): String {
+        if (paint.measureText(text) <= maxWidth) return text
+
+        val ellipsis = "..."
+        val ellipsisWidth = paint.measureText(ellipsis)
+        val availableWidth = maxWidth - ellipsisWidth
+
+        if (availableWidth <= 0) return ellipsis
+
+        var truncated = text
+        while (truncated.isNotEmpty() && paint.measureText(truncated) > availableWidth) {
+            truncated = truncated.dropLast(1)
+        }
+
+        return if (truncated.isEmpty()) ellipsis else truncated + ellipsis
     }
 
     /**
