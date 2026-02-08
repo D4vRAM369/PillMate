@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.data.MedicationRepository
@@ -30,6 +31,10 @@ import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
 import com.d4vram.pillmate2.ui.export.PdfExportSheet
 import com.d4vram.pillmate2.ui.theme.AppUiStyle
 import com.d4vram.pillmate2.ui.theme.ThemeManager
+import com.d4vram.pillmate2.notifications.NotificationHelper
+import android.os.Build
+import android.Manifest
+import android.provider.Settings
 import androidx.biometric.BiometricManager
 import com.d4vram.pillmate2.model.SortMode
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +52,8 @@ import java.text.DateFormat
 import java.util.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 
 /**
  * ⚙️ Pantalla de configuración
@@ -84,6 +91,28 @@ fun SettingsScreen(
     var pendingEncryptedBackupFile by remember { mutableStateOf<File?>(null) }
     var showPdfExportSheet by remember { mutableStateOf(false) }
 
+    // Estado de permisos de notificación
+    var hasNotificationPermission by remember {
+        mutableStateOf(NotificationHelper.hasNotificationPermission(context))
+    }
+    var hasExactAlarmPermission by remember {
+        mutableStateOf(NotificationHelper.hasExactAlarmPermission(context))
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    // Launcher para solicitar permiso de notificaciones (Android 13+)
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasNotificationPermission = isGranted
+        hasExactAlarmPermission = NotificationHelper.hasExactAlarmPermission(context)
+        if (isGranted) {
+            snackbarMessage = "✅ Notificaciones activadas"
+        } else {
+            snackbarMessage = "❌ Permiso denegado. Actívalo en Ajustes del sistema."
+        }
+    }
+
     val biometricManager = remember { BiometricManager.from(context) }
     val canAuthenticateBiometric = remember(biometricManager) {
         biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG) ==
@@ -108,6 +137,17 @@ fun SettingsScreen(
     }
     val autoBackupFolderText = remember(autoBackupFolderName) {
         if (autoBackupFolderName != null) "Configurada" else "No configurada"
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasNotificationPermission = NotificationHelper.hasNotificationPermission(context)
+                hasExactAlarmPermission = NotificationHelper.hasExactAlarmPermission(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     LaunchedEffect(snackbarMessage) {
@@ -463,17 +503,114 @@ fun SettingsScreen(
 
             item {
                 SettingsSection(title = "🔔 Notificaciones") {
-                    Text(text = "🚧 EN CONSTRUCCIÓN", style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold) //Con esto ponemos el texto en negrita, con el parámetro fontWeight = FontWeight.Bold dentro de style = MaterialTheme.typography.bodyLarge.copy
-                    )
+                    // Estado del permiso de notificaciones
+                    if (!hasNotificationPermission) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Permiso requerido",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Permite notificaciones para recibir recordatorios",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                                Button(
+                                    onClick = {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                        }
+                                    }
+                                ) {
+                                    Text("Activar")
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasExactAlarmPermission) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                            )
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Alarmas exactas desactivadas",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "Sin este permiso los recordatorios pueden retrasarse",
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                }
+                                Button(
+                                    onClick = {
+                                        NotificationHelper.openExactAlarmSettings(context)
+                                    }
+                                ) {
+                                    Text("Permitir")
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+
                     SettingsItem(
                         title = "Recordatorios",
-                        description = "Activar recordatorios automáticos",
-                        hasSwitch = true
+                        description = when {
+                            !hasNotificationPermission -> "Activa el permiso de notificaciones primero"
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasExactAlarmPermission -> "Permite alarmas exactas para máxima precisión"
+                            else -> "Los recordatorios se configuran en cada medicamento"
+                        },
+                        icon = Icons.Default.Notifications,
+                        onClick = {
+                            if (!hasNotificationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasExactAlarmPermission) {
+                                NotificationHelper.openExactAlarmSettings(context)
+                            } else {
+                                snackbarMessage = "Configura recordatorios en cada medicamento individual"
+                            }
+                        }
                     )
+
                     SettingsItem(
                         title = "Sonido",
                         description = "Configurar tono de notificación",
-                        icon = Icons.Default.VolumeUp
+                        icon = Icons.Default.VolumeUp,
+                        onClick = {
+                            // Abrir ajustes de notificación de la app
+                            val intent = Intent().apply {
+                                action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                            }
+                            context.startActivity(intent)
+                        }
                     )
                 }
             }

@@ -34,6 +34,7 @@ import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.Medication
 import com.d4vram.pillmate2.ui.components.ImagePickerSection
 import com.d4vram.pillmate2.utils.ImageUtils
+import com.d4vram.pillmate2.notifications.ReminderScheduler
 import com.github.skydoves.colorpicker.compose.HsvColorPicker
 import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 import kotlinx.coroutines.Dispatchers
@@ -63,6 +64,7 @@ fun AddEditMedicationScreen(
     var hour by remember { mutableStateOf("08") }
     var minute by remember { mutableStateOf("00") }
     var selectedDays by remember { mutableStateOf(setOf<String>()) }
+    var reminderEnabled by remember { mutableStateOf(false) }
     var isPrn by remember { mutableStateOf(false) }
     var existingMedication by remember { mutableStateOf<Medication?>(null) }
     var showEmojiPicker by remember { mutableStateOf(false) }
@@ -105,6 +107,17 @@ fun AddEditMedicationScreen(
                 selectedEmoji = it.emoji
                 dailyGoal = it.dailyGoal.toString()
                 isPrn = it.isPrn
+
+                // Cargar datos de horario si existen
+                it.scheduleTime?.let { time ->
+                    val parts = time.split(":")
+                    if (parts.size == 2) {
+                        hour = parts[0]
+                        minute = parts[1]
+                    }
+                }
+                selectedDays = it.scheduleDays.toSet()
+                reminderEnabled = it.reminderEnabled
 
                 // 📸 Cargar datos de foto si existen
                 photoPath = it.photoPath
@@ -149,6 +162,14 @@ fun AddEditMedicationScreen(
                             scheduleTime = null,
                             scheduleDays = emptyList()
                         )
+                        // Construir hora en formato HH:mm
+                        val formattedTime = if (hour.isNotBlank() && minute.isNotBlank()) {
+                            "${hour.padStart(2, '0')}:${minute.padStart(2, '0')}"
+                        } else null
+
+                        val savedScheduleTime = if (reminderEnabled) formattedTime else null
+                        val savedScheduleDays = if (reminderEnabled) selectedDays.toList() else emptyList()
+
                         val medication = baseMedication.copy(
                             name = name,
                             dose = dose,
@@ -157,16 +178,24 @@ fun AddEditMedicationScreen(
                             emoji = selectedEmoji,
                             dailyGoal = dailyGoal.toIntOrNull() ?: baseMedication.dailyGoal,
                             isPrn = isPrn,
-                            scheduleTime = baseMedication.scheduleTime,
-                            scheduleDays = baseMedication.scheduleDays,
-                            photoPath = photoPath, // 📸 Guardar ruta de foto
-                            usePhotoInstead = usePhotoInstead, // 🖼️ Guardar preferencia de visualización
-                            parentMedicationId = parentMedicationId // 🔗 Guardar vínculo (se pasa como argumento, pero también en el objeto por si acaso)
+                            scheduleTime = savedScheduleTime,
+                            scheduleDays = savedScheduleDays,
+                            reminderEnabled = reminderEnabled,
+                            photoPath = photoPath,
+                            usePhotoInstead = usePhotoInstead,
+                            parentMedicationId = parentMedicationId
                         )
 
                         // Usar la nueva lógica inteligente de familias
                         repository.saveMedicationWithSmartFamilyLogic(medication, parentMedicationId)
-                        
+
+                        // Programar o cancelar recordatorio según configuración
+                        if (medication.reminderEnabled) {
+                            ReminderScheduler.scheduleReminder(context, medication)
+                        } else {
+                            ReminderScheduler.cancelReminder(context, medication.id)
+                        }
+
                         onNavigateBack()
                     }
                 },
@@ -409,6 +438,30 @@ fun AddEditMedicationScreen(
                 title = "Planificación",
                 subtitle = "Configura la hora de toma y la frecuencia"
             ) {
+                // Switch para activar recordatorios
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Activar recordatorios",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            text = "Recibir notificación a la hora programada",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = reminderEnabled,
+                        onCheckedChange = { reminderEnabled = it }
+                    )
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
