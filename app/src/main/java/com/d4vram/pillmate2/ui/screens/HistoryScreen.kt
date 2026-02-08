@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -29,11 +31,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -88,9 +93,11 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
 
     var selectedPeriod by remember { mutableStateOf(TimePeriod.ALL) }
     var selectedHistoryEntry by remember { mutableStateOf<HistoryEntry?>(null) }
+    var isSearchVisible by remember { mutableStateOf(false) }
+    var notesSearchQuery by remember { mutableStateOf("") }
 
     // Filtrar entradas según el período seleccionado
-    val filteredEntries = remember(historyEntries, selectedPeriod) {
+    val entriesByPeriod = remember(historyEntries, selectedPeriod) {
         val now = LocalDateTime.now()
         val today = now.toLocalDate()
         when (selectedPeriod) {
@@ -103,6 +110,18 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
             }
             TimePeriod.MONTH -> historyEntries.filter {
                 ChronoUnit.DAYS.between(it.timestamp.toLocalDate(), today) <= 30
+            }
+        }
+    }
+
+    // Filtrar por búsqueda en notas (case-insensitive)
+    val filteredEntries = remember(entriesByPeriod, notesSearchQuery) {
+        val normalizedQuery = notesSearchQuery.trim().lowercase(Locale.getDefault())
+        if (normalizedQuery.isBlank()) {
+            entriesByPeriod
+        } else {
+            entriesByPeriod.filter { entry ->
+                entry.notes.isNotBlank() && entry.notes.lowercase(Locale.getDefault()).contains(normalizedQuery)
             }
         }
     }
@@ -122,6 +141,19 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
                             fontWeight = FontWeight.Bold
                         )
                     )
+                },
+                actions = {
+                    IconButton(
+                        onClick = {
+                            isSearchVisible = !isSearchVisible
+                            if (!isSearchVisible) notesSearchQuery = ""
+                        }
+                    ) {
+                        Icon(
+                            imageVector = if (isSearchVisible) Icons.Default.Close else Icons.Default.Search,
+                            contentDescription = if (isSearchVisible) "Cerrar búsqueda" else "Buscar en notas"
+                        )
+                    }
                 }
             )
         }
@@ -163,7 +195,84 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
+            if (isSearchVisible) {
+                item {
+                    OutlinedTextField(
+                        value = notesSearchQuery,
+                        onValueChange = { notesSearchQuery = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Buscar en notas del historial...") },
+                        singleLine = true,
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = null
+                            )
+                        },
+                        trailingIcon = {
+                            if (notesSearchQuery.isNotEmpty()) {
+                                IconButton(onClick = { notesSearchQuery = "" }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Limpiar búsqueda"
+                                    )
+                                }
+                            }
+                        },
+                        colors = TextFieldDefaults.colors()
+                    )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                item {
+                    val resultText = if (notesSearchQuery.isBlank()) {
+                        "Escribe para filtrar por contenido de notas"
+                    } else {
+                        "${filteredEntries.size} resultado(s) en notas"
+                    }
+                    Text(
+                        text = resultText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+
             // Lista del historial agrupada
+            if (groupedEntries.isEmpty()) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                        )
+                    ) {
+                        Text(
+                            text = if (notesSearchQuery.isNotBlank()) {
+                                "No hay notas que coincidan con \"$notesSearchQuery\""
+                            } else {
+                                "No hay registros para este filtro"
+                            },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
+
             groupedEntries.forEach { (periodLabel, entries) ->
                 item {
                     // Encabezado del grupo
