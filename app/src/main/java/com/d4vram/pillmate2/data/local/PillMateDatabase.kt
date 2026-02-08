@@ -10,7 +10,7 @@ import java.util.Locale
 
 @Database(
     entities = [MedicationEntity::class, HistoryEntryEntity::class, VoiceNoteEntity::class],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 abstract class PillMateDatabase : RoomDatabase() {
@@ -39,7 +39,8 @@ abstract class PillMateDatabase : RoomDatabase() {
                     MIGRATION_9_10,
                     MIGRATION_10_11,
                     MIGRATION_11_12,
-                    MIGRATION_12_13
+                    MIGRATION_12_13,
+                    MIGRATION_13_14
                 ).build().also { INSTANCE = it }
             }
         }
@@ -127,6 +128,13 @@ abstract class PillMateDatabase : RoomDatabase() {
             override fun migrate(database: SupportSQLiteDatabase) {
                 // 🔗 Añadir campo para vincular medicamentos (padre/hijo)
                 database.execSQL("ALTER TABLE medications ADD COLUMN parentMedicationId TEXT DEFAULT NULL")
+            }
+        }
+
+        private val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 🔔 Añadir campo para activar recordatorios
+                database.execSQL("ALTER TABLE medications ADD COLUMN reminderEnabled INTEGER NOT NULL DEFAULT 0")
             }
         }
 

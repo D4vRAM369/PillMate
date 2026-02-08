@@ -20,6 +20,7 @@ data class Medication(
     val sortOrder: Int = 0, // Orden manual en la cuadrícula
     val scheduleTime: String? = null,
     val scheduleDays: List<String> = emptyList(),
+    val reminderEnabled: Boolean = false, // Activar notificaciones para este medicamento
     val createdAt: Long = 0L, // Timestamp de creación en millis
     val photoPath: String? = null, // 📸 Ruta de la foto del medicamento (opcional)
     val usePhotoInstead: Boolean = false, // 🖼️ Usar foto en lugar de emoji+color
