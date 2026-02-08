@@ -161,9 +161,17 @@ class PdfExportViewModel(
             val medHistory = history.filter { it.medicationId == med.id }
             if (medHistory.isEmpty()) return@mapNotNull null
 
-            val doseValue = extractDoseValue(med.dose)
-            val totalValue = medHistory.sumOf { it.quantity } * doseValue
+            val totalQuantity = medHistory.sumOf { it.quantity }
             val unit = getDisplayUnit(med)
+
+            // Solo multiplicar por dosis si el tipo de medicamento lo permite
+            // Para tipos no reconocidos, simplemente contar tomas
+            val totalValue = if (shouldMultiplyByDose(med)) {
+                val doseValue = extractDoseValue(med.dose)
+                totalQuantity * doseValue
+            } else {
+                totalQuantity.toFloat()
+            }
 
             MedicationTotal(
                 medication = med,
@@ -198,8 +206,13 @@ class PdfExportViewModel(
             val dayHistory = history.filter { it.timestamp.toLocalDate() == date }
             val dayValue = dayHistory.sumOf { entry ->
                 val med = allMedications.find { it.id == entry.medicationId }
-                val doseValue = med?.dose?.let { extractDoseValue(it) } ?: 1f
-                entry.quantity * doseValue.toDouble()
+                // Usar la misma lógica que medicationTotals
+                if (med != null && shouldMultiplyByDose(med)) {
+                    val doseValue = extractDoseValue(med.dose)
+                    entry.quantity * doseValue.toDouble()
+                } else {
+                    entry.quantity.toDouble()
+                }
             }.toFloat()
 
             DailyDataPoint(date = date, value = dayValue)
@@ -226,12 +239,22 @@ class PdfExportViewModel(
         )
     }
 
+    /**
+     * Extrae el valor numérico de una dosis.
+     * Maneja tanto punto como coma decimal (ej: "0,1mg" o "0.1mg" → 0.1)
+     */
     private fun extractDoseValue(dose: String): Float {
+        // Normalizar: reemplazar coma por punto para decimales españoles
+        val normalizedDose = dose.replace(",", ".")
         val regex = Regex("([0-9]+\\.?[0-9]*)")
-        val match = regex.find(dose)
+        val match = regex.find(normalizedDose)
         return match?.groupValues?.get(1)?.toFloatOrNull() ?: 1f
     }
 
+    /**
+     * Determina la unidad de display según el tipo de medicamento.
+     * Si el tipo no se reconoce, devuelve null para indicar que se deben usar tomas simples.
+     */
     private fun getDisplayUnit(medication: com.d4vram.pillmate2.model.Medication): String {
         return when {
             medication.type.equals("Gota", ignoreCase = true) ||
@@ -242,6 +265,15 @@ class PdfExportViewModel(
             medication.type.equals("Comprimido", ignoreCase = true) -> "mg"
             else -> "tomas"
         }
+    }
+
+    /**
+     * Determina si este tipo de medicamento debe multiplicarse por la dosis numérica.
+     * Solo mg, ml y gotas tienen sentido multiplicar; "tomas" no.
+     */
+    private fun shouldMultiplyByDose(medication: com.d4vram.pillmate2.model.Medication): Boolean {
+        val type = medication.type.lowercase()
+        return type in listOf("gota", "gotas", "jarabe", "pastilla", "cápsula", "comprimido", "capsula")
     }
 
     private fun calculateHourlyPattern(history: List<com.d4vram.pillmate2.model.HistoryEntry>): Map<String, Int> {
