@@ -390,7 +390,7 @@ private fun PillIcon(
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TakeMedicationDialog(
+internal fun TakeMedicationDialog(
     medication: Medication,
     family: List<Medication>,
     onDismiss: () -> Unit,
