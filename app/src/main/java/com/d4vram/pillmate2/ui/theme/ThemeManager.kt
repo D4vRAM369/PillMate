@@ -52,6 +52,7 @@ class ThemeManager(private val context: Context) {
         private val UI_STYLE_KEY = stringPreferencesKey("ui_style")
         private val CHIP_COUNT_PERIOD_KEY = stringPreferencesKey("chip_count_period")
         private val SORT_MODE_KEY = stringPreferencesKey("sort_mode")
+        private val IS_LIST_VIEW_KEY = booleanPreferencesKey("is_list_view")
     }
     
     val isDarkMode: Flow<Boolean> = context.dataStore.data
@@ -116,6 +117,21 @@ class ThemeManager(private val context: Context) {
     suspend fun setSortMode(mode: SortMode) {
         context.dataStore.edit { preferences ->
             preferences[SORT_MODE_KEY] = mode.name
+        }
+    }
+
+    val isListView: Flow<Boolean> = context.dataStore.data
+        .catch { throwable ->
+            Log.e("ThemeManager", "Error reading list view preference", throwable)
+            emit(emptyPreferences())
+        }
+        .map { preferences ->
+            preferences[IS_LIST_VIEW_KEY] ?: false
+        }
+
+    suspend fun setListView(isList: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[IS_LIST_VIEW_KEY] = isList
         }
     }
 
