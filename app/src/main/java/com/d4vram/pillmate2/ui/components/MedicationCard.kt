@@ -11,7 +11,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material3.TimeInput
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -640,7 +643,7 @@ internal fun TakeMedicationDialog(
 }
 
 /**
- * 🕐 Dialog con TimePicker de Material3
+ * 🕐 Dialog con TimePicker de Material3 (toggle reloj/teclado)
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -655,36 +658,51 @@ private fun TimePickerDialog(
         initialMinute = initialMinute,
         is24Hour = true
     )
+    var isClockMode by remember { mutableStateOf(true) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        shape = RoundedCornerShape(28.dp),
-        containerColor = MaterialTheme.colorScheme.surface,
         title = {
-            Text(
-                text = "Seleccionar hora",
-                style = MaterialTheme.typography.titleLarge
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Seleccionar hora",
+                    style = MaterialTheme.typography.titleLarge
+                )
+                IconButton(onClick = { isClockMode = !isClockMode }) {
+                    Icon(
+                        imageVector = if (isClockMode) Icons.Default.Keyboard else Icons.Default.Schedule,
+                        contentDescription = if (isClockMode) "Cambiar a teclado" else "Cambiar a reloj",
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
         },
         text = {
             Box(
                 modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                TimePicker(state = timePickerState)
+                if (isClockMode) {
+                    TimePicker(state = timePickerState)
+                } else {
+                    TimeInput(state = timePickerState)
+                }
             }
         },
         confirmButton = {
-            TextButton(
-                onClick = { onConfirm(timePickerState.hour, timePickerState.minute) }
-            ) {
-                Text("Aceptar")
+            TextButton(onClick = { onConfirm(timePickerState.hour, timePickerState.minute) }) {
+                Text("Confirmar", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Cancelar")
             }
-        }
+        },
+        shape = RoundedCornerShape(28.dp)
     )
 }
