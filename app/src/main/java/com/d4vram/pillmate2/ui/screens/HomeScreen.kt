@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.IconButton
@@ -257,7 +258,7 @@ private fun HeaderSection(
             )
 
             // Barra de búsqueda expandible
-            androidx.compose.animation.AnimatedVisibility(visible = searchActive) {
+            AnimatedVisibility(visible = searchActive) {
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = onSearchQueryChange,
@@ -299,20 +300,22 @@ private fun HeaderSection(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
-                onClick = { onSearchActiveChange(true) },
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        color = Color.White.copy(alpha = 0.15f),
-                        shape = CircleShape
+            AnimatedVisibility(visible = !searchActive) {
+                IconButton(
+                    onClick = { onSearchActiveChange(true) },
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            color = Color.White.copy(alpha = 0.15f),
+                            shape = CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Buscar",
+                        tint = Color.White
                     )
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Buscar",
-                    tint = Color.White
-                )
+                }
             }
 
             FloatingActionButton(
