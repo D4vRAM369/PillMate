@@ -29,7 +29,10 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.Medication
 import com.d4vram.pillmate2.ui.components.ImagePickerSection
@@ -244,6 +247,18 @@ fun AddEditMedicationScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            SectionCard(
+                title = "Vista previa",
+                subtitle = "Así se verá en tu lista de medicamentos"
+            ) {
+                MedicationPreviewCard(
+                    name = name,
+                    dose = dose,
+                    emoji = selectedEmoji,
+                    color = selectedColor
+                )
+            }
+
             FormSection {
                 OutlinedTextField(
                     value = name,
@@ -888,6 +903,63 @@ private fun CustomColorPickerDialog(
             }
         }
     )
+}
+
+@Composable
+private fun MedicationPreviewCard(
+    name: String,
+    dose: String,
+    emoji: String,
+    color: Color
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(88.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(2.dp, color)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(52.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(color.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(text = emoji, fontSize = 24.sp)
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = name.ifBlank { "Nombre del medicamento" },
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = if (name.isBlank())
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
+                    else
+                        MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+                if (dose.isNotBlank()) {
+                    Text(
+                        text = dose,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+    }
 }
 
 private fun Color.toHexLabel(): String {
