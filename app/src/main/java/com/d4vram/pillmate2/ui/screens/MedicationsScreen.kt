@@ -42,7 +42,8 @@ fun MedicationsScreen(
         initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total
     )
     val isListView by themeManager.isListView.collectAsState(initial = false)
-    val listState = rememberLazyListState()
+    val gridListState = rememberLazyListState()
+    val itemListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
     var searchQuery by remember { mutableStateOf("") }
@@ -140,7 +141,7 @@ fun MedicationsScreen(
                     .padding(paddingValues)
                     .padding(horizontal = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
-                state = listState
+                state = itemListState
             ) {
                 item { Spacer(modifier = Modifier.height(4.dp)) }
                 items(filteredMedications, key = { it.id }) { medication ->
@@ -164,7 +165,7 @@ fun MedicationsScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
                     .padding(horizontal = 16.dp),
-                state = listState
+                state = gridListState
             ) {
                 item { Spacer(modifier = Modifier.height(8.dp)) }
                 item {
@@ -181,7 +182,7 @@ fun MedicationsScreen(
                         onReorder = { fromIndex, toIndex ->
                             repository.reorderMedications(fromIndex, toIndex)
                         },
-                        parentListState = listState,
+                        parentListState = gridListState,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
