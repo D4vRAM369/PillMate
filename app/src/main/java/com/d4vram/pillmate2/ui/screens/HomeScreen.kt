@@ -19,6 +19,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -77,6 +82,17 @@ fun HomeScreen(
         repository.applySorting(medicationsRaw, sortMode)
     }
 
+    var searchQuery by remember { mutableStateOf("") }
+    var searchActive by remember { mutableStateOf(false) }
+
+    val filteredMedications = remember(medications, searchQuery) {
+        if (searchQuery.isBlank()) medications
+        else medications.filter {
+            it.name.contains(searchQuery, ignoreCase = true) ||
+            it.dose.contains(searchQuery, ignoreCase = true)
+        }
+    }
+
     // Estado para el modal de notas / entrada seleccionada
     var selectedHistoryEntry by remember { mutableStateOf<HistoryEntry?>(null) }
 
@@ -90,7 +106,14 @@ fun HomeScreen(
             item {
                 // Header con gradiente verde
                 HeaderSection(
-                    onAddMedication = onAddMedication
+                    onAddMedication = onAddMedication,
+                    searchQuery = searchQuery,
+                    searchActive = searchActive,
+                    onSearchQueryChange = { searchQuery = it },
+                    onSearchActiveChange = { active ->
+                        searchActive = active
+                        if (!active) searchQuery = ""
+                    }
                 )
             }
 
@@ -114,7 +137,7 @@ fun HomeScreen(
             item {
                 // Grid de medicamentos reordenable
                 ReorderableMedicationGrid(
-                    medications = medications,
+                    medications = filteredMedications,
                     repository = repository,
                     chipCountPeriod = chipCountPeriod,
                     onTakeMedication = { medicationId, quantity, timestamp ->
@@ -186,7 +209,11 @@ fun HomeScreen(
  */
 @Composable
 private fun HeaderSection(
-    onAddMedication: () -> Unit
+    onAddMedication: () -> Unit,
+    searchQuery: String,
+    searchActive: Boolean,
+    onSearchQueryChange: (String) -> Unit,
+    onSearchActiveChange: (Boolean) -> Unit
 ) {
     val uiStyle = LocalUiStyle.current
     val headerModifier = Modifier
@@ -228,28 +255,87 @@ private fun HeaderSection(
                     Color.White.copy(alpha = 0.9f)
                 }
             )
+
+            // Barra de búsqueda expandible
+            androidx.compose.animation.AnimatedVisibility(visible = searchActive) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    placeholder = { Text("Buscar medicamento…", color = Color.White.copy(alpha = 0.7f)) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            tint = Color.White.copy(alpha = 0.8f)
+                        )
+                    },
+                    trailingIcon = {
+                        IconButton(onClick = { onSearchActiveChange(false) }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Cerrar búsqueda",
+                                tint = Color.White.copy(alpha = 0.8f)
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    shape = RoundedCornerShape(28.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color.White.copy(alpha = 0.6f),
+                        unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                        cursorColor = Color.White
+                    )
+                )
+            }
         }
 
-        FloatingActionButton(
-            onClick = onAddMedication,
+        Row(
             modifier = Modifier.align(Alignment.CenterEnd),
-            containerColor = if (uiStyle == AppUiStyle.MaterialYou) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                Color.White.copy(alpha = 0.2f)
-            },
-            contentColor = if (uiStyle == AppUiStyle.MaterialYou) {
-                MaterialTheme.colorScheme.onPrimary
-            } else {
-                Color.White
-            }
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "+",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold
+            IconButton(
+                onClick = { onSearchActiveChange(true) },
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        color = Color.White.copy(alpha = 0.15f),
+                        shape = CircleShape
+                    )
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Search,
+                    contentDescription = "Buscar",
+                    tint = Color.White
                 )
-            )
+            }
+
+            FloatingActionButton(
+                onClick = onAddMedication,
+                modifier = Modifier.size(48.dp),
+                containerColor = if (uiStyle == AppUiStyle.MaterialYou) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    Color.White.copy(alpha = 0.2f)
+                },
+                contentColor = if (uiStyle == AppUiStyle.MaterialYou) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    Color.White
+                }
+            ) {
+                Text(
+                    text = "+",
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            }
         }
     }
 }
