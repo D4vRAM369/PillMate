@@ -90,10 +90,8 @@ fun AiHubScreen(
     val scope = rememberCoroutineScope()
 
     var showDownloadDialog by remember { mutableStateOf(false) }
-    var showNewSessionDialog by remember { mutableStateOf(false) }
     var modelName by remember { mutableStateOf("") }
     var modelUrl by remember { mutableStateOf("") }
-    var sessionName by remember { mutableStateOf("") }
 
     LaunchedEffect(statsUiState) {
         aiViewModel.updateStatisticsContext(statsUiState.toTreatmentStatsSnapshot())
@@ -169,8 +167,7 @@ fun AiHubScreen(
             SessionSection(
                 sessions = aiUiState.sessions,
                 activeSessionId = aiUiState.activeSessionId,
-                onCreateSession = { showNewSessionDialog = true },
-                onSelectSession = aiViewModel::selectSession,
+                onCreateSession = { aiViewModel.createSession("Nueva conversación") },
                 onImportSession = {
                     sessionImporter.launch(arrayOf("application/json", "*/*"))
                 },
@@ -241,37 +238,6 @@ fun AiHubScreen(
             },
             dismissButton = {
                 OutlinedButton(onClick = { showDownloadDialog = false }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
-
-    if (showNewSessionDialog) {
-        AlertDialog(
-            onDismissRequest = { showNewSessionDialog = false },
-            title = { Text("Nueva conversación") },
-            text = {
-                OutlinedTextField(
-                    value = sessionName,
-                    onValueChange = { sessionName = it },
-                    label = { Text("Título") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        aiViewModel.createSession(sessionName.ifBlank { "Nueva conversación" })
-                        sessionName = ""
-                        showNewSessionDialog = false
-                    }
-                ) {
-                    Text("Crear")
-                }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = { showNewSessionDialog = false }) {
                     Text("Cancelar")
                 }
             }
@@ -410,7 +376,6 @@ private fun SessionSection(
     sessions: List<StoredChatSession>,
     activeSessionId: String?,
     onCreateSession: () -> Unit,
-    onSelectSession: (String) -> Unit,
     onImportSession: () -> Unit,
     onExportSession: () -> Unit,
     onManageSessions: () -> Unit
@@ -452,7 +417,6 @@ private fun SessionSection(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(18.dp))
-                            .clickable { onSelectSession(session.id) }
                             .background(
                                 if (session.id == activeSessionId) {
                                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
@@ -470,12 +434,21 @@ private fun SessionSection(
                             modifier = Modifier.weight(1f)
                         )
                         Text(
-                            text = "${session.messages.size} msgs",
+                            text = if (session.id == activeSessionId) {
+                                "Activa · ${session.messages.size} msgs"
+                            } else {
+                                "${session.messages.size} msgs"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
+                Text(
+                    text = "Selecciona, renombra o elimina desde \"Gestionar sesiones en hoja\" o desde el chat.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
