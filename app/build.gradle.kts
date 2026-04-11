@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.d4vram.pillmate2"
+        applicationId = "com.d4vram.pillmate.ai"
         minSdk = 26
         targetSdk = 35
         versionCode = 4
@@ -117,6 +117,7 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("androidx.documentfile:documentfile:1.0.1")
+    implementation("com.google.mediapipe:tasks-genai:0.10.27")
 
 
     // Vico Charts

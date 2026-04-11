@@ -10,6 +10,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
 import androidx.fragment.app.FragmentActivity
 import com.d4vram.pillmate2.ui.navigation.PillMateNavigation
+import com.d4vram.pillmate2.ui.onboarding.OnboardingManager
 import com.d4vram.pillmate2.ui.security.AppLockScreen
 import com.d4vram.pillmate2.ui.security.SecurityManager
 import com.d4vram.pillmate2.ui.security.SecuritySettings
@@ -21,6 +22,7 @@ class MainActivity : FragmentActivity() {
 
     private lateinit var themeManager: ThemeManager
     private lateinit var securityManager: SecurityManager
+    private lateinit var onboardingManager: OnboardingManager
     private var isLoading by mutableStateOf(true)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,6 +31,7 @@ class MainActivity : FragmentActivity() {
 
         themeManager = ThemeManager(this)
         securityManager = SecurityManager(this)
+        onboardingManager = OnboardingManager(this)
 
         lifecycleScope.launch {
             themeManager.uiStyle.collect {
@@ -52,7 +55,11 @@ class MainActivity : FragmentActivity() {
                         errorMessage = lockError
                     )
                 } else {
-                    PillMateNavigation(themeManager, securityManager)
+                    PillMateNavigation(
+                        themeManager = themeManager,
+                        securityManager = securityManager,
+                        onboardingManager = onboardingManager
+                    )
                 }
             }
         }

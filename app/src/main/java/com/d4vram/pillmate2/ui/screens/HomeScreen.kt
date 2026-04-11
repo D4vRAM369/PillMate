@@ -21,6 +21,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PsychologyAlt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -67,6 +68,7 @@ fun HomeScreen(
     repository: MedicationRepository,
     navController: NavController,
     themeManager: com.d4vram.pillmate2.ui.theme.ThemeManager,
+    onOpenAiIntro: () -> Unit,
     onAddMedication: () -> Unit,
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {}
@@ -124,6 +126,13 @@ fun HomeScreen(
                 StatisticsEntryCard(
                     onClick = { navController.navigate("global_stats") },
                     modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp)
+                )
+            }
+
+            item {
+                AiEntryCard(
+                    onClick = onOpenAiIntro,
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 2.dp)
                 )
             }
 
@@ -409,6 +418,76 @@ private fun StatisticsEntryCard(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                 contentDescription = "Ver estadísticas",
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun AiEntryCard(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(102.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(Color(0xFF071325), Color(0xFF0F3B66), Color(0xFF0EA5E9))
+                    )
+                )
+                .padding(horizontal = 20.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .background(
+                            color = Color.White.copy(alpha = 0.14f),
+                            shape = RoundedCornerShape(18.dp)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PsychologyAlt,
+                        contentDescription = null,
+                        tint = Color(0xFFBAE6FD)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column {
+                    Text(
+                        text = "PillMate AI",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = Color.White
+                    )
+                    Text(
+                        text = "Descubre el modo IA local y privado",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFFD6F2FF)
+                    )
+                }
+            }
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = "Abrir modo IA",
+                tint = Color.White
             )
         }
     }

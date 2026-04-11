@@ -71,12 +71,12 @@ fun StatisticsScreen(
     repository: MedicationRepository,
     navController: androidx.navigation.NavController? = null
 ) {
+    val context = LocalContext.current
     val viewModel: StatisticsViewModel = viewModel(
         factory = StatisticsViewModel.provideFactory(repository)
     )
 
     val uiState by viewModel.uiState.collectAsState()
-    val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -212,6 +212,48 @@ fun StatisticsScreen(
                 averageValue = uiState.averageInUnit,
                 lastRecord = uiState.timeSinceLastRecord
             )
+
+            if (navController != null) {
+                ElevatedCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { navController.navigate("ai_hub") },
+                    colors = CardDefaults.elevatedCardColors(containerColor = Color.Transparent),
+                    shape = RoundedCornerShape(24.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                                    colors = listOf(Color(0xFF071325), Color(0xFF0F3B66), Color(0xFF0EA5E9))
+                                )
+                            )
+                            .padding(20.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = "Abrir PillMate AI",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Text(
+                                text = "Lleva este periodo al chat privado con modelos locales, sesiones guardadas e importación/exportación.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color(0xFFD6F2FF)
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = "Abrir IA",
+                            tint = Color.White
+                        )
+                    }
+                }
+            }
 
             // Gráfica lineal semanal (nueva, con protagonismo)
             if (uiState.activityData.isNotEmpty()) {

@@ -29,6 +29,10 @@ import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
 import com.d4vram.pillmate2.ui.voicenotes.VoiceNotesViewModel
 import com.d4vram.pillmate2.ui.permissions.PermissionsManager
 import com.d4vram.pillmate2.ui.components.PermissionsRequestDialog
+import com.d4vram.pillmate2.ui.ai.AiHubScreen
+import com.d4vram.pillmate2.ui.onboarding.AiOnboardingScreen
+import com.d4vram.pillmate2.ui.onboarding.MainOnboardingScreen
+import com.d4vram.pillmate2.ui.onboarding.OnboardingManager
 import kotlinx.coroutines.launch
 
 /**
@@ -37,7 +41,11 @@ import kotlinx.coroutines.launch
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityManager) {
+fun PillMateNavigation(
+    themeManager: ThemeManager,
+    securityManager: SecurityManager,
+    onboardingManager: OnboardingManager
+) {
     val navController = rememberNavController()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -70,7 +78,20 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
 
     // 📸 Gestor de permisos para fotografías de medicamentos
     val permissionsManager = remember { PermissionsManager(context) }
+    val isMainOnboardingCompleted by onboardingManager.isMainOnboardingCompleted.collectAsState(initial = false)
+    val isAiOnboardingCompleted by onboardingManager.isAiOnboardingCompleted.collectAsState(initial = false)
     val shouldShowPermissionsDialog by permissionsManager.shouldShowPermissionsDialog.collectAsState(initial = false)
+
+    if (!isMainOnboardingCompleted) {
+        MainOnboardingScreen(
+            onFinish = {
+                coroutineScope.launch {
+                    onboardingManager.completeMainOnboarding()
+                }
+            }
+        )
+        return
+    }
 
     // Mostrar diálogo de permisos si es necesario
     if (shouldShowPermissionsDialog) {
@@ -144,6 +165,11 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
                     repository = repository,
                     navController = navController,
                     themeManager = themeManager,
+                    onOpenAiIntro = {
+                        navController.navigate(
+                            if (isAiOnboardingCompleted) Screen.AiHub.route else Screen.AiIntro.route
+                        )
+                    },
                     onAddMedication = {
                         navController.navigate("add_medication")
                     },
@@ -241,7 +267,33 @@ fun PillMateNavigation(themeManager: ThemeManager, securityManager: SecurityMana
                     onNavigateBack = {
                         navController.popBackStack()
                     },
-                    repository = repository
+                    repository = repository,
+                    navController = navController
+                )
+            }
+
+            composable(Screen.AiIntro.route) {
+                AiOnboardingScreen(
+                    onFinish = {
+                        coroutineScope.launch {
+                            onboardingManager.completeAiOnboarding()
+                        }
+                        navController.navigate(Screen.AiHub.route) {
+                            popUpTo(Screen.AiIntro.route) { inclusive = true }
+                        }
+                    },
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            composable(Screen.AiHub.route) {
+                AiHubScreen(
+                    repository = repository,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
                 )
             }
         }
@@ -259,6 +311,8 @@ sealed class Screen(val route: String, val label: String? = null, val icon: Imag
     object Settings : Screen("settings", "Ajustes", Icons.Default.Settings)
     object MedicationStats : Screen("medication_stats/{medicationId}")
     object GlobalStats : Screen("global_stats")
+    object AiIntro : Screen("ai_intro")
+    object AiHub : Screen("ai_hub")
     object PdfExport : Screen("pdf_export")
 }
 
