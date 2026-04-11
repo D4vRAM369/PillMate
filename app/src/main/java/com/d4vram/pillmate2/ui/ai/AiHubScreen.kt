@@ -166,7 +166,8 @@ fun AiHubScreen(
                 },
                 onDownloadModel = { showDownloadDialog = true },
                 onActivateModel = aiViewModel::activateModel,
-                onDeleteModel = aiViewModel::deleteModel
+                onDeleteModel = aiViewModel::deleteModel,
+                onManageModels = aiViewModel::showModelSheet
             )
 
             SessionSection(
@@ -194,7 +195,8 @@ fun AiHubScreen(
                         }
                         context.startActivity(Intent.createChooser(intent, "Exportar conversación"))
                     }
-                }
+                },
+                onManageSessions = aiViewModel::showSessionSheet
             )
 
             TreatmentAssistantCard(
@@ -279,6 +281,30 @@ fun AiHubScreen(
             }
         )
     }
+
+    if (aiUiState.showModelSheet) {
+        ModelBottomSheet(
+            models = aiUiState.models,
+            activeModelPath = aiUiState.activeModelPath,
+            candidatePaths = aiUiState.candidatePaths,
+            onDismiss = aiViewModel::hideModelSheet,
+            onImportModel = { modelImporter.launch(arrayOf("*/*")) },
+            onDownloadModel = { showDownloadDialog = true },
+            onActivateModel = aiViewModel::activateModel,
+            onDeleteModel = aiViewModel::deleteModel
+        )
+    }
+
+    if (aiUiState.showSessionSheet) {
+        SessionBottomSheet(
+            sessions = aiUiState.sessions,
+            activeSessionId = aiUiState.activeSessionId,
+            onDismiss = aiViewModel::hideSessionSheet,
+            onSelectSession = aiViewModel::selectSession,
+            onCreateSession = aiViewModel::createSession,
+            onDeleteSession = aiViewModel::deleteSession
+        )
+    }
 }
 
 @Composable
@@ -333,7 +359,8 @@ private fun ModelSection(
     onImportModel: () -> Unit,
     onDownloadModel: () -> Unit,
     onActivateModel: (String) -> Unit,
-    onDeleteModel: (String) -> Unit
+    onDeleteModel: (String) -> Unit,
+    onManageModels: () -> Unit
 ) {
     Card(shape = RoundedCornerShape(24.dp)) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -354,6 +381,9 @@ private fun ModelSection(
                 description = "Bajar un modelo `.task` directamente a la app",
                 onClick = onDownloadModel
             )
+            OutlinedButton(onClick = onManageModels, modifier = Modifier.fillMaxWidth()) {
+                Text("Gestionar modelos en hoja")
+            }
 
             if (models.isEmpty()) {
                 EmptyRow("Todavía no hay modelos registrados.")
@@ -395,7 +425,8 @@ private fun SessionSection(
     onCreateSession: () -> Unit,
     onSelectSession: (String) -> Unit,
     onImportSession: () -> Unit,
-    onExportSession: () -> Unit
+    onExportSession: () -> Unit,
+    onManageSessions: () -> Unit
 ) {
     Card(shape = RoundedCornerShape(24.dp)) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -422,6 +453,9 @@ private fun SessionSection(
                 description = "Crear una sesión nueva con otro hilo",
                 onClick = onCreateSession
             )
+            OutlinedButton(onClick = onManageSessions, modifier = Modifier.fillMaxWidth()) {
+                Text("Gestionar sesiones en hoja")
+            }
 
             if (sessions.isEmpty()) {
                 EmptyRow("Todavía no hay conversaciones.")
