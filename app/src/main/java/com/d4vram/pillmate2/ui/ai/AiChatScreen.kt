@@ -2,6 +2,7 @@
 package com.d4vram.pillmate2.ui.ai
 
 import android.app.Application
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,14 +13,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.d4vram.pillmate2.ai.AssistantChatMessage
@@ -27,7 +31,8 @@ import com.d4vram.pillmate2.ai.AssistantMessageRole
 import com.d4vram.pillmate2.ai.toTreatmentStatsSnapshot
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.ui.stats.viewmodel.StatisticsViewModel
-import androidx.compose.ui.platform.LocalContext
+import kotlinx.coroutines.launch
+import java.io.File
 
 private val suggestions = listOf(
     "¿Qué patrón tengo esta semana?",
@@ -43,6 +48,7 @@ fun AiChatScreen(
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val statsViewModel: StatisticsViewModel = viewModel(
         factory = StatisticsViewModel.provideFactory(repository)
     )
@@ -52,6 +58,7 @@ fun AiChatScreen(
     val statsUiState by statsViewModel.uiState.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
+    var showMenu by remember { mutableStateOf(false) }
 
     LaunchedEffect(statsUiState) {
         viewModel.updateStatisticsContext(statsUiState.toTreatmentStatsSnapshot())
@@ -103,6 +110,56 @@ fun AiChatScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "Opciones")
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Nueva conversación") },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.createSession("Nueva conversación")
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Exportar chat") },
+                                onClick = {
+                                    showMenu = false
+                                    scope.launch {
+                                        val exportUri = viewModel.exportCurrentSession() ?: return@launch
+                                        val file = File(requireNotNull(exportUri.path))
+                                        val shareUri = FileProvider.getUriForFile(
+                                            context,
+                                            "${context.packageName}.provider",
+                                            file
+                                        )
+                                        val intent = Intent(Intent.ACTION_SEND).apply {
+                                            type = "application/json"
+                                            putExtra(Intent.EXTRA_STREAM, shareUri)
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                            putExtra(Intent.EXTRA_SUBJECT, "Chat PillMate AI")
+                                        }
+                                        context.startActivity(
+                                            Intent.createChooser(intent, "Exportar conversación")
+                                        )
+                                    }
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Gestionar sesiones") },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.showSessionSheet()
+                                }
+                            )
+                        }
                     }
                 }
             )
@@ -161,6 +218,17 @@ fun AiChatScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
         }
+    }
+
+    if (uiState.showSessionSheet) {
+        SessionBottomSheet(
+            sessions = uiState.sessions,
+            activeSessionId = uiState.activeSessionId,
+            onDismiss = viewModel::hideSessionSheet,
+            onSelectSession = viewModel::selectSession,
+            onCreateSession = viewModel::createSession,
+            onDeleteSession = viewModel::deleteSession
+        )
     }
 }
 
