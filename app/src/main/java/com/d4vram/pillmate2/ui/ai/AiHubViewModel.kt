@@ -157,6 +157,12 @@ class AiHubViewModel(
         }
     }
 
+    fun renameSession(sessionId: String, title: String) {
+        viewModelScope.launch {
+            repository.renameSession(sessionId, title)
+        }
+    }
+
     override fun onCleared() {
         assistant.close()
         super.onCleared()

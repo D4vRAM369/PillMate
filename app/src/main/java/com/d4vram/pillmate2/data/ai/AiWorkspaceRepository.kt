@@ -221,6 +221,23 @@ class AiWorkspaceRepository(
         persist()
     }
 
+    suspend fun renameSession(sessionId: String, title: String) = withContext(Dispatchers.IO) {
+        val newTitle = title.trim().ifBlank { "Nueva conversación" }
+        _workspace.update { state ->
+            state.copy(
+                sessions = state.sessions.map { session ->
+                    if (session.id == sessionId) {
+                        session.copy(
+                            title = newTitle,
+                            updatedAtEpochMillis = System.currentTimeMillis()
+                        )
+                    } else session
+                }
+            )
+        }
+        persist()
+    }
+
     fun currentMessages(sessionId: String?): List<AssistantChatMessage> {
         val session = workspace.value.sessions.firstOrNull { it.id == sessionId } ?: return emptyList()
         return session.messages.map { stored ->

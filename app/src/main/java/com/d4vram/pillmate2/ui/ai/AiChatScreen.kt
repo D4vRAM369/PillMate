@@ -59,6 +59,8 @@ fun AiChatScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val listState = rememberLazyListState()
     var showMenu by remember { mutableStateOf(false) }
+    var showRenameDialog by remember { mutableStateOf(false) }
+    var renameDraft by remember { mutableStateOf("") }
 
     LaunchedEffect(statsUiState) {
         viewModel.updateStatisticsContext(statsUiState.toTreatmentStatsSnapshot())
@@ -121,6 +123,16 @@ fun AiChatScreen(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
+                            DropdownMenuItem(
+                                text = { Text("Renombrar conversación") },
+                                onClick = {
+                                    showMenu = false
+                                    renameDraft = uiState.sessions.firstOrNull {
+                                        it.id == uiState.activeSessionId
+                                    }?.title.orEmpty()
+                                    showRenameDialog = true
+                                }
+                            )
                             DropdownMenuItem(
                                 text = { Text("Nueva conversación") },
                                 onClick = {
@@ -228,6 +240,37 @@ fun AiChatScreen(
             onSelectSession = viewModel::selectSession,
             onCreateSession = viewModel::createSession,
             onDeleteSession = viewModel::deleteSession
+        )
+    }
+
+    if (showRenameDialog) {
+        AlertDialog(
+            onDismissRequest = { showRenameDialog = false },
+            title = { Text("Renombrar conversación") },
+            text = {
+                OutlinedTextField(
+                    value = renameDraft,
+                    onValueChange = { renameDraft = it },
+                    label = { Text("Título") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val sessionId = uiState.activeSessionId
+                        if (sessionId != null) {
+                            viewModel.renameSession(sessionId, renameDraft)
+                        }
+                        showRenameDialog = false
+                    }
+                ) { Text("Guardar") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showRenameDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
         )
     }
 }
