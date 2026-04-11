@@ -26,7 +26,7 @@ fun SessionBottomSheet(
     activeSessionId: String?,
     onDismiss: () -> Unit,
     onSelectSession: (String) -> Unit,
-    onCreateSession: () -> Unit,
+    onCreateSession: (String) -> Unit,
     onDeleteSession: (String) -> Unit
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
@@ -109,7 +109,7 @@ fun SessionBottomSheet(
             confirmButton = {
                 Button(
                     onClick = {
-                        onCreateSession()
+                        onCreateSession(newSessionName.ifBlank { "Nueva conversación" })
                         showCreateDialog = false
                         newSessionName = ""
                         onDismiss()
