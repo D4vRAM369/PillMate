@@ -342,7 +342,7 @@ private fun ModelSection(
                 onClick = onDownloadModel
             )
             OutlinedButton(onClick = onManageModels, modifier = Modifier.fillMaxWidth()) {
-                Text("Gestionar modelos en hoja")
+                Text("Gestionar modelos")
             }
 
             if (models.isEmpty()) {
@@ -406,7 +406,7 @@ private fun SessionSection(
                 onClick = onCreateSession
             )
             OutlinedButton(onClick = onManageSessions, modifier = Modifier.fillMaxWidth()) {
-                Text("Gestionar sesiones en hoja")
+                Text("Gestionar sesiones")
             }
 
             if (sessions.isEmpty()) {
@@ -435,9 +435,9 @@ private fun SessionSection(
                         )
                         Text(
                             text = if (session.id == activeSessionId) {
-                                "Activa · ${session.messages.size} msgs"
+                                "Activa · ${session.messages.size} mensajes"
                             } else {
-                                "${session.messages.size} msgs"
+                                "${session.messages.size} mensajes"
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -445,7 +445,7 @@ private fun SessionSection(
                     }
                 }
                 Text(
-                    text = "Selecciona, renombra o elimina desde \"Gestionar sesiones en hoja\" o desde el chat.",
+                    text = "Selecciona, renombra o elimina desde \"Gestionar sesiones\" o desde el chat.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
