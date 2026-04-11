@@ -77,6 +77,7 @@ import java.io.File
 @Composable
 fun AiHubScreen(
     repository: MedicationRepository,
+    onOpenChat: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -150,6 +151,12 @@ fun AiHubScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             HeroAiCard()
+            ActionRowButton(
+                icon = Icons.Default.SmartToy,
+                title = "Abrir chat IA",
+                description = "Entrar en el chat completo con contexto de estadísticas",
+                onClick = onOpenChat
+            )
 
             ModelSection(
                 models = aiUiState.models,

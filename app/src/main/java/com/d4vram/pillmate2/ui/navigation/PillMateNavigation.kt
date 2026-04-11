@@ -29,6 +29,7 @@ import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
 import com.d4vram.pillmate2.ui.voicenotes.VoiceNotesViewModel
 import com.d4vram.pillmate2.ui.permissions.PermissionsManager
 import com.d4vram.pillmate2.ui.components.PermissionsRequestDialog
+import com.d4vram.pillmate2.ui.ai.AiChatScreen
 import com.d4vram.pillmate2.ui.ai.AiHubScreen
 import com.d4vram.pillmate2.ui.onboarding.AiOnboardingScreen
 import com.d4vram.pillmate2.ui.onboarding.MainOnboardingScreen
@@ -291,6 +292,18 @@ fun PillMateNavigation(
             composable(Screen.AiHub.route) {
                 AiHubScreen(
                     repository = repository,
+                    onOpenChat = {
+                        navController.navigate(Screen.AiChat.route)
+                    },
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    }
+                )
+            }
+
+            composable(Screen.AiChat.route) {
+                AiChatScreen(
+                    repository = repository,
                     onNavigateBack = {
                         navController.popBackStack()
                     }
@@ -313,6 +326,7 @@ sealed class Screen(val route: String, val label: String? = null, val icon: Imag
     object GlobalStats : Screen("global_stats")
     object AiIntro : Screen("ai_intro")
     object AiHub : Screen("ai_hub")
+    object AiChat : Screen("ai_chat")
     object PdfExport : Screen("pdf_export")
 }
 
