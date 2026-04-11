@@ -31,6 +31,7 @@ fun SessionBottomSheet(
 ) {
     var showCreateDialog by remember { mutableStateOf(false) }
     var newSessionName by remember { mutableStateOf("") }
+    var sessionPendingDelete by remember { mutableStateOf<StoredChatSession?>(null) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -82,7 +83,7 @@ fun SessionBottomSheet(
                                 onSelectSession(session.id)
                                 onDismiss()
                             },
-                            onDelete = { onDeleteSession(session.id) }
+                            onDelete = { sessionPendingDelete = session }
                         )
                     }
                 }
@@ -121,6 +122,31 @@ fun SessionBottomSheet(
                     showCreateDialog = false
                     newSessionName = ""
                 }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    sessionPendingDelete?.let { session ->
+        AlertDialog(
+            onDismissRequest = { sessionPendingDelete = null },
+            title = { Text("Eliminar sesión") },
+            text = {
+                Text(
+                    "¿Seguro que quieres eliminar \"${session.title}\"? Esta acción no se puede deshacer."
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteSession(session.id)
+                        sessionPendingDelete = null
+                    }
+                ) { Text("Eliminar") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { sessionPendingDelete = null }) {
+                    Text("Cancelar")
+                }
             }
         )
     }

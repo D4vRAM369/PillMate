@@ -30,6 +30,8 @@ fun ModelBottomSheet(
     onActivateModel: (String) -> Unit,
     onDeleteModel: (String) -> Unit
 ) {
+    var modelPendingDelete by remember { mutableStateOf<StoredLocalModel?>(null) }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface
@@ -104,12 +106,33 @@ fun ModelBottomSheet(
                             model = model,
                             isActive = model.localPath == activeModelPath,
                             onActivate = { onActivateModel(model.id) },
-                            onDelete = { onDeleteModel(model.id) }
+                            onDelete = { modelPendingDelete = model }
                         )
                     }
                 }
             }
         }
+    }
+
+    modelPendingDelete?.let { model ->
+        AlertDialog(
+            onDismissRequest = { modelPendingDelete = null },
+            title = { Text("Eliminar modelo") },
+            text = { Text("¿Seguro que quieres eliminar \"${model.displayName}\"?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteModel(model.id)
+                        modelPendingDelete = null
+                    }
+                ) { Text("Eliminar") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { modelPendingDelete = null }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
 }
 
