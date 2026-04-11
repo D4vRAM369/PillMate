@@ -29,7 +29,9 @@ data class AiHubUiState(
     val messages: List<AssistantChatMessage> = emptyList(),
     val models: List<StoredLocalModel> = emptyList(),
     val activeModelPath: String? = null,
-    val candidatePaths: List<String> = emptyList()
+    val candidatePaths: List<String> = emptyList(),
+    val showModelSheet: Boolean = false,
+    val showSessionSheet: Boolean = false
 )
 
 class AiHubViewModel(
@@ -131,6 +133,28 @@ class AiHubViewModel(
     suspend fun exportCurrentSession(): Uri? {
         val sessionId = _uiState.value.activeSessionId ?: return null
         return repository.exportSession(sessionId)
+    }
+
+    fun showModelSheet() {
+        _uiState.update { it.copy(showModelSheet = true) }
+    }
+
+    fun hideModelSheet() {
+        _uiState.update { it.copy(showModelSheet = false) }
+    }
+
+    fun showSessionSheet() {
+        _uiState.update { it.copy(showSessionSheet = true) }
+    }
+
+    fun hideSessionSheet() {
+        _uiState.update { it.copy(showSessionSheet = false) }
+    }
+
+    fun deleteSession(sessionId: String) {
+        viewModelScope.launch {
+            repository.deleteSession(sessionId)
+        }
     }
 
     override fun onCleared() {
