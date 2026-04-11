@@ -24,11 +24,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.FolderZip
 import androidx.compose.material.icons.filled.Memory
-import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.AlertDialog
@@ -93,7 +91,6 @@ fun AiHubScreen(
 
     var showDownloadDialog by remember { mutableStateOf(false) }
     var showNewSessionDialog by remember { mutableStateOf(false) }
-    var modelPendingDelete by remember { mutableStateOf<StoredLocalModel?>(null) }
     var modelName by remember { mutableStateOf("") }
     var modelUrl by remember { mutableStateOf("") }
     var sessionName by remember { mutableStateOf("") }
@@ -166,10 +163,6 @@ fun AiHubScreen(
                     modelImporter.launch(arrayOf("*/*"))
                 },
                 onDownloadModel = { showDownloadDialog = true },
-                onActivateModel = aiViewModel::activateModel,
-                onDeleteModel = { modelId ->
-                    modelPendingDelete = aiUiState.models.firstOrNull { it.id == modelId }
-                },
                 onManageModels = aiViewModel::showModelSheet
             )
 
@@ -285,29 +278,6 @@ fun AiHubScreen(
         )
     }
 
-    modelPendingDelete?.let { model ->
-        AlertDialog(
-            onDismissRequest = { modelPendingDelete = null },
-            title = { Text("Eliminar modelo") },
-            text = {
-                Text("¿Seguro que quieres eliminar \"${model.displayName}\" desde el hub?")
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        aiViewModel.deleteModel(model.id)
-                        modelPendingDelete = null
-                    }
-                ) { Text("Eliminar") }
-            },
-            dismissButton = {
-                OutlinedButton(onClick = { modelPendingDelete = null }) {
-                    Text("Cancelar")
-                }
-            }
-        )
-    }
-
     if (aiUiState.showModelSheet) {
         ModelBottomSheet(
             models = aiUiState.models,
@@ -384,8 +354,6 @@ private fun ModelSection(
     activeModelPath: String?,
     onImportModel: () -> Unit,
     onDownloadModel: () -> Unit,
-    onActivateModel: (String) -> Unit,
-    onDeleteModel: (String) -> Unit,
     onManageModels: () -> Unit
 ) {
     Card(shape = RoundedCornerShape(24.dp)) {
@@ -423,18 +391,11 @@ private fun ModelSection(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(model.displayName, fontWeight = FontWeight.SemiBold)
                             Text(
-                                text = if (model.isActive) "Activo" else "Listo para activar",
+                                text = if (model.isActive) "Activo"
+                                else "Gestiona activación en hoja",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(onClick = { onActivateModel(model.id) }) {
-                                Icon(Icons.Default.PlayArrow, contentDescription = null)
-                            }
-                            OutlinedButton(onClick = { onDeleteModel(model.id) }) {
-                                Icon(Icons.Default.Delete, contentDescription = null)
-                            }
                         }
                     }
                     HorizontalDivider()
