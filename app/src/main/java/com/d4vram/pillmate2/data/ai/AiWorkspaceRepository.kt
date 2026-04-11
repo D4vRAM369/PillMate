@@ -208,6 +208,19 @@ class AiWorkspaceRepository(
         newId
     }
 
+    suspend fun deleteSession(sessionId: String) = withContext(Dispatchers.IO) {
+        _workspace.update { state ->
+            val remaining = state.sessions.filterNot { it.id == sessionId }
+            val newActiveId = if (state.activeSessionId == sessionId) {
+                remaining.firstOrNull()?.id
+            } else {
+                state.activeSessionId
+            }
+            state.copy(sessions = remaining, activeSessionId = newActiveId)
+        }
+        persist()
+    }
+
     fun currentMessages(sessionId: String?): List<AssistantChatMessage> {
         val session = workspace.value.sessions.firstOrNull { it.id == sessionId } ?: return emptyList()
         return session.messages.map { stored ->
