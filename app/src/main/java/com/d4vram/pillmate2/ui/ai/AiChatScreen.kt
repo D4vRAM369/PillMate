@@ -142,6 +142,7 @@ fun AiChatScreen(
                             )
                             DropdownMenuItem(
                                 text = { Text("Exportar chat") },
+                                enabled = uiState.activeSessionId != null,
                                 onClick = {
                                     showMenu = false
                                     scope.launch {
@@ -203,9 +204,12 @@ fun AiChatScreen(
                 }
             }
 
-            // Chips de sugerencias (solo cuando no se está generando)
-            if (!uiState.isGenerating && uiState.messages.isNotEmpty()
-                && uiState.messages.last().role == AssistantMessageRole.ASSISTANT) {
+            val shouldShowSuggestions = !uiState.isGenerating && (
+                uiState.messages.isEmpty() ||
+                    uiState.messages.lastOrNull()?.role == AssistantMessageRole.ASSISTANT
+                )
+
+            if (shouldShowSuggestions) {
                 LazyRow(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
