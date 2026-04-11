@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -251,13 +250,20 @@ private fun InputBar(
                     shape = RoundedCornerShape(12.dp)
                 )
         ) {
-            Icon(
-                imageVector = if (isGenerating) Icons.Default.Stop
-                else Icons.AutoMirrored.Filled.Send,
-                contentDescription = if (isGenerating) "Detener" else "Enviar",
-                tint = if (value.isNotBlank() && !isGenerating) Color.White
-                else MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            if (isGenerating) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Send,
+                    contentDescription = "Enviar",
+                    tint = if (value.isNotBlank()) Color.White
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
