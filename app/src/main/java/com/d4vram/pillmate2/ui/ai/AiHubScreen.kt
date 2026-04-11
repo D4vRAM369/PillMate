@@ -93,6 +93,7 @@ fun AiHubScreen(
 
     var showDownloadDialog by remember { mutableStateOf(false) }
     var showNewSessionDialog by remember { mutableStateOf(false) }
+    var modelPendingDelete by remember { mutableStateOf<StoredLocalModel?>(null) }
     var modelName by remember { mutableStateOf("") }
     var modelUrl by remember { mutableStateOf("") }
     var sessionName by remember { mutableStateOf("") }
@@ -166,7 +167,9 @@ fun AiHubScreen(
                 },
                 onDownloadModel = { showDownloadDialog = true },
                 onActivateModel = aiViewModel::activateModel,
-                onDeleteModel = aiViewModel::deleteModel,
+                onDeleteModel = { modelId ->
+                    modelPendingDelete = aiUiState.models.firstOrNull { it.id == modelId }
+                },
                 onManageModels = aiViewModel::showModelSheet
             )
 
@@ -276,6 +279,29 @@ fun AiHubScreen(
             },
             dismissButton = {
                 OutlinedButton(onClick = { showNewSessionDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    modelPendingDelete?.let { model ->
+        AlertDialog(
+            onDismissRequest = { modelPendingDelete = null },
+            title = { Text("Eliminar modelo") },
+            text = {
+                Text("¿Seguro que quieres eliminar \"${model.displayName}\" desde el hub?")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        aiViewModel.deleteModel(model.id)
+                        modelPendingDelete = null
+                    }
+                ) { Text("Eliminar") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { modelPendingDelete = null }) {
                     Text("Cancelar")
                 }
             }
