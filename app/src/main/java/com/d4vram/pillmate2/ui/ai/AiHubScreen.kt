@@ -24,11 +24,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.FolderZip
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SmartToy
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.AlertDialog
@@ -407,7 +407,7 @@ private fun ModelSection(
                                 Icon(Icons.Default.PlayArrow, contentDescription = null)
                             }
                             OutlinedButton(onClick = { onDeleteModel(model.id) }) {
-                                Icon(Icons.Default.Refresh, contentDescription = null)
+                                Icon(Icons.Default.Delete, contentDescription = null)
                             }
                         }
                     }
