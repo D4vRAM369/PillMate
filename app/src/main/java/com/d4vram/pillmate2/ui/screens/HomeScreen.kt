@@ -14,17 +14,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.PsychologyAlt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -53,6 +58,7 @@ import com.d4vram.pillmate2.model.HistoryEntry
 import java.time.LocalDateTime
 import com.d4vram.pillmate2.model.SortMode
 import com.d4vram.pillmate2.ui.components.HistoryItem
+import com.d4vram.pillmate2.ui.components.MedicationListItem
 import com.d4vram.pillmate2.ui.components.ReorderableMedicationGrid
 import com.d4vram.pillmate2.ui.theme.AppUiStyle
 import com.d4vram.pillmate2.ui.theme.HeaderGradientEnd
@@ -79,6 +85,8 @@ fun HomeScreen(
     val stats by repository.stats.collectAsState()
     val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)
     val sortMode by themeManager.sortMode.collectAsState(initial = SortMode.MANUAL)
+    val isListView by themeManager.isListView.collectAsState(initial = false)
+    val scope = rememberCoroutineScope()
 
     // Aplicar ordenamiento según la configuración del usuario
     val medications = remember(medicationsRaw, sortMode) {
@@ -137,35 +145,66 @@ fun HomeScreen(
             }
 
             item {
-                // Título de medicamentos
                 SectionTitle(
                     title = "🏠 Mis Medicamentos",
-                    modifier = Modifier.padding(horizontal = 24.dp)
+                    modifier = Modifier.padding(horizontal = 24.dp),
+                    trailingContent = {
+                        IconButton(
+                            onClick = { scope.launch { themeManager.setListView(!isListView) } },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isListView)
+                                    Icons.Default.GridView
+                                else
+                                    Icons.AutoMirrored.Filled.ViewList,
+                                contentDescription = if (isListView) "Ver como grid" else "Ver como lista",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 )
             }
 
-            item {
-                // Grid de medicamentos reordenable
-                ReorderableMedicationGrid(
-                    medications = filteredMedications,
-                    repository = repository,
-                    chipCountPeriod = chipCountPeriod,
-                    onTakeMedication = { medicationId, quantity, timestamp ->
-                        repository.takeMedication(medicationId, quantity, timestamp)
-                    },
-                    onAddMedication = onAddMedication,
-                    onEditMedication = onEditMedication,
-                    onDeleteMedication = onDeleteMedication,
-                    onReorder = { fromIndex, toIndex ->
-                        // Solo permitir reordenar en modo MANUAL
-                        if (sortMode == SortMode.MANUAL) {
-                            repository.reorderMedications(fromIndex, toIndex)
-                        }
-                    },
-                    dragEnabled = sortMode == SortMode.MANUAL,
-                    parentListState = listState,
-                    modifier = Modifier.padding(horizontal = 24.dp)
-                )
+            if (isListView) {
+                items(
+                    items = filteredMedications,
+                    key = { it.id }
+                ) { medication ->
+                    MedicationListItem(
+                        medication = medication,
+                        repository = repository,
+                        chipCountPeriod = chipCountPeriod,
+                        onTakeMedication = { medicationId, quantity, timestamp ->
+                            repository.takeMedication(medicationId, quantity, timestamp)
+                        },
+                        onEditMedication = onEditMedication,
+                        onDeleteMedication = onDeleteMedication,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                }
+            } else {
+                item {
+                    ReorderableMedicationGrid(
+                        medications = filteredMedications,
+                        repository = repository,
+                        chipCountPeriod = chipCountPeriod,
+                        onTakeMedication = { medicationId, quantity, timestamp ->
+                            repository.takeMedication(medicationId, quantity, timestamp)
+                        },
+                        onAddMedication = onAddMedication,
+                        onEditMedication = onEditMedication,
+                        onDeleteMedication = onDeleteMedication,
+                        onReorder = { fromIndex, toIndex ->
+                            if (sortMode == SortMode.MANUAL) {
+                                repository.reorderMedications(fromIndex, toIndex)
+                            }
+                        },
+                        dragEnabled = sortMode == SortMode.MANUAL,
+                        parentListState = listState,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+                }
             }
 
             item {
@@ -500,7 +539,8 @@ private fun AiEntryCard(
 private fun SectionTitle(
     title: String,
     subtitle: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    trailingContent: @Composable (() -> Unit)? = null
 ) {
     Column(modifier = modifier) {
         Row(
@@ -515,7 +555,9 @@ private fun SectionTitle(
                 ),
                 color = MaterialTheme.colorScheme.onSurface
             )
-            if (subtitle != null) {
+            if (trailingContent != null) {
+                trailingContent()
+            } else if (subtitle != null) {
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
