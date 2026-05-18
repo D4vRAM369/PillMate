@@ -5,14 +5,14 @@ import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class MediapipeLocalLlmEngine(context: Context) : AutoCloseable {
+class MediapipeLocalLlmEngine(context: Context) : LlmEngine {
 
     private val appContext = context.applicationContext
     private val lock = Any()
     private var currentModelPath: String? = null
     private var currentEngine: LlmInference? = null
 
-    suspend fun generate(prompt: String, modelPath: String): String = withContext(Dispatchers.IO) {
+    override suspend fun generate(prompt: String, modelPath: String): String = withContext(Dispatchers.IO) {
         val engine = synchronized(lock) {
             if (currentEngine == null || currentModelPath != modelPath) {
                 currentEngine?.close()

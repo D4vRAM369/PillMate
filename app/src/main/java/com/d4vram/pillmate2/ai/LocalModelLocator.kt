@@ -3,11 +3,11 @@ package com.d4vram.pillmate2.ai
 import android.content.Context
 import java.io.File
 
-class LocalModelLocator(context: Context) {
+class LocalModelLocator(context: Context) : ModelLocator {
 
     private val appContext = context.applicationContext
 
-    fun locate(): LocalModelStatus {
+    override fun locate(): LocalModelStatus {
         val internalDir = File(appContext.filesDir, "llm")
         val activePointer = File(internalDir, "active-model-path.txt")
         val candidates = buildList {

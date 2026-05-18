@@ -1,13 +1,19 @@
 package com.d4vram.pillmate2.ai
 
 import android.content.Context
+import android.util.Log
 
 class PrivateTreatmentAssistant(
-    context: Context,
-    private val modelLocator: LocalModelLocator = LocalModelLocator(context),
+    private val modelLocator: ModelLocator,
     private val fallbackEngine: PblFallbackEngine = PblFallbackEngine(),
-    private val llmEngine: MediapipeLocalLlmEngine = MediapipeLocalLlmEngine(context)
+    private val llmEngine: LlmEngine
 ) : AutoCloseable {
+
+    constructor(context: Context) : this(
+        modelLocator = LocalModelLocator(context),
+        fallbackEngine = PblFallbackEngine(),
+        llmEngine = MediapipeLocalLlmEngine(context)
+    )
 
     fun inspectModelStatus(): LocalModelStatus = modelLocator.locate()
 
@@ -55,12 +61,14 @@ class PrivateTreatmentAssistant(
                 modelStatus = modelStatus,
                 isFallback = response.isBlank()
             )
-        } catch (_: Throwable) {
+        } catch (t: Throwable) {
+            Log.e("PillMateAI", "LLM engine falló: ${t.message}", t)
             TreatmentAssistantReply(
                 text = fallbackEngine.respond(question, snapshot),
                 sourceLabel = "Analizador local privado",
                 modelStatus = modelStatus,
                 isFallback = true
+                // failureHint se añade en Task 2, cuando el campo exista en TreatmentAssistantReply
             )
         }
     }
