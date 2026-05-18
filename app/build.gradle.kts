@@ -82,6 +82,12 @@ android {
         checkReleaseBuilds = false
         textReport = true
     }
+
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {

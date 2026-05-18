@@ -67,8 +67,8 @@ class PrivateTreatmentAssistant(
                 text = fallbackEngine.respond(question, snapshot),
                 sourceLabel = "Analizador local privado",
                 modelStatus = modelStatus,
-                isFallback = true
-                // failureHint se añade en Task 2, cuando el campo exista en TreatmentAssistantReply
+                isFallback = true,
+                failureHint = "Motor LLM falló: ${t.message ?: t.javaClass.simpleName}"
             )
         }
     }

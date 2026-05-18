@@ -92,7 +92,8 @@ data class TreatmentAssistantReply(
     val text: String,
     val sourceLabel: String,
     val modelStatus: LocalModelStatus,
-    val isFallback: Boolean
+    val isFallback: Boolean,
+    val failureHint: String? = null
 )
 
 fun StatisticsUiState.toTreatmentStatsSnapshot(): TreatmentStatsSnapshot {
