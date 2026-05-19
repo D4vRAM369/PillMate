@@ -1,9 +1,12 @@
 package com.d4vram.pillmate2.ui.onboarding
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,19 +23,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.MonitorHeart
-import androidx.compose.material.icons.filled.PsychologyAlt
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -46,6 +48,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 private data class OnboardingPageModel(
     val eyebrow: String,
@@ -234,9 +237,12 @@ fun MainOnboardingScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AiOnboardingScreen(
     onFinish: () -> Unit,
+    onImportModel: () -> Unit,
+    onDownloadModel: () -> Unit,
     onNavigateBack: () -> Unit
 ) {
     Surface(
@@ -251,82 +257,130 @@ fun AiOnboardingScreen(
                         colors = listOf(Color(0xFF071325), Color(0xFF0B1F3B), Color(0xFF13345A))
                     )
                 )
+                .verticalScroll(rememberScrollState())
                 .padding(24.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(22.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "MODO IA LOCAL",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF7DD3FC)
-                    )
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = Color.White
-                        )
-                    }
-                }
-
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = "PillMate AI tendrá su propio espacio para chatear con tus estadísticas y gestionar modelos locales.",
+                    text = "PILLMATE AI",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF7DD3FC)
+                )
+                IconButton(onClick = onNavigateBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Volver",
+                        tint = Color.White
+                    )
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "Chatea con tus estadísticas.\nTodo en tu teléfono.",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.White
                 )
-
                 Text(
-                    text = "En la siguiente fase añadimos pantalla propia, gestión de modelos, historial de conversaciones, importación y exportación local.",
+                    text = "Sin conexión a internet. Sin servidores. El modelo de IA corre directamente en tu dispositivo.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = Color(0xFFB6CCE6)
                 )
+            }
 
-                Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    AiFeatureCard(
-                        icon = Icons.Default.Memory,
-                        title = "Modelos locales",
-                        description = "Descarga, activa y administra modelos desde una screen propia."
-                    )
-                    AiFeatureCard(
-                        icon = Icons.Default.PsychologyAlt,
-                        title = "Chats privados",
-                        description = "Sesiones guardadas con contexto de estadísticas y continuidad real."
-                    )
-                    AiFeatureCard(
-                        icon = Icons.Default.Shield,
-                        title = "Control visible",
-                        description = "Estado del modelo, privacidad, importación y exportación en un solo lugar."
-                    )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                listOf(
+                    "🔒 Sin red",
+                    "💬 Sesiones guardadas",
+                    "📊 Contexto de estadísticas",
+                    "🛡️ Sin telemetría"
+                ).forEach { chip ->
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(Color.White.copy(alpha = 0.08f))
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = chip,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFFB6CCE6)
+                        )
+                    }
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(
+                    text = "CÓMO EMPEZAR",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF7DD3FC),
+                    letterSpacing = 1.5.sp
+                )
+                AiInfoCard(
+                    emoji = "📦",
+                    title = "Necesitas un modelo .task",
+                    description = "Un archivo de IA que corre 100% en tu móvil. Sin cuenta ni internet una vez instalado."
+                )
+                AiInfoCard(
+                    emoji = "⭐",
+                    title = "Gemma 2B — recomendado",
+                    description = "Modelo de Google, ~1.5 GB, compatible con esta app. Puedes descargarlo directo desde aquí."
+                )
+            }
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(top = 4.dp)
+            ) {
                 Button(
-                    onClick = onFinish,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(58.dp),
-                    shape = RoundedCornerShape(20.dp)
-                ) {
-                    Text("Continuar")
-                }
-                OutlinedButton(
-                    onClick = onNavigateBack,
+                    onClick = onDownloadModel,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(54.dp),
-                    shape = RoundedCornerShape(18.dp)
+                    shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Volver")
+                    Text("⬇️  Descargar modelo Gemma")
+                }
+                OutlinedButton(
+                    onClick = onImportModel,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, Color(0xFF0EA5E9).copy(alpha = 0.5f))
+                ) {
+                    Text(
+                        "📂  Importar .task que ya tengo",
+                        color = Color(0xFF7DD3FC)
+                    )
+                }
+                TextButton(
+                    onClick = onFinish,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        "Explorar sin modelo por ahora",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF6B8BAF)
+                    )
                 }
             }
+
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
@@ -360,45 +414,36 @@ private fun OnboardingBullet(
 }
 
 @Composable
-private fun AiFeatureCard(
-    icon: ImageVector,
+private fun AiInfoCard(
+    emoji: String,
     title: String,
     description: String
 ) {
     Card(
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f))
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White.copy(alpha = 0.05f)
+        ),
+        border = BorderStroke(1.dp, Color(0xFF0EA5E9).copy(alpha = 0.25f))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(18.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(14.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Color(0xFF0EA5E9).copy(alpha = 0.2f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = Color(0xFF7DD3FC)
-                )
-            }
-            Spacer(modifier = Modifier.width(16.dp))
+            Text(text = emoji, style = MaterialTheme.typography.headlineSmall)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     color = Color.White,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = description,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFFB6CCE6)
                 )
             }
