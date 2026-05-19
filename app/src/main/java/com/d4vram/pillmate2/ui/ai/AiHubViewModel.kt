@@ -31,7 +31,8 @@ data class AiHubUiState(
     val activeModelPath: String? = null,
     val candidatePaths: List<String> = emptyList(),
     val showModelSheet: Boolean = false,
-    val showSessionSheet: Boolean = false
+    val showSessionSheet: Boolean = false,
+    val lastFailureHint: String? = null
 )
 
 class AiHubViewModel(
@@ -182,6 +183,7 @@ class AiHubViewModel(
                 it.copy(
                     isGenerating = false,
                     sourceLabel = reply.sourceLabel,
+                    lastFailureHint = reply.failureHint,
                     messages = repository.currentMessages(sessionId),
                     activeSessionId = sessionId,
                     activeModelPath = modelStatus.activeModelPath,

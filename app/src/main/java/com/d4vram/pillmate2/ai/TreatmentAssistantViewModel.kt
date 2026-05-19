@@ -24,7 +24,8 @@ Estoy listo para leer el periodo visible de tus estadísticas de tratamiento. To
     val isGenerating: Boolean = false,
     val sourceLabel: String = "Analizador local privado",
     val activeModelPath: String? = null,
-    val candidatePaths: List<String> = emptyList()
+    val candidatePaths: List<String> = emptyList(),
+    val lastFailureHint: String? = null
 )
 
 class TreatmentAssistantViewModel(
@@ -95,7 +96,8 @@ class TreatmentAssistantViewModel(
                         content = reply.text
                     ),
                     isGenerating = false,
-                    sourceLabel = reply.sourceLabel
+                    sourceLabel = reply.sourceLabel,
+                    lastFailureHint = reply.failureHint
                 ).withModelStatus(reply.modelStatus)
             }
         }

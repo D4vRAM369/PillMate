@@ -534,5 +534,6 @@ private fun AiHubUiState.toAssistantCardState() = com.d4vram.pillmate2.ai.Treatm
     isGenerating = isGenerating,
     sourceLabel = sourceLabel,
     activeModelPath = activeModelPath,
-    candidatePaths = candidatePaths
+    candidatePaths = candidatePaths,
+    lastFailureHint = lastFailureHint
 )
