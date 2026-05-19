@@ -2,6 +2,8 @@ package com.d4vram.pillmate2.ui.ai
 
 import android.app.Application
 import android.content.Intent
+import android.net.Uri
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -92,6 +94,8 @@ fun AiHubScreen(
     var showDownloadDialog by remember { mutableStateOf(false) }
     var modelName by remember { mutableStateOf("") }
     var modelUrl by remember { mutableStateOf("") }
+    var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingImportName by remember { mutableStateOf("") }
 
     LaunchedEffect(statsUiState) {
         aiViewModel.updateStatisticsContext(statsUiState.toTreatmentStatsSnapshot())
@@ -101,9 +105,8 @@ fun AiHubScreen(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
         if (uri != null) {
-            scope.launch {
-                aiViewModel.importModel(uri, "modelo-importado")
-            }
+            pendingImportUri = uri
+            pendingImportName = uri.resolveDisplayName(context)
         }
     }
 
@@ -238,6 +241,40 @@ fun AiHubScreen(
             },
             dismissButton = {
                 OutlinedButton(onClick = { showDownloadDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (pendingImportUri != null) {
+        AlertDialog(
+            onDismissRequest = { pendingImportUri = null },
+            title = { Text("Nombre del modelo") },
+            text = {
+                OutlinedTextField(
+                    value = pendingImportName,
+                    onValueChange = { pendingImportName = it },
+                    label = { Text("Nombre visible en la app") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val uri = pendingImportUri ?: return@Button
+                        val name = pendingImportName.trim().ifBlank { "modelo-importado" }
+                        scope.launch { aiViewModel.importModel(uri, name) }
+                        pendingImportUri = null
+                    },
+                    enabled = pendingImportName.isNotBlank()
+                ) {
+                    Text("Importar")
+                }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { pendingImportUri = null }) {
                     Text("Cancelar")
                 }
             }
@@ -526,6 +563,18 @@ private fun EmptyRow(text: String) {
     ) {
         Text(text = text, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
+}
+
+private fun Uri.resolveDisplayName(context: android.content.Context): String {
+    context.contentResolver.query(this, null, null, null, null)?.use { cursor ->
+        val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+        if (cursor.moveToFirst() && nameIndex >= 0) {
+            return cursor.getString(nameIndex)
+                .removeSuffix(".task")
+                .ifBlank { "modelo-importado" }
+        }
+    }
+    return lastPathSegment?.removeSuffix(".task") ?: "modelo-importado"
 }
 
 private fun AiHubUiState.toAssistantCardState() = com.d4vram.pillmate2.ai.TreatmentAssistantUiState(
