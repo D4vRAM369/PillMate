@@ -118,6 +118,15 @@ fun TreatmentAssistantCard(
 
             HorizontalDivider()
 
+            uiState.lastFailureHint?.let { hint ->
+                Text(
+                    text = hint,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+            }
+
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
