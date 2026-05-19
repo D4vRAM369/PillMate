@@ -26,6 +26,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.FolderZip
 import androidx.compose.material.icons.filled.Memory
@@ -77,7 +78,9 @@ import java.io.File
 @Composable
 fun AiHubScreen(
     repository: MedicationRepository,
+    action: String? = null,
     onOpenChat: () -> Unit,
+    onOpenIntro: () -> Unit = {},
     onNavigateBack: () -> Unit
 ) {
     val context = LocalContext.current
@@ -110,6 +113,13 @@ fun AiHubScreen(
         }
     }
 
+    LaunchedEffect(action) {
+        when (action) {
+            "import" -> modelImporter.launch(arrayOf("*/*"))
+            "download" -> showDownloadDialog = true
+        }
+    }
+
     val sessionImporter = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -135,6 +145,14 @@ fun AiHubScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onOpenIntro) {
+                        Icon(
+                            imageVector = Icons.Default.HelpOutline,
+                            contentDescription = "Cómo funciona"
                         )
                     }
                 }
