@@ -16,9 +16,8 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.NavType
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
+import com.d4vram.pillmate2.ui.ai.AiPendingAction
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.local.PillMateDatabase
 import com.d4vram.pillmate2.data.voice.VoiceNoteRepository
@@ -284,14 +283,16 @@ fun PillMateNavigation(
                         }
                     },
                     onImportModel = {
+                        AiPendingAction.action = "import"
                         coroutineScope.launch { onboardingManager.completeAiOnboarding() }
-                        navController.navigate("ai_hub?action=import") {
+                        navController.navigate(Screen.AiHub.route) {
                             popUpTo(Screen.AiIntro.route) { inclusive = true }
                         }
                     },
                     onDownloadModel = {
+                        AiPendingAction.action = "download"
                         coroutineScope.launch { onboardingManager.completeAiOnboarding() }
-                        navController.navigate("ai_hub?action=download") {
+                        navController.navigate(Screen.AiHub.route) {
                             popUpTo(Screen.AiIntro.route) { inclusive = true }
                         }
                     },
@@ -301,20 +302,9 @@ fun PillMateNavigation(
                 )
             }
 
-            composable(
-                route = "ai_hub?action={action}",
-                arguments = listOf(
-                    navArgument("action") {
-                        type = NavType.StringType
-                        nullable = true
-                        defaultValue = null
-                    }
-                )
-            ) { backStackEntry ->
-                val action = backStackEntry.arguments?.getString("action")
+            composable(Screen.AiHub.route) {
                 AiHubScreen(
                     repository = repository,
-                    action = action,
                     onOpenChat = {
                         navController.navigate(Screen.AiChat.route)
                     },

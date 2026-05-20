@@ -113,8 +113,8 @@ fun AiHubScreen(
         }
     }
 
-    LaunchedEffect(action) {
-        when (action) {
+    LaunchedEffect(Unit) {
+        when (action ?: AiPendingAction.consume()) {
             "import" -> modelImporter.launch(arrayOf("*/*"))
             "download" -> showDownloadDialog = true
         }
