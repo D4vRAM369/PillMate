@@ -77,7 +77,8 @@ class TreatmentAssistantViewModel(
             state.copy(
                 messages = state.messages + userMessage,
                 draft = if (clearDraft) "" else state.draft,
-                isGenerating = true
+                isGenerating = true,
+                lastFailureHint = null
             )
         }
 

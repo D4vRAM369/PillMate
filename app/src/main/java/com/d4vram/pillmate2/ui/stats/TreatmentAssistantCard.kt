@@ -120,9 +120,9 @@ fun TreatmentAssistantCard(
 
             uiState.lastFailureHint?.let { hint ->
                 Text(
-                    text = hint,
+                    text = "⚠️ $hint",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(vertical = 4.dp)
                 )
             }

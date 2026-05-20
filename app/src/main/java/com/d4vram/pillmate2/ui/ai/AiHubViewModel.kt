@@ -170,7 +170,7 @@ class AiHubViewModel(
     }
 
     private fun sendQuestion(question: String, clearDraft: Boolean) {
-        _uiState.update { it.copy(isGenerating = true, draft = if (clearDraft) "" else it.draft) }
+        _uiState.update { it.copy(isGenerating = true, lastFailureHint = null, draft = if (clearDraft) "" else it.draft) }
         viewModelScope.launch {
             val sessionId = _uiState.value.activeSessionId ?: repository.createSession("Nueva conversación")
             repository.setActiveSession(sessionId)
