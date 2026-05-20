@@ -95,8 +95,8 @@ fun AiHubScreen(
     val scope = rememberCoroutineScope()
 
     var showDownloadDialog by remember { mutableStateOf(false) }
-    var modelName by remember { mutableStateOf("") }
-    var modelUrl by remember { mutableStateOf("") }
+    var modelName by remember { mutableStateOf("Gemma 3 1B IT (int4)") }
+    var modelUrl by remember { mutableStateOf("https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.task") }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
     var pendingImportName by remember { mutableStateOf("") }
 
