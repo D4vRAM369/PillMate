@@ -24,8 +24,8 @@ android {
         applicationId = "com.d4vram.pillmate.ai"
         minSdk = 26
         targetSdk = 35
-        versionCode = 4
-        versionName = "1.2.2"
+        versionCode = 5
+        versionName = "1.2.3-aihubfix"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
