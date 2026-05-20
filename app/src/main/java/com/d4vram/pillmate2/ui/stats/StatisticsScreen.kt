@@ -216,8 +216,7 @@ fun StatisticsScreen(
             if (navController != null) {
                 ElevatedCard(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { navController.navigate("ai_hub") },
+                        .fillMaxWidth(),
                     colors = CardDefaults.elevatedCardColors(containerColor = Color.Transparent),
                     shape = RoundedCornerShape(24.dp)
                 ) {

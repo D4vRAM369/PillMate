@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -146,7 +147,7 @@ fun MainOnboardingScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(340.dp)
+                        .heightIn(min = 200.dp, max = 340.dp)
                         .clip(RoundedCornerShape(36.dp))
                         .background(
                             brush = Brush.linearGradient(
@@ -249,7 +250,7 @@ fun AiOnboardingScreen(
         modifier = Modifier.fillMaxSize(),
         color = Color(0xFF071325)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
@@ -257,130 +258,141 @@ fun AiOnboardingScreen(
                         colors = listOf(Color(0xFF071325), Color(0xFF0B1F3B), Color(0xFF13345A))
                     )
                 )
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                Text(
-                    text = "PILLMATE AI",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF7DD3FC)
-                )
-                IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Volver",
-                        tint = Color.White
-                    )
-                }
-            }
-
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "Chatea con tus estadísticas.\nTodo en tu teléfono.",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = Color.White
-                )
-                Text(
-                    text = "Sin conexión a internet. Sin servidores. El modelo de IA corre directamente en tu dispositivo.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = Color(0xFFB6CCE6)
-                )
-            }
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                listOf(
-                    "🔒 Sin red",
-                    "💬 Sesiones guardadas",
-                    "📊 Contexto de estadísticas",
-                    "🛡️ Sin telemetría"
-                ).forEach { chip ->
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .background(Color.White.copy(alpha = 0.08f))
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(20.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = chip,
-                            style = MaterialTheme.typography.bodySmall,
+                            text = "PILLMATE AI",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF7DD3FC)
+                        )
+                        IconButton(onClick = onNavigateBack) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Volver",
+                                tint = Color.White
+                            )
+                        }
+                    }
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "Chatea con tus estadísticas.\nTodo en tu teléfono.",
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "Sin conexión a internet. Sin servidores. El modelo de IA corre directamente en tu dispositivo.",
+                            style = MaterialTheme.typography.bodyLarge,
                             color = Color(0xFFB6CCE6)
                         )
                     }
+
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        listOf(
+                            "🔒 Sin red",
+                            "💬 Sesiones guardadas",
+                            "📊 Contexto de estadísticas",
+                            "🛡️ Sin telemetría"
+                        ).forEach { chip ->
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(Color.White.copy(alpha = 0.08f))
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = chip,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color(0xFFB6CCE6)
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
+
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(
+                            text = "CÓMO EMPEZAR",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF7DD3FC),
+                            letterSpacing = 1.5.sp
+                        )
+                        AiInfoCard(
+                            emoji = "📦",
+                            title = "Necesitas un modelo .task",
+                            description = "Un archivo de IA que corre 100% en tu móvil. Sin cuenta ni internet una vez instalado."
+                        )
+                        AiInfoCard(
+                            emoji = "⭐",
+                            title = "Gemma 2B — recomendado",
+                            description = "Modelo de Google, ~1.5 GB, compatible con esta app. Puedes descargarlo directo desde aquí."
+                        )
+                    }
                 }
-            }
 
-            HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
-
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(
-                    text = "CÓMO EMPEZAR",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF7DD3FC),
-                    letterSpacing = 1.5.sp
-                )
-                AiInfoCard(
-                    emoji = "📦",
-                    title = "Necesitas un modelo .task",
-                    description = "Un archivo de IA que corre 100% en tu móvil. Sin cuenta ni internet una vez instalado."
-                )
-                AiInfoCard(
-                    emoji = "⭐",
-                    title = "Gemma 2B — recomendado",
-                    description = "Modelo de Google, ~1.5 GB, compatible con esta app. Puedes descargarlo directo desde aquí."
-                )
-            }
-
-            Column(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.padding(top = 4.dp)
-            ) {
-                Button(
-                    onClick = onDownloadModel,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(54.dp),
-                    shape = RoundedCornerShape(16.dp)
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.padding(top = 4.dp)
                 ) {
-                    Text("⬇️  Descargar modelo Gemma")
+                    Button(
+                        onClick = onDownloadModel,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(54.dp),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text("⬇️  Descargar modelo Gemma")
+                    }
+                    OutlinedButton(
+                        onClick = onImportModel,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, Color(0xFF0EA5E9).copy(alpha = 0.5f))
+                    ) {
+                        Text(
+                            "📂  Importar .task que ya tengo",
+                            color = Color(0xFF7DD3FC)
+                        )
+                    }
+                    TextButton(
+                        onClick = onFinish,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            "Explorar sin modelo por ahora",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color(0xFF6B8BAF)
+                        )
+                    }
                 }
-                OutlinedButton(
-                    onClick = onImportModel,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    border = BorderStroke(1.dp, Color(0xFF0EA5E9).copy(alpha = 0.5f))
-                ) {
-                    Text(
-                        "📂  Importar .task que ya tengo",
-                        color = Color(0xFF7DD3FC)
-                    )
-                }
-                TextButton(
-                    onClick = onFinish,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        "Explorar sin modelo por ahora",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFF6B8BAF)
-                    )
-                }
-            }
 
-            Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+            }
         }
     }
 }

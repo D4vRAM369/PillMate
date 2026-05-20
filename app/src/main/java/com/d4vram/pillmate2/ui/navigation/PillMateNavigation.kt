@@ -1,6 +1,7 @@
 package com.d4vram.pillmate2.ui.navigation
 
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
@@ -17,7 +18,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.d4vram.pillmate2.ui.ai.AiPendingAction
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.local.PillMateDatabase
 import com.d4vram.pillmate2.data.voice.VoiceNoteRepository
@@ -51,6 +51,8 @@ fun PillMateNavigation(
     val navController = rememberNavController()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    var showAiHubOverlay by remember { mutableStateOf(false) }
+    var pendingAiHubAction by remember { mutableStateOf<String?>(null) }
 
     val repository = remember {
         val database = PillMateDatabase.getInstance(context)
@@ -81,7 +83,6 @@ fun PillMateNavigation(
     // 📸 Gestor de permisos para fotografías de medicamentos
     val permissionsManager = remember { PermissionsManager(context) }
     val isMainOnboardingCompleted by onboardingManager.isMainOnboardingCompleted.collectAsState(initial = false)
-    val isAiOnboardingCompleted by onboardingManager.isAiOnboardingCompleted.collectAsState(initial = false)
     val shouldShowPermissionsDialog by permissionsManager.shouldShowPermissionsDialog.collectAsState(initial = false)
 
     if (!isMainOnboardingCompleted) {
@@ -120,7 +121,7 @@ fun PillMateNavigation(
             // Solo mostrar la barra de navegación en las pantallas principales
             val showBottomBar = bottomNavItems.any { it.route == currentRoute }
 
-            if (showBottomBar) {
+            if (showBottomBar && !showAiHubOverlay) {
                 NavigationBar {
                     bottomNavItems.forEach { screen ->
                         NavigationBarItem(
@@ -157,10 +158,34 @@ fun PillMateNavigation(
         }
 
     ) { innerPadding ->
+        if (showAiHubOverlay) {
+            AiHubScreen(
+                repository = repository,
+                action = pendingAiHubAction,
+                onOpenChat = {
+                    showAiHubOverlay = false
+                    pendingAiHubAction = null
+                    navController.navigate(Screen.AiChat.route)
+                },
+                onOpenIntro = {
+                    showAiHubOverlay = false
+                    pendingAiHubAction = null
+                    navController.navigate(Screen.AiIntro.route)
+                },
+                onNavigateBack = {
+                    showAiHubOverlay = false
+                    pendingAiHubAction = null
+                }
+            )
+            return@Scaffold
+        }
+
         NavHost(
             navController = navController,
             startDestination = Screen.Home.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(
@@ -168,9 +193,8 @@ fun PillMateNavigation(
                     navController = navController,
                     themeManager = themeManager,
                     onOpenAiIntro = {
-                        navController.navigate(
-                            if (isAiOnboardingCompleted) Screen.AiHub.route else Screen.AiIntro.route
-                        )
+                        pendingAiHubAction = null
+                        showAiHubOverlay = true
                     },
                     onAddMedication = {
                         navController.navigate("add_medication")
@@ -278,38 +302,21 @@ fun PillMateNavigation(
                 AiOnboardingScreen(
                     onFinish = {
                         coroutineScope.launch { onboardingManager.completeAiOnboarding() }
-                        navController.navigate(Screen.AiHub.route) {
-                            popUpTo(Screen.AiIntro.route) { inclusive = true }
-                        }
+                        pendingAiHubAction = null
+                        navController.popBackStack()
+                        showAiHubOverlay = true
                     },
                     onImportModel = {
-                        AiPendingAction.action = "import"
                         coroutineScope.launch { onboardingManager.completeAiOnboarding() }
-                        navController.navigate(Screen.AiHub.route) {
-                            popUpTo(Screen.AiIntro.route) { inclusive = true }
-                        }
+                        pendingAiHubAction = "import"
+                        navController.popBackStack()
+                        showAiHubOverlay = true
                     },
                     onDownloadModel = {
-                        AiPendingAction.action = "download"
                         coroutineScope.launch { onboardingManager.completeAiOnboarding() }
-                        navController.navigate(Screen.AiHub.route) {
-                            popUpTo(Screen.AiIntro.route) { inclusive = true }
-                        }
-                    },
-                    onNavigateBack = {
+                        pendingAiHubAction = "download"
                         navController.popBackStack()
-                    }
-                )
-            }
-
-            composable(Screen.AiHub.route) {
-                AiHubScreen(
-                    repository = repository,
-                    onOpenChat = {
-                        navController.navigate(Screen.AiChat.route)
-                    },
-                    onOpenIntro = {
-                        navController.navigate(Screen.AiIntro.route)
+                        showAiHubOverlay = true
                     },
                     onNavigateBack = {
                         navController.popBackStack()
@@ -341,7 +348,6 @@ sealed class Screen(val route: String, val label: String? = null, val icon: Imag
     object MedicationStats : Screen("medication_stats/{medicationId}")
     object GlobalStats : Screen("global_stats")
     object AiIntro : Screen("ai_intro")
-    object AiHub : Screen("ai_hub")
     object AiChat : Screen("ai_chat")
     object PdfExport : Screen("pdf_export")
 }
