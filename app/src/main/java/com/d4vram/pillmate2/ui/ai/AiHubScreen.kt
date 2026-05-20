@@ -96,7 +96,7 @@ fun AiHubScreen(
 
     var showDownloadDialog by remember { mutableStateOf(false) }
     var modelName by remember { mutableStateOf("Gemma 3 1B IT (int4)") }
-    var modelUrl by remember { mutableStateOf("https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.task") }
+    var modelUrl by remember { mutableStateOf("") }
     var pendingImportUri by remember { mutableStateOf<Uri?>(null) }
     var pendingImportName by remember { mutableStateOf("") }
 
@@ -182,6 +182,9 @@ fun AiHubScreen(
             ModelSection(
                 models = aiUiState.models,
                 activeModelPath = aiUiState.activeModelPath,
+                isDownloading = aiUiState.isDownloading,
+                downloadProgress = aiUiState.downloadProgress,
+                downloadingModelName = aiUiState.downloadingModelName,
                 onImportModel = {
                     modelImporter.launch(arrayOf("*/*"))
                 },
@@ -249,12 +252,10 @@ fun AiHubScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        scope.launch {
-                            aiViewModel.downloadModel(modelName, modelUrl)
-                            showDownloadDialog = false
-                            modelName = ""
-                            modelUrl = ""
-                        }
+                        aiViewModel.downloadModel(modelName, modelUrl)
+                        showDownloadDialog = false
+                        modelName = "Gemma 3 1B IT (int4)"
+                        modelUrl = ""
                     },
                     enabled = modelName.isNotBlank() && modelUrl.startsWith("http")
                 ) {
@@ -377,6 +378,9 @@ private fun HeroAiCard() {
 private fun ModelSection(
     models: List<StoredLocalModel>,
     activeModelPath: String?,
+    isDownloading: Boolean = false,
+    downloadProgress: Float? = null,
+    downloadingModelName: String? = null,
     onImportModel: () -> Unit,
     onDownloadModel: () -> Unit,
     onManageModels: () -> Unit
@@ -388,6 +392,29 @@ private fun ModelSection(
                 subtitle = activeModelPath?.substringAfterLast('/') ?: "Sin modelo activo"
             )
 
+            if (isDownloading) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        text = "Descargando ${downloadingModelName ?: "modelo"}…",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (downloadProgress != null) {
+                        androidx.compose.material3.LinearProgressIndicator(
+                            progress = { downloadProgress },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text(
+                            text = "${(downloadProgress * 100).toInt()}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        androidx.compose.material3.LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                }
+            }
+
             ActionRowButton(
                 icon = Icons.Default.FileOpen,
                 title = "Importar modelo",
@@ -398,7 +425,8 @@ private fun ModelSection(
                 icon = Icons.Default.Download,
                 title = "Descargar por URL",
                 description = "Bajar un modelo `.task` directamente a la app",
-                onClick = onDownloadModel
+                onClick = onDownloadModel,
+                enabled = !isDownloading
             )
             OutlinedButton(onClick = onManageModels, modifier = Modifier.fillMaxWidth()) {
                 Text("Gestionar modelos")
@@ -537,15 +565,16 @@ private fun ActionRowButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
     description: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable(enabled = enabled, onClick = onClick),
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = if (enabled) 0.35f else 0.15f)
         )
     ) {
         Row(

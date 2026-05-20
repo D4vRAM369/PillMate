@@ -116,7 +116,8 @@ class AiWorkspaceRepository(
 
     suspend fun downloadModel(
         displayName: String,
-        sourceUrl: String
+        sourceUrl: String,
+        onProgress: (Float) -> Unit = {}
     ): StoredLocalModel = withContext(Dispatchers.IO) {
         val safeName = displayName.trim().ifBlank { "modelo-remoto" }
             .replace(Regex("[^a-zA-Z0-9._-]"), "-")
@@ -124,16 +125,24 @@ class AiWorkspaceRepository(
 
         val connection = URL(sourceUrl).openConnection() as HttpURLConnection
         connection.connectTimeout = 15_000
-        connection.readTimeout = 60_000
+        connection.readTimeout = 120_000
         connection.requestMethod = "GET"
         connection.connect()
         if (connection.responseCode !in 200..299) {
-            error("Descarga fallida (${connection.responseCode})")
+            error("Descarga fallida (HTTP ${connection.responseCode}). La URL requiere autenticación o no es válida.")
         }
 
+        val totalBytes = connection.contentLengthLong.takeIf { it > 0 }
+        var bytesRead = 0L
+        val buffer = ByteArray(8192)
         connection.inputStream.use { input ->
             target.outputStream().use { output ->
-                input.copyTo(output)
+                var read: Int
+                while (input.read(buffer).also { read = it } != -1) {
+                    output.write(buffer, 0, read)
+                    bytesRead += read
+                    totalBytes?.let { onProgress(bytesRead.toFloat() / it) }
+                }
             }
         }
         connection.disconnect()

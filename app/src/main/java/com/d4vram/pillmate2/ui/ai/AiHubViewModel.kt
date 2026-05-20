@@ -32,7 +32,10 @@ data class AiHubUiState(
     val candidatePaths: List<String> = emptyList(),
     val showModelSheet: Boolean = false,
     val showSessionSheet: Boolean = false,
-    val lastFailureHint: String? = null
+    val lastFailureHint: String? = null,
+    val isDownloading: Boolean = false,
+    val downloadProgress: Float? = null,
+    val downloadingModelName: String? = null
 )
 
 class AiHubViewModel(
@@ -108,10 +111,18 @@ class AiHubViewModel(
         refreshModelStatus()
     }
 
-    suspend fun downloadModel(displayName: String, sourceUrl: String) {
-        runCatching { repository.downloadModel(displayName, sourceUrl) }
-            .onFailure { e -> _uiState.update { it.copy(lastFailureHint = e.message ?: "Error al descargar") } }
-            .onSuccess { refreshModelStatus() }
+    fun downloadModel(displayName: String, sourceUrl: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isDownloading = true, downloadProgress = null, downloadingModelName = displayName, lastFailureHint = null) }
+            runCatching {
+                repository.downloadModel(displayName, sourceUrl) { progress ->
+                    _uiState.update { it.copy(downloadProgress = progress) }
+                }
+            }
+                .onFailure { e -> _uiState.update { it.copy(lastFailureHint = e.message ?: "Error al descargar") } }
+                .onSuccess { refreshModelStatus() }
+            _uiState.update { it.copy(isDownloading = false, downloadProgress = null, downloadingModelName = null) }
+        }
     }
 
     fun activateModel(modelId: String) {
