@@ -116,7 +116,11 @@ fun AiHubScreen(
     LaunchedEffect(Unit) {
         when (action ?: AiPendingAction.consume()) {
             "import" -> modelImporter.launch(arrayOf("*/*"))
-            "download" -> showDownloadDialog = true
+            "download" -> {
+                modelName = "Gemma 3 1B IT (int4)"
+                modelUrl = "https://huggingface.co/litert-community/Gemma3-1B-IT/resolve/main/gemma3-1b-it-int4.task"
+                showDownloadDialog = true
+            }
         }
     }
 

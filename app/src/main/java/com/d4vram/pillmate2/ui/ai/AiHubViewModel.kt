@@ -109,8 +109,9 @@ class AiHubViewModel(
     }
 
     suspend fun downloadModel(displayName: String, sourceUrl: String) {
-        repository.downloadModel(displayName, sourceUrl)
-        refreshModelStatus()
+        runCatching { repository.downloadModel(displayName, sourceUrl) }
+            .onFailure { e -> _uiState.update { it.copy(lastFailureHint = e.message ?: "Error al descargar") } }
+            .onSuccess { refreshModelStatus() }
     }
 
     fun activateModel(modelId: String) {
