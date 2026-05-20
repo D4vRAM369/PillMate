@@ -1,6 +1,7 @@
 package com.d4vram.pillmate2
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -17,6 +18,7 @@ import com.d4vram.pillmate2.ui.security.SecuritySettings
 import com.d4vram.pillmate2.ui.theme.PillMateTheme
 import com.d4vram.pillmate2.ui.theme.ThemeManager
 import kotlinx.coroutines.launch
+import java.io.File
 
 class MainActivity : FragmentActivity() {
 
@@ -28,6 +30,7 @@ class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen().setKeepOnScreenCondition { isLoading }
         super.onCreate(savedInstanceState)
+        setupCrashReporter()
 
         themeManager = ThemeManager(this)
         securityManager = SecurityManager(this)
@@ -62,6 +65,23 @@ class MainActivity : FragmentActivity() {
                     )
                 }
             }
+        }
+    }
+
+    private fun setupCrashReporter() {
+        val crashFile = File(filesDir, "last_crash.txt")
+        if (!crashFile.exists()) return
+
+        runCatching {
+            Log.e("MainActivity", "Previous crash detected:\n${crashFile.readText().take(3000)}")
+        }.onFailure { error ->
+            Log.e("MainActivity", "Unable to read previous crash report", error)
+        }
+
+        runCatching {
+            crashFile.delete()
+        }.onFailure { error ->
+            Log.e("MainActivity", "Unable to delete previous crash report", error)
         }
     }
 
