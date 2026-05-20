@@ -35,8 +35,11 @@ import coil.compose.AsyncImage
 import com.d4vram.pillmate2.model.Medication
 import kotlinx.coroutines.delay
 import java.io.File
-import java.time.LocalDateTime
+import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Calendar
 
 /**
@@ -407,11 +410,21 @@ internal fun TakeMedicationDialog(
     val currentTime = remember { Calendar.getInstance() }
     var selectedHour by remember { mutableStateOf(currentTime.get(Calendar.HOUR_OF_DAY)) }
     var selectedMinute by remember { mutableStateOf(currentTime.get(Calendar.MINUTE)) }
+    var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd/MM/yyyy") }
 
     // Formatear la hora seleccionada para mostrar
     val formattedTime = remember(selectedHour, selectedMinute) {
         String.format("%02d:%02d", selectedHour, selectedMinute)
+    }
+    val formattedDate = remember(selectedDate, dateFormatter) {
+        when (selectedDate) {
+            LocalDate.now() -> "Hoy"
+            LocalDate.now().minusDays(1) -> "Ayer"
+            else -> selectedDate.format(dateFormatter)
+        }
     }
 
     AlertDialog(
@@ -492,7 +505,10 @@ internal fun TakeMedicationDialog(
                         // Chip "Ahora"
                         FilterChip(
                             selected = useCurrentTime,
-                            onClick = { useCurrentTime = true },
+                            onClick = {
+                                useCurrentTime = true
+                                selectedDate = LocalDate.now()
+                            },
                             label = { Text("Ahora") },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -515,6 +531,31 @@ internal fun TakeMedicationDialog(
                                 selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         )
+                    }
+
+                    if (!useCurrentTime) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            AssistChip(
+                                onClick = { showDatePicker = true },
+                                label = { Text(formattedDate) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Schedule,
+                                        contentDescription = null
+                                    )
+                                }
+                            )
+
+                            AssistChip(
+                                onClick = {
+                                    selectedDate = LocalDate.now().minusDays(1)
+                                },
+                                label = { Text("Ayer") }
+                            )
+                        }
                     }
                 }
 
@@ -601,9 +642,10 @@ internal fun TakeMedicationDialog(
                     val timestamp = if (useCurrentTime) {
                         null  // null = usar hora actual en el repository
                     } else {
-                        LocalDateTime.now()
-                            .withHour(selectedHour)
-                            .withMinute(selectedMinute)
+                        selectedDate
+                            .atTime(selectedHour, selectedMinute)
+                            .withSecond(0)
+                            .withNano(0)
                     }
                     onConfirm(selectedMedication.id, quantity.coerceAtLeast(1), timestamp)
                 },
@@ -637,6 +679,17 @@ internal fun TakeMedicationDialog(
                 selectedHour = hour
                 selectedMinute = minute
                 showTimePicker = false
+            }
+        )
+    }
+
+    if (showDatePicker) {
+        MedicationDatePickerDialog(
+            initialDate = selectedDate,
+            onDismiss = { showDatePicker = false },
+            onConfirm = { date ->
+                selectedDate = date
+                showDatePicker = false
             }
         )
     }
@@ -705,4 +758,45 @@ private fun TimePickerDialog(
         },
         shape = RoundedCornerShape(28.dp)
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MedicationDatePickerDialog(
+    initialDate: LocalDate,
+    onDismiss: () -> Unit,
+    onConfirm: (LocalDate) -> Unit
+) {
+    val zoneId = remember { ZoneId.systemDefault() }
+    val initialMillis = remember(initialDate, zoneId) {
+        initialDate.atStartOfDay(zoneId).toInstant().toEpochMilli()
+    }
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val selectedDate = datePickerState.selectedDateMillis
+                        ?.let { millis ->
+                            Instant.ofEpochMilli(millis)
+                                .atZone(zoneId)
+                                .toLocalDate()
+                        }
+                        ?: initialDate
+                    onConfirm(selectedDate)
+                }
+            ) {
+                Text("Confirmar", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    ) {
+        DatePicker(state = datePickerState)
+    }
 }
