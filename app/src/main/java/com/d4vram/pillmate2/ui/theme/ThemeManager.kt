@@ -48,11 +48,13 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "th
  */
 class ThemeManager(private val context: Context) {
     companion object {
+        private const val QUICK_TAKE_SLOT_COUNT = 4
         private val IS_DARK_MODE_KEY = booleanPreferencesKey("is_dark_mode")
         private val UI_STYLE_KEY = stringPreferencesKey("ui_style")
         private val CHIP_COUNT_PERIOD_KEY = stringPreferencesKey("chip_count_period")
         private val SORT_MODE_KEY = stringPreferencesKey("sort_mode")
         private val IS_LIST_VIEW_KEY = booleanPreferencesKey("is_list_view")
+        private val QUICK_TAKE_MEDICATION_IDS_KEY = stringPreferencesKey("quick_take_medication_ids")
     }
     
     val isDarkMode: Flow<Boolean> = context.dataStore.data
@@ -135,10 +137,48 @@ class ThemeManager(private val context: Context) {
         }
     }
 
+    val quickTakeMedicationIds: Flow<List<String?>> = context.dataStore.data
+        .catch { throwable ->
+            Log.e("ThemeManager", "Error reading quick take preferences", throwable)
+            emit(emptyPreferences())
+        }
+        .map { preferences ->
+            preferences[QUICK_TAKE_MEDICATION_IDS_KEY]
+                .decodeQuickTakeSlots()
+        }
+
+    suspend fun setQuickTakeMedication(slotIndex: Int, medicationId: String?) {
+        if (slotIndex !in 0 until QUICK_TAKE_SLOT_COUNT) return
+
+        context.dataStore.edit { preferences ->
+            val slots = preferences[QUICK_TAKE_MEDICATION_IDS_KEY]
+                .decodeQuickTakeSlots()
+                .toMutableList()
+            slots[slotIndex] = medicationId
+            preferences[QUICK_TAKE_MEDICATION_IDS_KEY] = slots.encodeQuickTakeSlots()
+        }
+    }
+
     private suspend fun clearCorruptedPreferences() {
         context.dataStore.edit { prefs ->
             prefs.clear()
         }
+    }
+
+    private fun String?.decodeQuickTakeSlots(): List<String?> {
+        val parts = this
+            ?.split("|")
+            ?.take(QUICK_TAKE_SLOT_COUNT)
+            ?: emptyList()
+
+        return (0 until QUICK_TAKE_SLOT_COUNT).map { index ->
+            parts.getOrNull(index)?.takeIf { it.isNotBlank() }
+        }
+    }
+
+    private fun List<String?>.encodeQuickTakeSlots(): String {
+        return (0 until QUICK_TAKE_SLOT_COUNT)
+            .joinToString("|") { index -> getOrNull(index).orEmpty() }
     }
 }
 

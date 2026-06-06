@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -23,9 +25,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.GridView
-import androidx.compose.material.icons.filled.PsychologyAlt
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -57,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.HistoryEntry
+import com.d4vram.pillmate2.model.Medication
 import java.time.LocalDateTime
 import com.d4vram.pillmate2.model.SortMode
 import com.d4vram.pillmate2.ui.components.HistoryItem
@@ -88,6 +92,9 @@ fun HomeScreen(
     val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)
     val sortMode by themeManager.sortMode.collectAsState(initial = SortMode.MANUAL)
     val isListView by themeManager.isListView.collectAsState(initial = false)
+    val quickTakeMedicationIds by themeManager.quickTakeMedicationIds.collectAsState(
+        initial = listOf(null, null, null, null)
+    )
     val scope = rememberCoroutineScope()
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
 
@@ -104,6 +111,11 @@ fun HomeScreen(
         else medications.filter {
             it.name.contains(searchQuery, ignoreCase = true) ||
             it.dose.contains(searchQuery, ignoreCase = true)
+        }
+    }
+    val quickTakeSlots = remember(medications, quickTakeMedicationIds) {
+        quickTakeMedicationIds.map { medicationId ->
+            medicationId?.let { id -> medications.firstOrNull { it.id == id } }
         }
     }
 
@@ -142,11 +154,22 @@ fun HomeScreen(
                 )
             }
 
-            item {
-                AiEntryCard(
-                    onClick = onOpenAiIntro,
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 2.dp)
-                )
+            if (medications.isNotEmpty()) {
+                item {
+                    QuickTakeSection(
+                        slots = quickTakeSlots,
+                        availableMedications = medications,
+                        onQuickTake = { medicationId ->
+                            repository.takeMedication(medicationId, quantity = 1, customTimestamp = null)
+                        },
+                        onAssignMedication = { slotIndex, medicationId ->
+                            scope.launch {
+                                themeManager.setQuickTakeMedication(slotIndex, medicationId)
+                            }
+                        },
+                        modifier = Modifier.padding(top = 16.dp)
+                    )
+                }
             }
 
             item {
@@ -468,73 +491,252 @@ private fun StatisticsEntryCard(
 }
 
 @Composable
-private fun AiEntryCard(
-    onClick: () -> Unit,
+private fun QuickTakeSection(
+    slots: List<Medication?>,
+    availableMedications: List<Medication>,
+    onQuickTake: (String) -> Unit,
+    onAssignMedication: (Int, String?) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var slotBeingConfigured by remember { mutableStateOf<Int?>(null) }
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        SectionTitle(
+            title = "⚡ Toma rápida",
+            subtitle = "4 casillas",
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+
+        LazyRow(
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(count = 4, key = { it }) { slotIndex ->
+                QuickTakeSlotCard(
+                    slotNumber = slotIndex + 1,
+                    medication = slots.getOrNull(slotIndex),
+                    onQuickTake = { medication ->
+                        onQuickTake(medication.id)
+                    },
+                    onConfigure = {
+                        slotBeingConfigured = slotIndex
+                    }
+                )
+            }
+        }
+    }
+
+    slotBeingConfigured?.let { slotIndex ->
+        QuickTakeSlotPickerDialog(
+            slotNumber = slotIndex + 1,
+            medications = availableMedications,
+            selectedMedicationId = slots.getOrNull(slotIndex)?.id,
+            onSelectMedication = { medicationId ->
+                onAssignMedication(slotIndex, medicationId)
+                slotBeingConfigured = null
+            },
+            onClearSlot = {
+                onAssignMedication(slotIndex, null)
+                slotBeingConfigured = null
+            },
+            onDismiss = {
+                slotBeingConfigured = null
+            }
+        )
+    }
+}
+
+@Composable
+private fun QuickTakeSlotCard(
+    slotNumber: Int,
+    medication: Medication?,
+    onQuickTake: (Medication) -> Unit,
+    onConfigure: () -> Unit
+) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(102.dp)
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        modifier = Modifier
+            .width(176.dp)
+            .height(132.dp)
+            .clickable(enabled = medication != null) {
+                medication?.let(onQuickTake)
+            },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    brush = Brush.linearGradient(
-                        colors = listOf(Color(0xFF071325), Color(0xFF0F3B66), Color(0xFF0EA5E9))
-                    )
-                )
-                .padding(horizontal = 20.dp, vertical = 18.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(52.dp)
+                        .size(38.dp)
                         .background(
-                            color = Color.White.copy(alpha = 0.14f),
-                            shape = RoundedCornerShape(18.dp)
+                            color = medication?.color?.copy(alpha = 0.14f)
+                                ?: MaterialTheme.colorScheme.surfaceVariant,
+                            shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.PsychologyAlt,
-                        contentDescription = null,
-                        tint = Color(0xFFBAE6FD)
+                    Text(
+                        text = medication?.emoji ?: slotNumber.toString(),
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "PillMate AI",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold
+                        text = medication?.name ?: "Elegir",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.SemiBold
                         ),
-                        color = Color.White
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1
                     )
                     Text(
-                        text = "Descubre el modo IA local y privado",
+                        text = medication?.dose ?: "Casilla $slotNumber",
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color(0xFFD6F2FF)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1
+                    )
+                }
+
+                IconButton(
+                    onClick = onConfigure,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Configurar casilla $slotNumber",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
 
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Abrir modo IA",
-                tint = Color.White
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = if (medication == null) "Sin asignar" else "1 toma",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = medication?.color ?: MaterialTheme.colorScheme.outline,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (medication == null) "Configurar" else "Tomar",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = medication?.color ?: MaterialTheme.colorScheme.primary,
+                        maxLines = 1
+                    )
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun QuickTakeSlotPickerDialog(
+    slotNumber: Int,
+    medications: List<Medication>,
+    selectedMedicationId: String?,
+    onSelectMedication: (String) -> Unit,
+    onClearSlot: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Casilla $slotNumber") },
+        text = {
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 360.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                items(
+                    items = medications,
+                    key = { it.id }
+                ) { medication ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelectMedication(medication.id) }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(
+                                    color = medication.color.copy(alpha = 0.14f),
+                                    shape = CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(text = medication.emoji)
+                        }
+
+                        Spacer(modifier = Modifier.width(12.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = medication.name,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontWeight = FontWeight.SemiBold
+                                ),
+                                maxLines = 1
+                            )
+                            Text(
+                                text = medication.dose,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1
+                            )
+                        }
+
+                        if (medication.id == selectedMedicationId) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = "Seleccionado",
+                                tint = medication.color,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cerrar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onClearSlot) {
+                Text("Vaciar")
+            }
+        }
+    )
 }
 
 /**
