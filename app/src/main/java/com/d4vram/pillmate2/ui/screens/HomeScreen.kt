@@ -70,6 +70,8 @@ import com.d4vram.pillmate2.ui.theme.AppUiStyle
 import com.d4vram.pillmate2.ui.theme.HeaderGradientEnd
 import com.d4vram.pillmate2.ui.theme.HeaderGradientStart
 import com.d4vram.pillmate2.ui.theme.LocalUiStyle
+import com.d4vram.pillmate2.widget.QuickTakeWidget
+import androidx.glance.appwidget.updateAll
 
 /**
  * 🏠 Pantalla principal de la app
@@ -96,6 +98,7 @@ fun HomeScreen(
         initial = listOf(null, null, null, null)
     )
     val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
     val screenHeight = LocalConfiguration.current.screenHeightDp.dp
 
     // Aplicar ordenamiento según la configuración del usuario
@@ -161,10 +164,14 @@ fun HomeScreen(
                         availableMedications = medications,
                         onQuickTake = { medicationId ->
                             repository.takeMedication(medicationId, quantity = 1, customTimestamp = null)
+                            scope.launch {
+                                QuickTakeWidget().updateAll(context.applicationContext)
+                            }
                         },
                         onAssignMedication = { slotIndex, medicationId ->
                             scope.launch {
                                 themeManager.setQuickTakeMedication(slotIndex, medicationId)
+                                QuickTakeWidget().updateAll(context.applicationContext)
                             }
                         },
                         modifier = Modifier.padding(top = 16.dp)

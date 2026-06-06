@@ -150,32 +150,40 @@ class MedicationRepository(
         customTimestamp: LocalDateTime? = null
     ) {
         scope.launch {
-            val medication = medicationDao.getMedicationById(medicationId) ?: return@launch
+            recordMedicationTaken(medicationId, quantity, customTimestamp)
+        }
+    }
+
+    suspend fun recordMedicationTaken(
+        medicationId: String,
+        quantity: Int = 1,
+        customTimestamp: LocalDateTime? = null
+    ) {
+        database.withTransaction {
+            val medication = medicationDao.getMedicationById(medicationId) ?: return@withTransaction
             val safeQuantity = quantity.coerceAtLeast(1)
-            // Usar timestamp personalizado o la hora actual
             val now = (customTimestamp ?: LocalDateTime.now()).withSecond(0).withNano(0)
-            val formattedTime = formatTime(now)
-            val formattedLastTaken = formatDateTime(now)
             val updated = medication.copy(
                 takenToday = medication.takenToday + safeQuantity,
-                lastTaken = formattedLastTaken
+                lastTaken = formatDateTime(now)
             )
             medicationDao.upsertMedication(updated)
 
-            val historyEntry = HistoryEntryEntity(
-                id = UUID.randomUUID().toString(),
-                medicationId = medication.id,
-                medicationName = updated.name,
-                time = formattedTime,
-                date = formatDate(now),
-                colorArgb = updated.colorArgb,
-                emoji = updated.emoji,
-                quantity = safeQuantity,
-                notes = "",
-                timestampIso = now.toString(),
-                dose = updated.dose
+            historyDao.insert(
+                HistoryEntryEntity(
+                    id = UUID.randomUUID().toString(),
+                    medicationId = medication.id,
+                    medicationName = updated.name,
+                    time = formatTime(now),
+                    date = formatDate(now),
+                    colorArgb = updated.colorArgb,
+                    emoji = updated.emoji,
+                    quantity = safeQuantity,
+                    notes = "",
+                    timestampIso = now.toString(),
+                    dose = updated.dose
+                )
             )
-            historyDao.insert(historyEntry)
         }
     }
 

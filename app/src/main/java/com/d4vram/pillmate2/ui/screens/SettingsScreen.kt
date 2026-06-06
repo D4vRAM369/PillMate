@@ -31,7 +31,9 @@ import com.d4vram.pillmate2.ui.security.SecuritySettings
 import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
 import com.d4vram.pillmate2.ui.export.PdfExportSheet
 import com.d4vram.pillmate2.ui.theme.AppUiStyle
+import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetShape
 import com.d4vram.pillmate2.ui.theme.ThemeManager
+import com.d4vram.pillmate2.widget.QuickTakeWidget
 import com.d4vram.pillmate2.notifications.NotificationHelper
 import android.os.Build
 import android.Manifest
@@ -57,6 +59,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.first
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.glance.appwidget.updateAll
 
 /**
  * ⚙️ Pantalla de configuración
@@ -74,11 +77,13 @@ fun SettingsScreen(
     val isDarkMode by themeManager.isDarkMode.collectAsState(initial = false)
     val uiStyle by themeManager.uiStyle.collectAsState(initial = AppUiStyle.Default)
     val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)
+    val quickTakeWidgetShape by themeManager.quickTakeWidgetShape.collectAsState(initial = QuickTakeWidgetShape.Rounded)
     val sortMode by themeManager.sortMode.collectAsState(initial = SortMode.MANUAL)
     val snackbarHostState = remember { SnackbarHostState() }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var showUiDialog by remember { mutableStateOf(false) }
     var showChipPeriodDialog by remember { mutableStateOf(false) }
+    var showQuickTakeWidgetShapeDialog by remember { mutableStateOf(false) }
     var showSortModeDialog by remember { mutableStateOf(false) }
     val securitySettings by securityManager.settings.collectAsState(initial = SecuritySettings())
     var showPinSetupDialog by remember { mutableStateOf(false) }
@@ -364,6 +369,15 @@ fun SettingsScreen(
                         description = "Período: ${chipCountPeriod.title}",
                         icon = Icons.Default.Tag,
                         onClick = { showChipPeriodDialog = true }
+                    )
+
+                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    SettingsItem(
+                        title = "Widget de toma rápida",
+                        description = "Forma: ${quickTakeWidgetShape.title}",
+                        icon = Icons.Default.Widgets,
+                        onClick = { showQuickTakeWidgetShapeDialog = true }
                     )
                 }
             }
@@ -935,6 +949,56 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showChipPeriodDialog = false }) {
+                    Text("Cerrar")
+                }
+            }
+        )
+    }
+
+    if (showQuickTakeWidgetShapeDialog) {
+        AlertDialog(
+            onDismissRequest = { showQuickTakeWidgetShapeDialog = false },
+            title = { Text("Forma del widget") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    QuickTakeWidgetShape.entries.forEach { shape ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    scope.launch {
+                                        themeManager.setQuickTakeWidgetShape(shape)
+                                        QuickTakeWidget().updateAll(context.applicationContext)
+                                        snackbarMessage = "Forma del widget: ${shape.title}"
+                                    }
+                                    showQuickTakeWidgetShapeDialog = false
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = shape == quickTakeWidgetShape,
+                                onClick = {
+                                    scope.launch {
+                                        themeManager.setQuickTakeWidgetShape(shape)
+                                        QuickTakeWidget().updateAll(context.applicationContext)
+                                        snackbarMessage = "Forma del widget: ${shape.title}"
+                                    }
+                                    showQuickTakeWidgetShapeDialog = false
+                                }
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Text(
+                                text = shape.title,
+                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showQuickTakeWidgetShapeDialog = false }) {
                     Text("Cerrar")
                 }
             }

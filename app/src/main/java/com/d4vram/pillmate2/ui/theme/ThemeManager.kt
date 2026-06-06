@@ -16,6 +16,39 @@ import android.content.Context
 import android.util.Log
 import com.d4vram.pillmate2.model.SortMode
 
+enum class QuickTakeWidgetShape(val storageValue: String, val title: String) {
+    Rounded("rounded", "Redondeada"),
+    Circle("circle", "Circular"),
+    Square("square", "Cuadrada");
+
+    companion object {
+        fun fromStorage(value: String?): QuickTakeWidgetShape =
+            entries.firstOrNull { it.storageValue == value } ?: Rounded
+    }
+}
+
+object QuickTakeSettings {
+    const val SLOT_COUNT = 4
+    val MEDICATION_IDS_KEY = stringPreferencesKey("quick_take_medication_ids")
+    val WIDGET_SHAPE_KEY = stringPreferencesKey("quick_take_widget_shape")
+
+    fun String?.decodeSlots(): List<String?> {
+        val parts = this
+            ?.split("|")
+            ?.take(SLOT_COUNT)
+            ?: emptyList()
+
+        return (0 until SLOT_COUNT).map { index ->
+            parts.getOrNull(index)?.takeIf { it.isNotBlank() }
+        }
+    }
+
+    fun List<String?>.encodeSlots(): String {
+        return (0 until SLOT_COUNT)
+            .joinToString("|") { index -> getOrNull(index).orEmpty() }
+    }
+}
+
 enum class AppUiStyle(val storageValue: String, val title: String, val description: String) {
     Default("default", "Clásico", "Estilo actual de PillMate"),
     MaterialYou("material_you", "Material You", "Componentes nativos de Material Design 3");
@@ -48,13 +81,11 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "th
  */
 class ThemeManager(private val context: Context) {
     companion object {
-        private const val QUICK_TAKE_SLOT_COUNT = 4
         private val IS_DARK_MODE_KEY = booleanPreferencesKey("is_dark_mode")
         private val UI_STYLE_KEY = stringPreferencesKey("ui_style")
         private val CHIP_COUNT_PERIOD_KEY = stringPreferencesKey("chip_count_period")
         private val SORT_MODE_KEY = stringPreferencesKey("sort_mode")
         private val IS_LIST_VIEW_KEY = booleanPreferencesKey("is_list_view")
-        private val QUICK_TAKE_MEDICATION_IDS_KEY = stringPreferencesKey("quick_take_medication_ids")
     }
     
     val isDarkMode: Flow<Boolean> = context.dataStore.data
@@ -143,19 +174,38 @@ class ThemeManager(private val context: Context) {
             emit(emptyPreferences())
         }
         .map { preferences ->
-            preferences[QUICK_TAKE_MEDICATION_IDS_KEY]
-                .decodeQuickTakeSlots()
+            QuickTakeSettings.run {
+                preferences[MEDICATION_IDS_KEY].decodeSlots()
+            }
+        }
+
+    val quickTakeWidgetShape: Flow<QuickTakeWidgetShape> = context.dataStore.data
+        .catch { throwable ->
+            Log.e("ThemeManager", "Error reading quick take widget shape", throwable)
+            emit(emptyPreferences())
+        }
+        .map { preferences ->
+            QuickTakeWidgetShape.fromStorage(preferences[QuickTakeSettings.WIDGET_SHAPE_KEY])
         }
 
     suspend fun setQuickTakeMedication(slotIndex: Int, medicationId: String?) {
-        if (slotIndex !in 0 until QUICK_TAKE_SLOT_COUNT) return
+        if (slotIndex !in 0 until QuickTakeSettings.SLOT_COUNT) return
 
         context.dataStore.edit { preferences ->
-            val slots = preferences[QUICK_TAKE_MEDICATION_IDS_KEY]
-                .decodeQuickTakeSlots()
+            val slots = QuickTakeSettings.run {
+                preferences[MEDICATION_IDS_KEY].decodeSlots()
+            }
                 .toMutableList()
             slots[slotIndex] = medicationId
-            preferences[QUICK_TAKE_MEDICATION_IDS_KEY] = slots.encodeQuickTakeSlots()
+            preferences[QuickTakeSettings.MEDICATION_IDS_KEY] = QuickTakeSettings.run {
+                slots.encodeSlots()
+            }
+        }
+    }
+
+    suspend fun setQuickTakeWidgetShape(shape: QuickTakeWidgetShape) {
+        context.dataStore.edit { preferences ->
+            preferences[QuickTakeSettings.WIDGET_SHAPE_KEY] = shape.storageValue
         }
     }
 
@@ -165,21 +215,6 @@ class ThemeManager(private val context: Context) {
         }
     }
 
-    private fun String?.decodeQuickTakeSlots(): List<String?> {
-        val parts = this
-            ?.split("|")
-            ?.take(QUICK_TAKE_SLOT_COUNT)
-            ?: emptyList()
-
-        return (0 until QUICK_TAKE_SLOT_COUNT).map { index ->
-            parts.getOrNull(index)?.takeIf { it.isNotBlank() }
-        }
-    }
-
-    private fun List<String?>.encodeQuickTakeSlots(): String {
-        return (0 until QUICK_TAKE_SLOT_COUNT)
-            .joinToString("|") { index -> getOrNull(index).orEmpty() }
-    }
 }
 
 /**

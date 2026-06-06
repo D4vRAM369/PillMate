@@ -66,6 +66,17 @@
             android:name=".data.BackupReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".widget.QuickTakeWidgetReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/quick_take_widget_info" />
+        </receiver>
+
         <!-- Receiver para reprogramar alarmas tras reinicio -->
         <receiver
             android:name=".notifications.BootReceiver"
