@@ -62,6 +62,10 @@
             android:name=".notifications.ReminderReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name=".data.BackupReceiver"
+            android:exported="false" />
+
         <!-- Receiver para reprogramar alarmas tras reinicio -->
         <receiver
             android:name=".notifications.BootReceiver"

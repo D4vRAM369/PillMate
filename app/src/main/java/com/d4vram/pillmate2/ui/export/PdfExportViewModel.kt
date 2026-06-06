@@ -5,11 +5,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.d4vram.pillmate2.data.MedicationRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -93,6 +95,10 @@ class PdfExportViewModel(
      */
     fun generatePdf(context: Context) {
         val state = _uiState.value
+        if (state.endDate.isBefore(state.startDate)) {
+            _uiState.update { it.copy(error = "La fecha final no puede ser anterior a la inicial") }
+            return
+        }
 
         _uiState.update { it.copy(isGenerating = true, error = null, generatedFile = null) }
 
@@ -110,8 +116,10 @@ class PdfExportViewModel(
                 )
 
                 // 3. Generar PDF
-                val generator = PdfGenerator(context)
-                val file = generator.generate(config, reportData)
+                val file = withContext(Dispatchers.IO) {
+                    val generator = PdfGenerator(context)
+                    generator.generate(config, reportData)
+                }
 
                 if (file != null) {
                     _uiState.update {
@@ -136,6 +144,10 @@ class PdfExportViewModel(
      */
     fun clearGeneratedFile() {
         _uiState.update { it.copy(generatedFile = null) }
+    }
+
+    fun reportShareError(message: String) {
+        _uiState.update { it.copy(error = message, generatedFile = null) }
     }
 
     /**

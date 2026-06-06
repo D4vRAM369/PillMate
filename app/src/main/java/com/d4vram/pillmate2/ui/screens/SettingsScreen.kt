@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.BackupManager
 import com.d4vram.pillmate2.data.BackupSafManager
+import com.d4vram.pillmate2.data.BackupScheduler
 import com.d4vram.pillmate2.data.BackupZipManager
 import com.d4vram.pillmate2.data.CsvUtils
 import com.d4vram.pillmate2.ui.security.SecurityManager
@@ -37,6 +38,8 @@ import android.Manifest
 import android.provider.Settings
 import androidx.biometric.BiometricManager
 import com.d4vram.pillmate2.model.SortMode
+import com.d4vram.pillmate2.model.HistoryEntry
+import com.d4vram.pillmate2.model.Medication
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -90,6 +93,9 @@ fun SettingsScreen(
     var showBackupPasswordDialog by remember { mutableStateOf(false) }
     var pendingEncryptedBackupFile by remember { mutableStateOf<File?>(null) }
     var showPdfExportSheet by remember { mutableStateOf(false) }
+    var showAutoBackupIntervalDialog by remember { mutableStateOf(false) }
+    var showClearAllDialog by remember { mutableStateOf(false) }
+    var pendingRestore by remember { mutableStateOf<PendingRestore?>(null) }
 
     // Estado de permisos de notificación
     var hasNotificationPermission by remember {
@@ -128,6 +134,8 @@ fun SettingsScreen(
     val backupManager = remember { BackupManager(context.applicationContext, repository) }
     val backupSafManager = remember { BackupSafManager(context.applicationContext, repository) }
     val lastBackupMillis by backupManager.lastBackupFlow.collectAsState(initial = null)
+    val autoBackupEnabled by backupManager.autoBackupEnabledFlow.collectAsState(initial = false)
+    val autoBackupIntervalHours by backupManager.autoBackupIntervalHoursFlow.collectAsState(initial = 24)
     val autoBackupFolderName by backupSafManager.autoBackupFolderUri.collectAsState(initial = null)
     val voiceNoteSecurityManager = rememberVoiceNoteSecurityManager()
     val lastBackupText = remember(lastBackupMillis) {
@@ -154,24 +162,6 @@ fun SettingsScreen(
         snackbarMessage?.let { message ->
             snackbarHostState.showSnackbar(message)
             snackbarMessage = null
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        try {
-            // Intentar crear auto-backup con SAF si está configurado
-            val safSuccess = backupSafManager.createAutoBackupToFolder()
-            if (safSuccess) {
-                snackbarMessage = "Copia automática guardada en carpeta configurada"
-            } else {
-                // Fallback al método antiguo
-                val file = backupManager.createAutomaticBackupIfNeeded()
-                if (file != null) {
-                    snackbarMessage = "Copia automática guardada: ${file.name}"
-                }
-            }
-        } catch (e: Exception) {
-            snackbarMessage = "Error en copia automática: ${e.message ?: "desconocido"}"
         }
     }
 
@@ -203,6 +193,7 @@ fun SettingsScreen(
             scope.launch {
                 try {
                     backupSafManager.saveAutoBackupFolderUri(it)
+                    BackupScheduler.refresh(context.applicationContext)
                     snackbarMessage = "✅ Carpeta de auto-backup configurada"
                 } catch (e: Exception) {
                     snackbarMessage = "❌ Error al configurar carpeta: ${e.message}"
@@ -251,14 +242,12 @@ fun SettingsScreen(
                         pendingEncryptedBackupFile = tempFile
                         showBackupPasswordDialog = true
                     } else {
-                        // Extraer directamente si no está cifrado
-                        try {
-                            val parsed = BackupZipManager.extractBackupZip(context, tempFile)
-                            repository.replaceAllData(parsed.medications, parsed.history)
-                            snackbarMessage = "✅ Backup restaurado correctamente (con fotos)"
-                        } finally {
-                            tempFile.delete()
-                        }
+                        pendingRestore = PendingRestore(
+                            title = "Restaurar backup",
+                            description = "Se reemplazarán tus datos actuales por el contenido del backup seleccionado. Antes se creará una copia local de seguridad.",
+                            zipFile = tempFile
+                        )
+                        snackbarMessage = null
                     }
                 } catch (e: Exception) {
                     snackbarMessage = "❌ Error al restaurar backup: ${e.message}"
@@ -283,8 +272,12 @@ fun SettingsScreen(
 
                     val csvContent = readTextFromUri(context, it)
                     val parsed = CsvUtils.parseCsv(csvContent)
-                    repository.replaceAllData(parsed.medications, parsed.history)
-                    snackbarMessage = "✅ CSV importado correctamente"
+                    pendingRestore = PendingRestore(
+                        title = "Importar CSV",
+                        description = "Se reemplazarán tus datos actuales por ${parsed.medications.size} medicamentos y ${parsed.history.size} entradas de historial. Antes se creará una copia local de seguridad.",
+                        medications = parsed.medications,
+                        history = parsed.history
+                    )
                 } catch (e: Exception) {
                     snackbarMessage = "❌ Error al importar CSV: ${e.message}"
                 }
@@ -679,8 +672,7 @@ fun SettingsScreen(
                         description = "Eliminar todos los medicamentos y entradas",
                         icon = Icons.Default.Delete,
                         onClick = {
-                            repository.clearAllData()
-                            snackbarMessage = "✅ Datos eliminados"
+                            showClearAllDialog = true
                         }
                     )
 
@@ -714,6 +706,8 @@ fun SettingsScreen(
                             onClick = {
                                 scope.launch {
                                     backupSafManager.clearAutoBackupFolder()
+                                    backupManager.setAutoBackupEnabled(false)
+                                    BackupScheduler.refresh(context.applicationContext)
                                     snackbarMessage = "✅ Configuración limpiada. Configura nuevamente."
                                 }
                             }
@@ -730,14 +724,47 @@ fun SettingsScreen(
 
                     // 🚀 Crear auto-backup ahora
                     SettingsItem(
+                        title = "Auto-backup",
+                        description = if (autoBackupEnabled) "Activado cada ${formatInterval(autoBackupIntervalHours)}" else "Desactivado",
+                        icon = Icons.Default.Autorenew,
+                        hasSwitch = true,
+                        checked = autoBackupEnabled,
+                        onCheckedChange = { enabled ->
+                            scope.launch {
+                                if (enabled && autoBackupFolderName == null) {
+                                    snackbarMessage = "⚠️ Configura primero una carpeta de auto-backup"
+                                    return@launch
+                                }
+                                backupManager.setAutoBackupEnabled(enabled)
+                                BackupScheduler.refresh(context.applicationContext)
+                                snackbarMessage = if (enabled) {
+                                    "✅ Auto-backup activado"
+                                } else {
+                                    "Auto-backup desactivado"
+                                }
+                            }
+                        }
+                    )
+
+                    SettingsItem(
+                        title = "Frecuencia de auto-backup",
+                        description = "Cada ${formatInterval(autoBackupIntervalHours)}",
+                        icon = Icons.Default.Schedule,
+                        onClick = {
+                            showAutoBackupIntervalDialog = true
+                        }
+                    )
+
+                    SettingsItem(
                         title = "Crear backup de seguridad ahora",
                         description = "Guardar backup en carpeta configurada",
                         icon = Icons.Default.Backup,
                         onClick = {
                             scope.launch {
                                 try {
-                                    val success = backupSafManager.createAutoBackupToFolder()
+                                    val success = backupSafManager.createAutoBackupToFolder(force = true)
                                     if (success) {
+                                        BackupScheduler.refresh(context.applicationContext)
                                         snackbarMessage = "✅ Backup creado en carpeta configurada"
                                     } else {
                                         snackbarMessage = "⚠️ Configura primero una carpeta de auto-backup"
@@ -1139,14 +1166,13 @@ fun SettingsScreen(
                 scope.launch {
                     try {
                         pendingEncryptedBackupFile?.let { tempFile ->
-                            try {
-                                val parsed = BackupZipManager.extractBackupZip(context, tempFile, password)
-                                repository.replaceAllData(parsed.medications, parsed.history)
-                                snackbarMessage = "✅ Backup cifrado restaurado correctamente (con fotos)"
-                            } finally {
-                                tempFile.delete()
-                                pendingEncryptedBackupFile = null
-                            }
+                            pendingRestore = PendingRestore(
+                                title = "Restaurar backup cifrado",
+                                description = "Se reemplazarán tus datos actuales por el contenido del backup cifrado seleccionado. Antes se creará una copia local de seguridad.",
+                                zipFile = tempFile,
+                                password = password
+                            )
+                            pendingEncryptedBackupFile = null
                         }
                         showBackupPasswordDialog = false
                     } catch (e: Exception) {
@@ -1157,9 +1183,86 @@ fun SettingsScreen(
                     }
                 }
             }
+	        )
+	    }
+
+    pendingRestore?.let { restore ->
+        ConfirmRestoreDialog(
+            restore = restore,
+            onDismiss = {
+                restore.zipFile?.delete()
+                pendingRestore = null
+            },
+            onConfirm = {
+                scope.launch {
+                    try {
+                        backupManager.createManualBackup()
+                        val parsed = restore.zipFile?.let { file ->
+                            BackupZipManager.extractBackupZip(context, file, restore.password)
+                        }
+                        val medications = parsed?.medications ?: restore.medications
+                        val history = parsed?.history ?: restore.history
+                        repository.replaceAllData(medications, history)
+                        snackbarMessage = "✅ Datos restaurados correctamente"
+                    } catch (e: Exception) {
+                        snackbarMessage = "❌ Restauración cancelada: ${e.message}"
+                    } finally {
+                        restore.zipFile?.delete()
+                        pendingRestore = null
+                    }
+                }
+            }
         )
     }
-}
+
+    if (showClearAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearAllDialog = false },
+            title = { Text("Eliminar todos los datos") },
+            text = { Text("Antes de borrar se creará una copia local de seguridad. Esta acción eliminará medicamentos e historial de la app.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        scope.launch {
+                            try {
+                                backupManager.createManualBackup()
+                                repository.clearAllData()
+                                snackbarMessage = "✅ Datos eliminados"
+                            } catch (e: Exception) {
+                                snackbarMessage = "❌ No se eliminaron datos: ${e.message}"
+                            } finally {
+                                showClearAllDialog = false
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearAllDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    if (showAutoBackupIntervalDialog) {
+        AutoBackupIntervalDialog(
+            selectedHours = autoBackupIntervalHours,
+            onDismiss = { showAutoBackupIntervalDialog = false },
+            onSelect = { hours ->
+                scope.launch {
+                    backupManager.setAutoBackupIntervalHours(hours)
+                    BackupScheduler.refresh(context.applicationContext)
+                    showAutoBackupIntervalDialog = false
+                    snackbarMessage = "✅ Frecuencia actualizada"
+                }
+            }
+        )
+    }
+	}
 
 private val lockTimeoutOptions = listOf(
     0L to "Inmediato",
@@ -1168,6 +1271,24 @@ private val lockTimeoutOptions = listOf(
     300_000L to "5 minutos",
     600_000L to "10 minutos"
 )
+
+private data class PendingRestore(
+    val title: String,
+    val description: String,
+    val medications: List<Medication> = emptyList(),
+    val history: List<HistoryEntry> = emptyList(),
+    val zipFile: File? = null,
+    val password: String? = null
+)
+
+private fun formatInterval(hours: Int): String = when {
+    hours < 24 -> "$hours h"
+    hours % 24 == 0 -> {
+        val days = hours / 24
+        if (days == 1) "1 día" else "$days días"
+    }
+    else -> "$hours h"
+}
 
 private fun lockTimeoutLabel(durationMs: Long): String {
     return lockTimeoutOptions.firstOrNull { it.first == durationMs }?.second
@@ -1423,11 +1544,11 @@ private fun SettingsItem(
     title: String,
     description: String,
     hasSwitch: Boolean = false,
+    checked: Boolean = false,
     icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    onCheckedChange: (Boolean) -> Unit = {},
     onClick: () -> Unit = {}
 ) {
-    var switchState by remember { mutableStateOf(false) }
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1468,8 +1589,8 @@ private fun SettingsItem(
 
         if (hasSwitch) {
             Switch(
-                checked = switchState,
-                onCheckedChange = { switchState = it }
+                checked = checked,
+                onCheckedChange = onCheckedChange
             )
         } else {
             Icon(
@@ -1514,12 +1635,24 @@ private fun getFileNameFromUri(context: Context, uri: Uri): String? {
 
 private fun shareFile(context: Context, file: File) {
     val uri = FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
+    val mimeType = when (file.extension.lowercase()) {
+        "csv" -> "text/csv"
+        "pdf" -> "application/pdf"
+        "zip" -> "application/zip"
+        else -> "application/octet-stream"
+    }
+    val label = when (file.extension.lowercase()) {
+        "csv" -> "Compartir CSV"
+        "pdf" -> "Compartir PDF"
+        "zip" -> "Compartir backup"
+        else -> "Compartir archivo"
+    }
     val shareIntent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/csv"
+        type = mimeType
         putExtra(Intent.EXTRA_STREAM, uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-    context.startActivity(Intent.createChooser(shareIntent, "Compartir CSV"))
+    context.startActivity(Intent.createChooser(shareIntent, label))
 }
 
 /**
@@ -1936,6 +2069,75 @@ private fun HistoryExportDialog(
 }
 
 @Composable
+private fun ConfirmRestoreDialog(
+    restore: PendingRestore,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(restore.title) },
+        text = { Text(restore.description) },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("Reemplazar datos")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+private fun AutoBackupIntervalDialog(
+    selectedHours: Int,
+    onDismiss: () -> Unit,
+    onSelect: (Int) -> Unit
+) {
+    val options = listOf(
+        6 to "Cada 6 horas",
+        12 to "Cada 12 horas",
+        24 to "Cada día",
+        72 to "Cada 3 días",
+        168 to "Cada semana"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Frecuencia de auto-backup") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                options.forEach { (hours, label) ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelect(hours) }
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedHours == hours,
+                            onClick = { onSelect(hours) }
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(label)
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
 private fun BackupExportDialog(
     onDismiss: () -> Unit,
     onExport: (password: String?) -> Unit
@@ -1947,7 +2149,7 @@ private fun BackupExportDialog(
     var confirmPasswordVisible by remember { mutableStateOf(false) }
 
     val passwordsMatch = password.isNotBlank() && password == confirmPassword
-    val isValid = passwordsMatch && password.length >= 6
+    val isValid = passwordsMatch && password.length >= 12
 
     if (!showPasswordInput) {
         // Primer paso: elegir si cifrar o no
@@ -1957,7 +2159,7 @@ private fun BackupExportDialog(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "Elige cómo exportar tu backup completo (medicamentos, historial y fotos):",
+                        text = "Elige cómo exportar tu backup completo (medicamentos, historial, fotos y audios):",
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -1975,7 +2177,7 @@ private fun BackupExportDialog(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "El cifrado protege tus datos con encriptación de grado militar. Recomendado si vas a compartir el backup.",
+                                text = "El cifrado protege tus datos con AES-256. Recomendado si vas a guardar o compartir el backup fuera de tu teléfono.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -2028,7 +2230,7 @@ private fun BackupExportDialog(
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Contraseña (mín. 6 caracteres)") },
+                        label = { Text("Contraseña (mín. 12 caracteres)") },
                         singleLine = true,
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
@@ -2068,9 +2270,9 @@ private fun BackupExportDialog(
                         )
                     }
 
-                    if (password.isNotBlank() && password.length < 6) {
+                    if (password.isNotBlank() && password.length < 12) {
                         Text(
-                            text = "La contraseña debe tener al menos 6 caracteres",
+                            text = "La contraseña debe tener al menos 12 caracteres",
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -2169,9 +2371,9 @@ private suspend fun exportHistoryWithAudio(
     val zipFile = File(context.cacheDir, "PillMate_Export_$timestamp.zip")
 
     java.util.zip.ZipOutputStream(zipFile.outputStream().buffered()).use { zipOut ->
-        // 1. Añadir CSV del historial
+        // 1. Añadir CSV compatible con el restaurador general
         val csvFile = createExportFile(context, repository)
-        zipOut.putNextEntry(java.util.zip.ZipEntry("history.csv"))
+        zipOut.putNextEntry(java.util.zip.ZipEntry("backup.csv"))
         csvFile.inputStream().use { it.copyTo(zipOut) }
         zipOut.closeEntry()
 
@@ -2186,25 +2388,28 @@ private suspend fun exportHistoryWithAudio(
             zipOut.putNextEntry(java.util.zip.ZipEntry("audio_notes/"))
             zipOut.closeEntry()
 
-            // Añadir cada audio encriptado
+            val tempAudioDir = File(context.cacheDir, "history_audio_export_$timestamp").apply { mkdirs() }
+            audioNoteManager.exportEncryptionSecret(tempAudioDir)
+            File(tempAudioDir, "install_secret").let { secretFile ->
+                if (secretFile.exists()) {
+                    zipOut.putNextEntry(java.util.zip.ZipEntry("audio_notes/${secretFile.name}"))
+                    secretFile.inputStream().use { it.copyTo(zipOut) }
+                    zipOut.closeEntry()
+                }
+            }
             audioEntries.forEach { entry ->
                 entry.audioNoteUri?.let { audioId ->
-                    // Archivo encriptado
-                    audioNoteManager.getEncryptedFile(audioId)?.let { encFile ->
-                        zipOut.putNextEntry(java.util.zip.ZipEntry("audio_notes/$audioId.enc"))
-                        encFile.inputStream().use { it.copyTo(zipOut) }
-                        zipOut.closeEntry()
-                    }
-
-                    // Metadatos de encriptación
-                    audioNoteManager.getEncryptionMetadata(audioId)?.let { metadata ->
-                        val metadataJson = """{"salt":"${metadata.salt}","iv":"${metadata.iv}"}"""
-                        zipOut.putNextEntry(java.util.zip.ZipEntry("audio_notes/$audioId.json"))
-                        zipOut.write(metadataJson.toByteArray())
-                        zipOut.closeEntry()
+                    if (audioNoteManager.exportEncryptedAudio(audioId, tempAudioDir)) {
+                        listOf("$audioId.enc", "$audioId.salt", "$audioId.iv").forEach { fileName ->
+                            val file = File(tempAudioDir, fileName)
+                            zipOut.putNextEntry(java.util.zip.ZipEntry("audio_notes/$fileName"))
+                            file.inputStream().use { it.copyTo(zipOut) }
+                            zipOut.closeEntry()
+                        }
                     }
                 }
             }
+            tempAudioDir.deleteRecursively()
         }
 
         // 3. Añadir archivo README con instrucciones
@@ -2213,15 +2418,13 @@ private suspend fun exportHistoryWithAudio(
             =======================
 
             Contenido:
-            - history.csv: Historial completo en formato CSV
+            - backup.csv: Datos completos en formato PillMate CSV
             - audio_notes/: Notas de voz encriptadas (AES-256-GCM)
-
-            Las notas de voz están encriptadas y requieren la misma
-            contraseña utilizada en la app para desencriptarlas.
 
             Formato de audios:
             - *.enc: Archivo de audio encriptado
-            - *.json: Metadatos de encriptación (salt e IV)
+            - *.salt: Salt para derivación de clave
+            - *.iv: Vector de inicialización
 
             Exportado el: ${Date(timestamp)}
         """.trimIndent()

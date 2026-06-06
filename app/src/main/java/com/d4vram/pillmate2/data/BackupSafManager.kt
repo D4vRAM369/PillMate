@@ -3,10 +3,7 @@ package com.d4vram.pillmate2.data
 import android.content.Context
 import android.net.Uri
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.documentfile.provider.DocumentFile
-import com.d4vram.pillmate2.model.HistoryEntry
-import com.d4vram.pillmate2.model.Medication
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -34,16 +31,12 @@ class BackupSafManager(
     private val context: Context,
     private val repository: MedicationRepository
 ) {
-    companion object {
-        private val AUTO_BACKUP_URI_KEY = stringPreferencesKey("auto_backup_folder_uri")
-    }
-
     /**
      * Obtiene el URI de la carpeta configurada para auto-backups
      * @return Flow con el URI como String, o null si no está configurado
      */
     val autoBackupFolderUri: Flow<String?> = context.backupDataStore.data
-        .map { preferences -> preferences[AUTO_BACKUP_URI_KEY] }
+        .map { preferences -> preferences[BackupPreferenceKeys.AUTO_BACKUP_FOLDER_URI] }
 
     /**
      * Crea un backup manual en el URI especificado por el usuario
@@ -52,13 +45,14 @@ class BackupSafManager(
      * @return true si el backup se creó correctamente, false en caso de error
      */
     suspend fun createManualBackupToUri(targetUri: Uri): Boolean = withContext(Dispatchers.IO) {
+        var tempZipFile: File? = null
         try {
             // 1. Obtener datos del repositorio
             val medications = repository.getMedicationsSnapshot()
             val history = repository.getHistorySnapshot()
 
             // 2. Crear backup ZIP en archivo temporal
-            val tempZipFile = File(context.cacheDir, "temp_backup_${System.currentTimeMillis()}.zip")
+            tempZipFile = File(context.cacheDir, "temp_backup_${System.currentTimeMillis()}.zip")
             BackupZipManager.createBackupZip(context, medications, history, tempZipFile)
 
             // 3. Copiar el ZIP al URI de destino elegido por el usuario
@@ -69,12 +63,13 @@ class BackupSafManager(
             }
 
             // 4. Limpiar archivo temporal
-            tempZipFile.delete()
-
+            BackupManager(context, repository).markBackupCreated()
             true
         } catch (e: Exception) {
             e.printStackTrace()
             false
+        } finally {
+            tempZipFile?.delete()
         }
     }
 
@@ -97,7 +92,7 @@ class BackupSafManager(
 
         // Guardar en DataStore
         context.backupDataStore.edit { preferences ->
-            preferences[AUTO_BACKUP_URI_KEY] = folderUri.toString()
+            preferences[BackupPreferenceKeys.AUTO_BACKUP_FOLDER_URI] = folderUri.toString()
         }
     }
 
@@ -106,8 +101,14 @@ class BackupSafManager(
      * 
      * @return true si el backup se creó correctamente, false si no hay carpeta configurada o hubo error
      */
-    suspend fun createAutoBackupToFolder(): Boolean = withContext(Dispatchers.IO) {
+    suspend fun createAutoBackupToFolder(force: Boolean = false): Boolean = withContext(Dispatchers.IO) {
+        var tempZipFile: File? = null
         try {
+            val backupManager = BackupManager(context, repository)
+            if (!force && !backupManager.shouldCreateAutomaticBackup()) {
+                return@withContext false
+            }
+
             // 1. Obtener URI de la carpeta configurada
             val folderUriString = autoBackupFolderUri.first() ?: return@withContext false
             val folderUri = Uri.parse(folderUriString)
@@ -125,7 +126,7 @@ class BackupSafManager(
             val history = repository.getHistorySnapshot()
 
             // 4. Crear backup ZIP en archivo temporal
-            val tempZipFile = File(context.cacheDir, "temp_auto_backup_${System.currentTimeMillis()}.zip")
+            tempZipFile = File(context.cacheDir, "temp_auto_backup_${System.currentTimeMillis()}.zip")
             BackupZipManager.createBackupZip(context, medications, history, tempZipFile)
 
             // 5. Crear archivo en la carpeta del usuario
@@ -134,19 +135,21 @@ class BackupSafManager(
                 ?: return@withContext false
 
             // 6. Copiar contenido del ZIP temporal al archivo final
-            context.contentResolver.openOutputStream(newFile.uri)?.use { outputStream ->
+            val outputStream = context.contentResolver.openOutputStream(newFile.uri)
+                ?: return@withContext false
+            outputStream.use {
                 tempZipFile.inputStream().use { inputStream ->
-                    inputStream.copyTo(outputStream)
+                    inputStream.copyTo(it)
                 }
             }
 
-            // 7. Limpiar archivo temporal
-            tempZipFile.delete()
-
+            backupManager.markBackupCreated()
             true
         } catch (e: Exception) {
             e.printStackTrace()
             false
+        } finally {
+            tempZipFile?.delete()
         }
     }
 
@@ -171,7 +174,7 @@ class BackupSafManager(
      */
     suspend fun clearAutoBackupFolder() {
         context.backupDataStore.edit { preferences ->
-            preferences.remove(AUTO_BACKUP_URI_KEY)
+            preferences.remove(BackupPreferenceKeys.AUTO_BACKUP_FOLDER_URI)
         }
     }
 }

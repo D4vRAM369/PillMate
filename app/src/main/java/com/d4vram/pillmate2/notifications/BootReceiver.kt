@@ -3,6 +3,7 @@ package com.d4vram.pillmate2.notifications
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.d4vram.pillmate2.data.BackupScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -29,6 +30,7 @@ class BootReceiver : BroadcastReceiver() {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     ReminderScheduler.rescheduleAllReminders(context)
+                    BackupScheduler.refresh(context.applicationContext)
                 } finally {
                     pendingResult.finish()
                 }

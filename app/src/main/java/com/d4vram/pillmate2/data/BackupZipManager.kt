@@ -72,14 +72,13 @@ object BackupZipManager {
             // 2.5. Copiar audios del historial
             val audioNotesDir = File(tempDir, "audio_notes")
             audioNotesDir.mkdirs()
+            val audioNoteManager = AudioNoteManager(context)
+            audioNoteManager.exportEncryptionSecret(audioNotesDir)
 
             var audioCopiedCount = 0
             history.forEach { entry ->
-                entry.audioNoteUri?.let { audioUri ->
-                    val sourceFile = File(audioUri)
-                    if (sourceFile.exists()) {
-                        val destFile = File(audioNotesDir, sourceFile.name)
-                        sourceFile.copyTo(destFile, overwrite = true)
+                entry.audioNoteUri?.let { audioId ->
+                    if (audioNoteManager.exportEncryptedAudio(audioId, audioNotesDir)) {
                         audioCopiedCount++
                     }
                 }
@@ -154,14 +153,13 @@ object BackupZipManager {
             // 2.5. Copiar audios del historial
             val audioNotesDir = File(tempDir, "audio_notes")
             audioNotesDir.mkdirs()
+            val audioNoteManager = AudioNoteManager(context)
+            audioNoteManager.exportEncryptionSecret(audioNotesDir)
 
             var audioCopiedCount = 0
             history.forEach { entry ->
-                entry.audioNoteUri?.let { audioUri ->
-                    val sourceFile = File(audioUri)
-                    if (sourceFile.exists()) {
-                        val destFile = File(audioNotesDir, sourceFile.name)
-                        sourceFile.copyTo(destFile, overwrite = true)
+                entry.audioNoteUri?.let { audioId ->
+                    if (audioNoteManager.exportEncryptedAudio(audioId, audioNotesDir)) {
                         audioCopiedCount++
                     }
                 }
@@ -259,29 +257,28 @@ object BackupZipManager {
 
             // 5. Restaurar audios del historial
             val audioNotesDir = File(tempExtractDir, "audio_notes")
-            val historyAudioDir = File(context.filesDir, "history_audio_notes")
-            historyAudioDir.mkdirs()
-
-            val audioPathMap = mutableMapOf<String, String>() // nombre_archivo -> ruta_nueva
+            val audioNoteManager = AudioNoteManager(context)
+            val restoredAudioIds = mutableSetOf<String>()
 
             if (audioNotesDir.exists() && audioNotesDir.isDirectory) {
-                audioNotesDir.listFiles()?.forEach { audioFile ->
-                    if (audioFile.isFile) {
-                        // Copiar audio al directorio de la app
-                        val destFile = File(historyAudioDir, audioFile.name)
-                        audioFile.copyTo(destFile, overwrite = true)
-                        audioPathMap[audioFile.name] = destFile.absolutePath
+                audioNoteManager.importEncryptionSecret(audioNotesDir)
+                audioNotesDir.listFiles()
+                    ?.filter { it.isFile && it.extension == "enc" }
+                    ?.forEach { audioFile ->
+                        val audioId = audioFile.nameWithoutExtension
+                        if (audioNoteManager.importEncryptedAudio(audioId, audioNotesDir)) {
+                            restoredAudioIds += audioId
+                        }
                     }
-                }
             }
 
             // 6. Reconstruir rutas de audios en historial
             val historyWithAudios = parsed.history.map { entry ->
-                val audioFileName = entry.audioNoteUri // Viene solo el nombre del archivo
-                if (!audioFileName.isNullOrBlank() && audioPathMap.containsKey(audioFileName)) {
-                    entry.copy(audioNoteUri = audioPathMap[audioFileName])
+                val audioId = entry.audioNoteUri
+                if (!audioId.isNullOrBlank() && audioId in restoredAudioIds) {
+                    entry.copy(audioNoteUri = audioId)
                 } else {
-                    entry
+                    entry.copy(audioNoteUri = null)
                 }
             }
 

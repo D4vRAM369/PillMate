@@ -5,6 +5,7 @@ import com.d4vram.pillmate2.data.voice.VoiceNoteEncryption
 import java.io.File
 import java.util.Base64
 import java.util.UUID
+import java.security.SecureRandom
 
 /**
  * 🎙️ Gestor de notas de audio encriptadas para el historial
@@ -20,8 +21,9 @@ class AudioNoteManager(private val context: Context) {
     companion object {
         private const val AUDIO_NOTES_DIR = "audio_notes"
         private const val TEMP_DECRYPT_DIR = "temp_audio"
-        // Contraseña fija para encriptación (en producción debería venir de KeyStore)
-        private val ENCRYPTION_PASSWORD = "PillMate_AudioNotes_2024".toCharArray()
+        private const val PREFS_NAME = "audio_note_encryption"
+        private const val INSTALL_SECRET_KEY = "install_secret"
+        private val LEGACY_ENCRYPTION_PASSWORD = "PillMate_AudioNotes_2024".toCharArray()
     }
 
     private val audioNotesDir: File by lazy {
@@ -34,6 +36,18 @@ class AudioNoteManager(private val context: Context) {
         File(context.cacheDir, TEMP_DECRYPT_DIR).apply {
             if (!exists()) mkdirs()
         }
+    }
+
+    private val encryptionPassword: CharArray by lazy {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val existing = prefs.getString(INSTALL_SECRET_KEY, null)
+        val encoded = existing ?: run {
+            val bytes = ByteArray(32).apply { SecureRandom().nextBytes(this) }
+            Base64.getEncoder().encodeToString(bytes).also {
+                prefs.edit().putString(INSTALL_SECRET_KEY, it).apply()
+            }
+        }
+        encoded.toCharArray()
     }
 
     /**
@@ -50,7 +64,7 @@ class AudioNoteManager(private val context: Context) {
         val iv = VoiceNoteEncryption.generateIv()
 
         // Derivar clave de la contraseña
-        val key = VoiceNoteEncryption.deriveKey(ENCRYPTION_PASSWORD, salt)
+        val key = VoiceNoteEncryption.deriveKey(encryptionPassword, salt)
 
         // Encriptar archivo
         VoiceNoteEncryption.encryptFile(key, iv, tempFile, encryptedFile)
@@ -82,10 +96,14 @@ class AudioNoteManager(private val context: Context) {
         try {
             val salt = saltFile.readBytes()
             val iv = ivFile.readBytes()
-            val key = VoiceNoteEncryption.deriveKey(ENCRYPTION_PASSWORD, salt)
-
             val tempDecryptedFile = File(tempDecryptDir, "$audioId.m4a")
-            VoiceNoteEncryption.decryptFile(key, iv, encryptedFile, tempDecryptedFile)
+            val key = VoiceNoteEncryption.deriveKey(encryptionPassword, salt)
+            runCatching {
+                VoiceNoteEncryption.decryptFile(key, iv, encryptedFile, tempDecryptedFile)
+            }.getOrElse {
+                val legacyKey = VoiceNoteEncryption.deriveKey(LEGACY_ENCRYPTION_PASSWORD, salt)
+                VoiceNoteEncryption.decryptFile(legacyKey, iv, encryptedFile, tempDecryptedFile)
+            }
 
             return tempDecryptedFile
         } catch (e: Exception) {
@@ -117,6 +135,46 @@ class AudioNoteManager(private val context: Context) {
     fun getEncryptedFile(audioId: String): File? {
         val file = File(audioNotesDir, "$audioId.enc")
         return if (file.exists()) file else null
+    }
+
+    fun exportEncryptedAudio(audioId: String, destinationDir: File): Boolean {
+        val encryptedFile = File(audioNotesDir, "$audioId.enc")
+        val saltFile = File(audioNotesDir, "$audioId.salt")
+        val ivFile = File(audioNotesDir, "$audioId.iv")
+        if (!encryptedFile.exists() || !saltFile.exists() || !ivFile.exists()) return false
+
+        destinationDir.mkdirs()
+        encryptedFile.copyTo(File(destinationDir, encryptedFile.name), overwrite = true)
+        saltFile.copyTo(File(destinationDir, saltFile.name), overwrite = true)
+        ivFile.copyTo(File(destinationDir, ivFile.name), overwrite = true)
+        return true
+    }
+
+    fun exportEncryptionSecret(destinationDir: File) {
+        destinationDir.mkdirs()
+        File(destinationDir, INSTALL_SECRET_KEY).writeText(String(encryptionPassword))
+    }
+
+    fun importEncryptionSecret(sourceDir: File) {
+        val secretFile = File(sourceDir, INSTALL_SECRET_KEY)
+        if (!secretFile.exists()) return
+        val secret = secretFile.readText().takeIf { it.isNotBlank() } ?: return
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .putString(INSTALL_SECRET_KEY, secret)
+            .apply()
+    }
+
+    fun importEncryptedAudio(audioId: String, sourceDir: File): Boolean {
+        val encryptedFile = File(sourceDir, "$audioId.enc")
+        val saltFile = File(sourceDir, "$audioId.salt")
+        val ivFile = File(sourceDir, "$audioId.iv")
+        if (!encryptedFile.exists() || !saltFile.exists() || !ivFile.exists()) return false
+
+        encryptedFile.copyTo(File(audioNotesDir, encryptedFile.name), overwrite = true)
+        saltFile.copyTo(File(audioNotesDir, saltFile.name), overwrite = true)
+        ivFile.copyTo(File(audioNotesDir, ivFile.name), overwrite = true)
+        return true
     }
 
     /**

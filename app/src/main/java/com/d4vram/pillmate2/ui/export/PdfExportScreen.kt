@@ -57,7 +57,7 @@ fun PdfExportScreen(
                 context.startActivity(Intent.createChooser(intent, "Compartir reporte"))
                 viewModel.clearGeneratedFile()
             } catch (e: Exception) {
-                e.printStackTrace()
+                viewModel.reportShareError(e.message ?: "No se pudo compartir el PDF")
             }
         }
     }

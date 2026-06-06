@@ -74,7 +74,10 @@ object CsvUtils {
     }
 
     fun parseCsv(csv: String): ParsedCsv {
-        val lines = csv.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()
+        val lines = csv.lineSequence()
+            .map { it.trimEnd('\r') }
+            .filter { it.isNotBlank() }
+            .toList()
         if (lines.isEmpty() || lines.first() != HEADER) {
             throw IllegalArgumentException("Formato CSV no reconocido")
         }
@@ -128,7 +131,7 @@ object CsvUtils {
         val history = mutableListOf<HistoryEntry>()
         while (index < lines.size) {
             val tokens = parseCsvLine(lines[index])
-            // New header: id,medicationId,medicationName,dose,time,date,colorArgb,emoji,quantity,notes,timestampIso
+            // New header: id,medicationId,medicationName,dose,time,date,colorArgb,emoji,quantity,notes,timestampIso,audioNoteUri
             if (tokens.size < 3) { // Must have at least id, medicationId, and name
                 continue // or throw exception
             }
@@ -136,16 +139,17 @@ object CsvUtils {
             val id = tokens[0]
             val medicationId = tokens[1]
             val medicationName = tokens[2]
-            val dose = tokens.getOrNull(3)
-            val time = tokens.getOrNull(4) ?: ""
-            val date = tokens.getOrNull(5) ?: ""
-            val colorArgb = tokens.getOrNull(6)?.toIntOrNull() ?: 0
-            val emoji = tokens.getOrNull(7) ?: ""
-            val quantity = tokens.getOrNull(8)?.toIntOrNull() ?: 1
-            val notes = tokens.getOrNull(9)?.replace("\\n", "\n") ?: ""
-            val timestampStr = tokens.getOrNull(10)
+            val offset = if (historyHeaderHasDose) 0 else -1
+            val dose = if (historyHeaderHasDose) tokens.getOrNull(3)?.ifBlank { null } else null
+            val time = tokens.getOrNull(4 + offset) ?: ""
+            val date = tokens.getOrNull(5 + offset) ?: ""
+            val colorArgb = tokens.getOrNull(6 + offset)?.toIntOrNull() ?: 0
+            val emoji = tokens.getOrNull(7 + offset) ?: ""
+            val quantity = tokens.getOrNull(8 + offset)?.toIntOrNull() ?: 1
+            val notes = tokens.getOrNull(9 + offset)?.replace("\\n", "\n") ?: ""
+            val timestampStr = tokens.getOrNull(10 + offset)
             val timestamp = timestampStr?.let { runCatching { LocalDateTime.parse(it) }.getOrNull() } ?: LocalDateTime.now()
-            val audioNoteUri = tokens.getOrNull(11)?.ifBlank { null } // 🎤 Será reconstruida al restaurar
+            val audioNoteUri = tokens.getOrNull(11 + offset)?.ifBlank { null } // 🎤 ID del audio
 
             history.add(
                 HistoryEntry(
