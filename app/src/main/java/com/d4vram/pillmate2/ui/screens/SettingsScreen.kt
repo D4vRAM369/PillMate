@@ -30,8 +30,15 @@ import com.d4vram.pillmate2.ui.security.SecurityManager
 import com.d4vram.pillmate2.ui.security.SecuritySettings
 import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
 import com.d4vram.pillmate2.ui.export.PdfExportSheet
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import com.d4vram.pillmate2.ui.theme.AppUiStyle
+import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetColor
 import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetShape
+import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetSize
 import com.d4vram.pillmate2.ui.theme.ThemeManager
 import com.d4vram.pillmate2.widget.QuickTakeWidget
 import com.d4vram.pillmate2.notifications.NotificationHelper
@@ -78,12 +85,23 @@ fun SettingsScreen(
     val uiStyle by themeManager.uiStyle.collectAsState(initial = AppUiStyle.Default)
     val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)
     val quickTakeWidgetShape by themeManager.quickTakeWidgetShape.collectAsState(initial = QuickTakeWidgetShape.Rounded)
+    val quickTakeWidgetColor by themeManager.quickTakeWidgetColor.collectAsState(initial = QuickTakeWidgetColor.Green)
+    val quickTakeWidgetSize by themeManager.quickTakeWidgetSize.collectAsState(initial = QuickTakeWidgetSize.Normal)
+    val quickTakeMedicationIds by themeManager.quickTakeMedicationIds.collectAsState(initial = emptyList())
+    var previewSlots by remember { mutableStateOf<List<Medication?>>(List(4) { null }) }
+
+    LaunchedEffect(quickTakeMedicationIds) {
+        val allMeds = withContext(Dispatchers.IO) {
+            repository.getMedicationsSnapshot().associateBy { it.id }
+        }
+        previewSlots = quickTakeMedicationIds.map { id -> id?.let { allMeds[it] } }
+    }
+
     val sortMode by themeManager.sortMode.collectAsState(initial = SortMode.MANUAL)
     val snackbarHostState = remember { SnackbarHostState() }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var showUiDialog by remember { mutableStateOf(false) }
     var showChipPeriodDialog by remember { mutableStateOf(false) }
-    var showQuickTakeWidgetShapeDialog by remember { mutableStateOf(false) }
     var showSortModeDialog by remember { mutableStateOf(false) }
     val securitySettings by securityManager.settings.collectAsState(initial = SecuritySettings())
     var showPinSetupDialog by remember { mutableStateOf(false) }
@@ -373,11 +391,29 @@ fun SettingsScreen(
 
                     Divider(modifier = Modifier.padding(vertical = 8.dp))
 
-                    SettingsItem(
-                        title = "Widget de toma rápida",
-                        description = "Forma: ${quickTakeWidgetShape.title}",
-                        icon = Icons.Default.Widgets,
-                        onClick = { showQuickTakeWidgetShapeDialog = true }
+                    WidgetCustomizationCard(
+                        color = quickTakeWidgetColor,
+                        size = quickTakeWidgetSize,
+                        shape = quickTakeWidgetShape,
+                        slots = previewSlots,
+                        onColorChange = { newColor ->
+                            scope.launch {
+                                themeManager.setQuickTakeWidgetColor(newColor)
+                                QuickTakeWidget().updateAll(context)
+                            }
+                        },
+                        onSizeChange = { newSize ->
+                            scope.launch {
+                                themeManager.setQuickTakeWidgetSize(newSize)
+                                QuickTakeWidget().updateAll(context)
+                            }
+                        },
+                        onShapeChange = { newShape ->
+                            scope.launch {
+                                themeManager.setQuickTakeWidgetShape(newShape)
+                                QuickTakeWidget().updateAll(context)
+                            }
+                        }
                     )
                 }
             }
@@ -955,56 +991,6 @@ fun SettingsScreen(
         )
     }
 
-    if (showQuickTakeWidgetShapeDialog) {
-        AlertDialog(
-            onDismissRequest = { showQuickTakeWidgetShapeDialog = false },
-            title = { Text("Forma del widget") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    QuickTakeWidgetShape.entries.forEach { shape ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(12.dp))
-                                .clickable {
-                                    scope.launch {
-                                        themeManager.setQuickTakeWidgetShape(shape)
-                                        QuickTakeWidget().updateAll(context.applicationContext)
-                                        snackbarMessage = "Forma del widget: ${shape.title}"
-                                    }
-                                    showQuickTakeWidgetShapeDialog = false
-                                }
-                                .padding(vertical = 12.dp, horizontal = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            RadioButton(
-                                selected = shape == quickTakeWidgetShape,
-                                onClick = {
-                                    scope.launch {
-                                        themeManager.setQuickTakeWidgetShape(shape)
-                                        QuickTakeWidget().updateAll(context.applicationContext)
-                                        snackbarMessage = "Forma del widget: ${shape.title}"
-                                    }
-                                    showQuickTakeWidgetShapeDialog = false
-                                }
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = shape.title,
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
-                            )
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showQuickTakeWidgetShapeDialog = false }) {
-                    Text("Cerrar")
-                }
-            }
-        )
-    }
-
     if (showSortModeDialog) {
         AlertDialog(
             onDismissRequest = { showSortModeDialog = false },
@@ -1572,6 +1558,177 @@ private fun LockTimeoutDialog(
             }
         }
     )
+}
+
+@Composable
+private fun WidgetPreview(
+    color: QuickTakeWidgetColor,
+    size: QuickTakeWidgetSize,
+    shape: QuickTakeWidgetShape,
+    slots: List<Medication?>
+) {
+    val cornerRadius = when (shape) {
+        QuickTakeWidgetShape.Circle -> 48.dp
+        QuickTakeWidgetShape.Rounded -> 18.dp
+        QuickTakeWidgetShape.Square -> 4.dp
+    }
+    val bgColor = Color(color.backgroundArgb)
+    val emptyCellColor = Color(color.emptyCellArgb)
+    val cellHeight = size.cellHeightDp.dp
+    val padding = size.paddingDp.dp
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(bgColor, RoundedCornerShape(12.dp))
+            .padding(padding)
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = "Toma rápida",
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                color = Color(0xFF234236)
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                PreviewCell(slots.getOrNull(0), emptyCellColor, cornerRadius, cellHeight, Modifier.weight(1f))
+                PreviewCell(slots.getOrNull(1), emptyCellColor, cornerRadius, cellHeight, Modifier.weight(1f))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                PreviewCell(slots.getOrNull(2), emptyCellColor, cornerRadius, cellHeight, Modifier.weight(1f))
+                PreviewCell(slots.getOrNull(3), emptyCellColor, cornerRadius, cellHeight, Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun PreviewCell(
+    medication: Medication?,
+    emptyCellColor: Color,
+    cornerRadius: Dp,
+    cellHeight: Dp,
+    modifier: Modifier = Modifier
+) {
+    val bg = medication?.color ?: emptyCellColor
+    Box(
+        modifier = modifier
+            .height(cellHeight)
+            .background(bg, RoundedCornerShape(cornerRadius))
+            .padding(4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        if (medication == null) {
+            Text(
+                text = "Elegir",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color(0xFF48675A),
+                maxLines = 1
+            )
+        } else {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                if (medication.emoji.isNotBlank()) {
+                    Text(text = medication.emoji, style = MaterialTheme.typography.labelSmall)
+                }
+                Text(
+                    text = medication.name.take(12),
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color.White,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WidgetCustomizationCard(
+    color: QuickTakeWidgetColor,
+    size: QuickTakeWidgetSize,
+    shape: QuickTakeWidgetShape,
+    slots: List<Medication?>,
+    onColorChange: (QuickTakeWidgetColor) -> Unit,
+    onSizeChange: (QuickTakeWidgetSize) -> Unit,
+    onShapeChange: (QuickTakeWidgetShape) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.Widgets,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "Widget de toma rápida",
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+
+        WidgetPreview(color = color, size = size, shape = shape, slots = slots)
+
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = "Color",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                QuickTakeWidgetColor.entries.forEach { theme ->
+                    val isSelected = theme == color
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(Color(theme.accentArgb), CircleShape)
+                            .then(
+                                if (isSelected) Modifier.border(3.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                                else Modifier.border(1.dp, Color.Transparent, CircleShape)
+                            )
+                            .clickable { onColorChange(theme) }
+                    )
+                }
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = "Tamaño",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                QuickTakeWidgetSize.entries.forEach { preset ->
+                    FilterChip(
+                        selected = preset == size,
+                        onClick = { onSizeChange(preset) },
+                        label = { Text(preset.title) }
+                    )
+                }
+            }
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = "Forma",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                QuickTakeWidgetShape.entries.forEach { s ->
+                    FilterChip(
+                        selected = s == shape,
+                        onClick = { onShapeChange(s) },
+                        label = { Text(s.title) }
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable
