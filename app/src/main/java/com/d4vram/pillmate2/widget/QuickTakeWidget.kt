@@ -42,7 +42,9 @@ import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.local.MedicationEntity
 import com.d4vram.pillmate2.data.local.PillMateDatabase
 import com.d4vram.pillmate2.ui.theme.QuickTakeSettings
+import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetColor
 import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetShape
+import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetSize
 import com.d4vram.pillmate2.ui.theme.dataStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -78,7 +80,9 @@ private val MedicationIdKey = ActionParameters.Key<String>("medication_id")
 
 private data class QuickTakeWidgetData(
     val slots: List<MedicationEntity?>,
-    val shape: QuickTakeWidgetShape
+    val shape: QuickTakeWidgetShape,
+    val color: QuickTakeWidgetColor,
+    val size: QuickTakeWidgetSize
 )
 
 private object QuickTakeWidgetRepository {
@@ -90,6 +94,12 @@ private object QuickTakeWidgetRepository {
         val shape = QuickTakeWidgetShape.fromStorage(
             preferences[QuickTakeSettings.WIDGET_SHAPE_KEY]
         )
+        val color = QuickTakeWidgetColor.fromStorage(
+            preferences[QuickTakeSettings.WIDGET_COLOR_KEY]
+        )
+        val size = QuickTakeWidgetSize.fromStorage(
+            preferences[QuickTakeSettings.WIDGET_SIZE_KEY]
+        )
         val medicationsById = PillMateDatabase.getInstance(context)
             .medicationDao()
             .getAllMedications()
@@ -97,7 +107,9 @@ private object QuickTakeWidgetRepository {
 
         QuickTakeWidgetData(
             slots = slots.map { id -> id?.let { medicationsById[it] } },
-            shape = shape
+            shape = shape,
+            color = color,
+            size = size
         )
     }
 
@@ -116,8 +128,8 @@ private fun QuickTakeWidgetContent(data: QuickTakeWidgetData) {
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(ColorProvider(Color(0xFFF7FBF7)))
-            .padding(10.dp),
+            .background(ColorProvider(Color(data.color.backgroundArgb)))
+            .padding(data.size.paddingDp.dp),
         verticalAlignment = Alignment.Vertical.CenterVertically,
         horizontalAlignment = Alignment.Horizontal.CenterHorizontally
     ) {
@@ -131,15 +143,15 @@ private fun QuickTakeWidgetContent(data: QuickTakeWidgetData) {
         )
         Spacer(modifier = GlanceModifier.height(8.dp))
         Row(modifier = GlanceModifier.fillMaxWidth()) {
-            WidgetCell(data.slots.getOrNull(0), data.shape, GlanceModifier.defaultWeight())
+            WidgetCell(data.slots.getOrNull(0), data.shape, data.color, data.size, GlanceModifier.defaultWeight())
             Spacer(modifier = GlanceModifier.width(8.dp))
-            WidgetCell(data.slots.getOrNull(1), data.shape, GlanceModifier.defaultWeight())
+            WidgetCell(data.slots.getOrNull(1), data.shape, data.color, data.size, GlanceModifier.defaultWeight())
         }
         Spacer(modifier = GlanceModifier.height(8.dp))
         Row(modifier = GlanceModifier.fillMaxWidth()) {
-            WidgetCell(data.slots.getOrNull(2), data.shape, GlanceModifier.defaultWeight())
+            WidgetCell(data.slots.getOrNull(2), data.shape, data.color, data.size, GlanceModifier.defaultWeight())
             Spacer(modifier = GlanceModifier.width(8.dp))
-            WidgetCell(data.slots.getOrNull(3), data.shape, GlanceModifier.defaultWeight())
+            WidgetCell(data.slots.getOrNull(3), data.shape, data.color, data.size, GlanceModifier.defaultWeight())
         }
     }
 }
@@ -148,6 +160,8 @@ private fun QuickTakeWidgetContent(data: QuickTakeWidgetData) {
 private fun WidgetCell(
     medication: MedicationEntity?,
     shape: QuickTakeWidgetShape,
+    color: QuickTakeWidgetColor,
+    size: QuickTakeWidgetSize,
     modifier: GlanceModifier = GlanceModifier
 ) {
     val radius = when (shape) {
@@ -156,7 +170,7 @@ private fun WidgetCell(
         QuickTakeWidgetShape.Square -> 4.dp
     }
     val background = medication?.let { ColorProvider(Color(it.colorArgb)) }
-        ?: ColorProvider(Color(0xFFE4EEE8))
+        ?: ColorProvider(Color(color.emptyCellArgb))
     val clickAction = medication?.let {
         actionRunCallback<QuickTakeActionCallback>(
             parameters = actionParametersOf(MedicationIdKey to it.id)
@@ -165,7 +179,7 @@ private fun WidgetCell(
 
     Box(
         modifier = modifier
-            .height(72.dp)
+            .height(size.cellHeightDp.dp)
             .background(background)
             .cornerRadius(radius)
             .clickable(clickAction)
