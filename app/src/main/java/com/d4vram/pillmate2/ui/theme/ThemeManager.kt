@@ -27,10 +27,50 @@ enum class QuickTakeWidgetShape(val storageValue: String, val title: String) {
     }
 }
 
+enum class QuickTakeWidgetColor(
+    val storageValue: String,
+    val title: String,
+    val backgroundArgb: Long,
+    val emptyCellArgb: Long,
+    val accentArgb: Long
+) {
+    Green("green",   "Verde",    0xFFF7FBF7L, 0xFFE4EEE8L, 0xFF4CAF82L),
+    Blue("blue",     "Azul",     0xFFF0F4FFL, 0xFFD8E4FFL, 0xFF5B8FCEL),
+    Purple("purple", "Morado",   0xFFF5F0FFL, 0xFFE4D8FFL, 0xFF9B72CFL),
+    Orange("orange", "Naranja",  0xFFFFF4F0L, 0xFFFFE4D8L, 0xFFE07B54L),
+    Pink("pink",     "Rosa",     0xFFFFF0F5L, 0xFFFFD8E8L, 0xFFCF729BL),
+    Yellow("yellow", "Amarillo", 0xFFFFFBF0L, 0xFFFFF0C8L, 0xFFD4A017L),
+    Gray("gray",     "Gris",     0xFFF5F5F5L, 0xFFE0E0E0L, 0xFF808080L),
+    Dark("dark",     "Oscuro",   0xFF1A1A2EL, 0xFF2D2D44L, 0xFF4CAF82L);
+
+    companion object {
+        fun fromStorage(value: String?): QuickTakeWidgetColor =
+            entries.firstOrNull { it.storageValue == value } ?: Green
+    }
+}
+
+enum class QuickTakeWidgetSize(
+    val storageValue: String,
+    val title: String,
+    val cellHeightDp: Int,
+    val paddingDp: Int
+) {
+    Compact("compact", "Compacto", 52, 7),
+    Normal("normal",   "Normal",   72, 10),
+    Large("large",     "Grande",   92, 12);
+
+    companion object {
+        fun fromStorage(value: String?): QuickTakeWidgetSize =
+            entries.firstOrNull { it.storageValue == value } ?: Normal
+    }
+}
+
 object QuickTakeSettings {
     const val SLOT_COUNT = 4
     val MEDICATION_IDS_KEY = stringPreferencesKey("quick_take_medication_ids")
     val WIDGET_SHAPE_KEY = stringPreferencesKey("quick_take_widget_shape")
+    val WIDGET_COLOR_KEY = stringPreferencesKey("quick_take_widget_color")
+    val WIDGET_SIZE_KEY  = stringPreferencesKey("quick_take_widget_size")
 
     fun String?.decodeSlots(): List<String?> {
         val parts = this
@@ -188,6 +228,24 @@ class ThemeManager(private val context: Context) {
             QuickTakeWidgetShape.fromStorage(preferences[QuickTakeSettings.WIDGET_SHAPE_KEY])
         }
 
+    val quickTakeWidgetColor: Flow<QuickTakeWidgetColor> = context.dataStore.data
+        .catch { throwable ->
+            Log.e("ThemeManager", "Error reading widget color", throwable)
+            emit(emptyPreferences())
+        }
+        .map { preferences ->
+            QuickTakeWidgetColor.fromStorage(preferences[QuickTakeSettings.WIDGET_COLOR_KEY])
+        }
+
+    val quickTakeWidgetSize: Flow<QuickTakeWidgetSize> = context.dataStore.data
+        .catch { throwable ->
+            Log.e("ThemeManager", "Error reading widget size", throwable)
+            emit(emptyPreferences())
+        }
+        .map { preferences ->
+            QuickTakeWidgetSize.fromStorage(preferences[QuickTakeSettings.WIDGET_SIZE_KEY])
+        }
+
     suspend fun setQuickTakeMedication(slotIndex: Int, medicationId: String?) {
         if (slotIndex !in 0 until QuickTakeSettings.SLOT_COUNT) return
 
@@ -206,6 +264,18 @@ class ThemeManager(private val context: Context) {
     suspend fun setQuickTakeWidgetShape(shape: QuickTakeWidgetShape) {
         context.dataStore.edit { preferences ->
             preferences[QuickTakeSettings.WIDGET_SHAPE_KEY] = shape.storageValue
+        }
+    }
+
+    suspend fun setQuickTakeWidgetColor(color: QuickTakeWidgetColor) {
+        context.dataStore.edit { preferences ->
+            preferences[QuickTakeSettings.WIDGET_COLOR_KEY] = color.storageValue
+        }
+    }
+
+    suspend fun setQuickTakeWidgetSize(size: QuickTakeWidgetSize) {
+        context.dataStore.edit { preferences ->
+            preferences[QuickTakeSettings.WIDGET_SIZE_KEY] = size.storageValue
         }
     }
 
