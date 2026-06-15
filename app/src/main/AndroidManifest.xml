@@ -57,6 +57,13 @@
             </intent-filter>
         </activity>
 
+        <!-- Bottom-sheet de toma rápida lanzado desde la notificación persistente -->
+        <activity
+            android:name=".ui.quicktake.QuickTakeSheetActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.PillMate.Transparent" />
+
         <!-- Receiver para recordatorios de medicamentos -->
         <receiver
             android:name=".notifications.ReminderReceiver"

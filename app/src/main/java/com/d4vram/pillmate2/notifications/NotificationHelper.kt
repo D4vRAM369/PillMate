@@ -31,6 +31,15 @@ object NotificationHelper {
     private const val CHANNEL_NAME = "Recordatorios de Medicamentos"
     private const val CHANNEL_DESCRIPTION = "Notificaciones para recordarte tomar tus medicamentos"
 
+    // Canal aparte para la notificación persistente de toma rápida: baja
+    // prioridad, silenciosa, sin vibrar. No debe competir con los recordatorios.
+    private const val QUICK_TAKE_CHANNEL_ID = "pillmate_quick_take"
+    private const val QUICK_TAKE_CHANNEL_NAME = "Toma rápida"
+    private const val QUICK_TAKE_CHANNEL_DESCRIPTION =
+        "Notificación siempre presente para registrar una toma con un toque"
+    // ID fijo: solo existe una notificación persistente a la vez.
+    const val QUICK_TAKE_NOTIFICATION_ID = 0x4D454431 // "MED1"
+
     /**
      * Crea el canal de notificaciones.
      * Debe llamarse una vez al iniciar la app (normalmente en Application.onCreate).
@@ -52,6 +61,68 @@ object NotificationHelper {
             val notificationManager = context.getSystemService(NotificationManager::class.java)
             notificationManager.createNotificationChannel(channel)
         }
+    }
+
+    /**
+     * Crea el canal de la notificación persistente de toma rápida.
+     * IMPORTANCE_LOW = visible pero silenciosa (sin sonido ni vibración),
+     * apropiado para una notificación que está siempre presente.
+     */
+    fun createQuickTakeChannel(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                QUICK_TAKE_CHANNEL_ID,
+                QUICK_TAKE_CHANNEL_NAME,
+                NotificationManager.IMPORTANCE_LOW
+            ).apply {
+                description = QUICK_TAKE_CHANNEL_DESCRIPTION
+                enableVibration(false)
+                setShowBadge(false)
+            }
+            context.getSystemService(NotificationManager::class.java)
+                .createNotificationChannel(channel)
+        }
+    }
+
+    /**
+     * Postea (o refresca) la notificación persistente de toma rápida.
+     * Al tocarla abre el bottom-sheet con los medicamentos más tomados.
+     */
+    fun showQuickTakeNotification(context: Context) {
+        if (!hasNotificationPermission(context)) return
+        createQuickTakeChannel(context)
+
+        val intent = Intent(context, com.d4vram.pillmate2.ui.quicktake.QuickTakeSheetActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            QUICK_TAKE_NOTIFICATION_ID,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, QUICK_TAKE_CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_check)
+            .setContentTitle("PillMate")
+            .setContentText("Toca para registrar una toma")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setOngoing(true)       // No se puede deslizar para descartar
+            .setAutoCancel(false)   // No se cierra al tocarla
+            .setShowWhen(false)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        NotificationManagerCompat.from(context)
+            .notify(QUICK_TAKE_NOTIFICATION_ID, notification)
+    }
+
+    /**
+     * Retira la notificación persistente de toma rápida.
+     */
+    fun cancelQuickTakeNotification(context: Context) {
+        NotificationManagerCompat.from(context).cancel(QUICK_TAKE_NOTIFICATION_ID)
     }
 
     /**
@@ -119,7 +190,7 @@ object NotificationHelper {
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true) // Se cierra al tocarla
             .setContentIntent(pendingIntent)
-            .addAction(R.drawable.ic_launcher_foreground, "Tomar ahora", markTakenPendingIntent)
+            .addAction(R.drawable.ic_check, "Tomar ahora", markTakenPendingIntent)
             .build()
 
         // Mostrar la notificación
