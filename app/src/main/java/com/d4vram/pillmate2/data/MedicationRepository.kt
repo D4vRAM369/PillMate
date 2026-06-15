@@ -90,6 +90,24 @@ class MedicationRepository(
         }
     }
 
+    /**
+     * Medicamentos más tomados en una ventana reciente, ordenados por número
+     * de tomas descendente. Alimenta el panel de toma rápida de la notificación
+     * persistente. Lectura síncrona de los StateFlow actuales para poder
+     * llamarse desde contexto de fondo (builder de notificación).
+     */
+    fun topTakenMedications(limit: Int = 5, withinDays: Int = 30): List<Medication> {
+        val today = LocalDate.now()
+        val countByMedicationId = historyEntries.value
+            .filter { ChronoUnit.DAYS.between(it.timestamp.toLocalDate(), today) in 0 until withinDays.toLong() }
+            .groupingBy { it.medicationId }
+            .eachCount()
+        return medications.value
+            .filter { (countByMedicationId[it.id] ?: 0) > 0 }
+            .sortedByDescending { countByMedicationId[it.id] ?: 0 }
+            .take(limit)
+    }
+
     val medications: StateFlow<List<Medication>> = medicationsFlow.stateIn(
         scope,
         SharingStarted.Eagerly,
