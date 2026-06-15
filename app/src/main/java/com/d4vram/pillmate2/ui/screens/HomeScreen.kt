@@ -25,10 +25,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.GridView
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Medication
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -181,7 +186,8 @@ fun HomeScreen(
 
             item {
                 SectionTitle(
-                    title = "🏠 Mis Medicamentos",
+                    title = "Mis Medicamentos",
+                    leadingIcon = Icons.Default.Medication,
                     modifier = Modifier.padding(horizontal = 24.dp),
                     trailingContent = {
                         IconButton(
@@ -249,7 +255,8 @@ fun HomeScreen(
             item {
                 // Título del historial
                 SectionTitle(
-                    title = "📊 Historial Reciente",
+                    title = "Historial Reciente",
+                    leadingIcon = Icons.Default.History,
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
             }
@@ -320,7 +327,7 @@ private fun HeaderSection(
     ) {
         Column {
             Text(
-                text = "💊 PillMate",
+                text = "PillMate",
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold
                 ),
@@ -415,11 +422,9 @@ private fun HeaderSection(
                     Color.White
                 }
             ) {
-                Text(
-                    text = "+",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    )
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Agregar medicamento"
                 )
             }
         }
@@ -464,9 +469,11 @@ private fun StatisticsEntryCard(
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "📊",
-                        style = MaterialTheme.typography.titleMedium
+                    Icon(
+                        imageVector = Icons.Default.BarChart,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
                 
@@ -509,8 +516,9 @@ private fun QuickTakeSection(
 
     Column(modifier = modifier.fillMaxWidth()) {
         SectionTitle(
-            title = "⚡ Toma rápida",
+            title = "Toma rápida",
             subtitle = "4 casillas",
+            leadingIcon = Icons.Default.Bolt,
             modifier = Modifier.padding(horizontal = 24.dp)
         )
 
@@ -753,6 +761,7 @@ private fun QuickTakeSlotPickerDialog(
 private fun SectionTitle(
     title: String,
     subtitle: String? = null,
+    leadingIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
     modifier: Modifier = Modifier,
     trailingContent: @Composable (() -> Unit)? = null
 ) {
@@ -762,13 +771,24 @@ private fun SectionTitle(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.SemiBold
-                ),
-                color = MaterialTheme.colorScheme.onSurface
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (leadingIcon != null) {
+                    Icon(
+                        imageVector = leadingIcon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
             if (trailingContent != null) {
                 trailingContent()
             } else if (subtitle != null) {
