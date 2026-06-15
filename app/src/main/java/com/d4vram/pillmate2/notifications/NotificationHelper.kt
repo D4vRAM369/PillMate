@@ -95,6 +95,21 @@ object NotificationHelper {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        // Acción "Tomar ahora": registra la toma sin abrir la app.
+        // getBroadcast -> MarkTakenReceiver. requestCode distinto (offset) para no
+        // colisionar con el PendingIntent de contenido del mismo medicamento.
+        val markTakenIntent = Intent(context, MarkTakenReceiver::class.java).apply {
+            action = MarkTakenReceiver.ACTION_MARK_TAKEN
+            putExtra(MarkTakenReceiver.EXTRA_MEDICATION_ID, medicationId)
+            putExtra(MarkTakenReceiver.EXTRA_MEDICATION_NAME, medicationName)
+        }
+        val markTakenPendingIntent = PendingIntent.getBroadcast(
+            context,
+            medicationId.hashCode() + 1,
+            markTakenIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         // Construir la notificación
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground) // TODO: Usar icono personalizado
@@ -104,6 +119,7 @@ object NotificationHelper {
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true) // Se cierra al tocarla
             .setContentIntent(pendingIntent)
+            .addAction(R.drawable.ic_launcher_foreground, "Tomar ahora", markTakenPendingIntent)
             .build()
 
         // Mostrar la notificación

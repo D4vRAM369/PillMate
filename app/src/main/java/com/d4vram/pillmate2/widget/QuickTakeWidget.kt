@@ -43,6 +43,7 @@ import com.d4vram.pillmate2.R
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.local.MedicationEntity
 import com.d4vram.pillmate2.data.local.PillMateDatabase
+import com.d4vram.pillmate2.notifications.ToastNotifier
 import com.d4vram.pillmate2.ui.theme.QuickTakeSettings
 import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetColor
 import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetShape
@@ -79,12 +80,16 @@ class QuickTakeActionCallback : ActionCallback {
         parameters: ActionParameters
     ) {
         val medicationId = parameters[MedicationIdKey] ?: return
+        val medicationName = parameters[MedicationNameKey].orEmpty()
         QuickTakeWidgetRepository.takeMedication(context, medicationId)
         QuickTakeWidget().updateAll(context)
+        // Confirmación visible (mismo Toast que la acción de la notificación).
+        ToastNotifier.showTakeConfirmation(context, medicationName)
     }
 }
 
 private val MedicationIdKey = ActionParameters.Key<String>("medication_id")
+private val MedicationNameKey = ActionParameters.Key<String>("medication_name")
 
 private data class QuickTakeWidgetData(
     val slots: List<MedicationEntity?>,
@@ -200,7 +205,10 @@ private fun WidgetCell(
         ?: ColorProvider(Color(color.emptyCellArgb))
     val clickAction = medication?.let {
         actionRunCallback<QuickTakeActionCallback>(
-            parameters = actionParametersOf(MedicationIdKey to it.id)
+            parameters = actionParametersOf(
+                MedicationIdKey to it.id,
+                MedicationNameKey to it.name
+            )
         )
     } ?: actionStartActivity<MainActivity>()
 

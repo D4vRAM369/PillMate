@@ -66,6 +66,11 @@
             android:name=".data.BackupReceiver"
             android:exported="false" />
 
+        <!-- Acción "Tomar ahora" desde la notificación de recordatorio -->
+        <receiver
+            android:name=".notifications.MarkTakenReceiver"
+            android:exported="false" />
+
         <receiver
             android:name=".widget.QuickTakeWidgetReceiver"
             android:exported="true">
