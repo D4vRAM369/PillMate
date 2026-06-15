@@ -4,8 +4,10 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.d4vram.pillmate2.data.BackupScheduler
+import com.d4vram.pillmate2.ui.theme.ThemeManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -31,6 +33,11 @@ class BootReceiver : BroadcastReceiver() {
                 try {
                     ReminderScheduler.rescheduleAllReminders(context)
                     BackupScheduler.refresh(context.applicationContext)
+                    // Re-postear la notificación persistente de toma rápida: las
+                    // notificaciones también se borran al reiniciar el dispositivo.
+                    if (ThemeManager(context.applicationContext).quickTakeNotificationEnabled.first()) {
+                        NotificationHelper.showQuickTakeNotification(context.applicationContext)
+                    }
                 } finally {
                     pendingResult.finish()
                 }
