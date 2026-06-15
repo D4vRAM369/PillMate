@@ -126,6 +126,7 @@ class ThemeManager(private val context: Context) {
         private val CHIP_COUNT_PERIOD_KEY = stringPreferencesKey("chip_count_period")
         private val SORT_MODE_KEY = stringPreferencesKey("sort_mode")
         private val IS_LIST_VIEW_KEY = booleanPreferencesKey("is_list_view")
+        private val QUICK_TAKE_NOTIFICATION_KEY = booleanPreferencesKey("quick_take_notification_enabled")
     }
     
     val isDarkMode: Flow<Boolean> = context.dataStore.data
@@ -205,6 +206,25 @@ class ThemeManager(private val context: Context) {
     suspend fun setListView(isList: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[IS_LIST_VIEW_KEY] = isList
+        }
+    }
+
+    /**
+     * Toggle de la notificación persistente de "toma rápida". Default OFF: es
+     * una notificación siempre presente, debe ser opt-in explícito del usuario.
+     */
+    val quickTakeNotificationEnabled: Flow<Boolean> = context.dataStore.data
+        .catch { throwable ->
+            Log.e("ThemeManager", "Error reading quick take notification preference", throwable)
+            emit(emptyPreferences())
+        }
+        .map { preferences ->
+            preferences[QUICK_TAKE_NOTIFICATION_KEY] ?: false
+        }
+
+    suspend fun setQuickTakeNotificationEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[QUICK_TAKE_NOTIFICATION_KEY] = enabled
         }
     }
 
