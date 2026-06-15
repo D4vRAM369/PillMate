@@ -34,14 +34,14 @@ enum class QuickTakeWidgetColor(
     val emptyCellArgb: Long,
     val accentArgb: Long
 ) {
-    Green("green",   "Verde",    0xFFF7FBF7L, 0xFFE4EEE8L, 0xFF4CAF82L),
-    Blue("blue",     "Azul",     0xFFF0F4FFL, 0xFFD8E4FFL, 0xFF5B8FCEL),
-    Purple("purple", "Morado",   0xFFF5F0FFL, 0xFFE4D8FFL, 0xFF9B72CFL),
-    Orange("orange", "Naranja",  0xFFFFF4F0L, 0xFFFFE4D8L, 0xFFE07B54L),
-    Pink("pink",     "Rosa",     0xFFFFF0F5L, 0xFFFFD8E8L, 0xFFCF729BL),
-    Yellow("yellow", "Amarillo", 0xFFFFFBF0L, 0xFFFFF0C8L, 0xFFD4A017L),
-    Gray("gray",     "Gris",     0xFFF5F5F5L, 0xFFE0E0E0L, 0xFF808080L),
-    Dark("dark",     "Oscuro",   0xFF1A1A2EL, 0xFF2D2D44L, 0xFF4CAF82L);
+    Green("green",   "Verde",    0xFFC8EAD6L, 0xFFAEDCC2L, 0xFF2E7D55L),
+    Blue("blue",     "Azul",     0xFFC4DBFFL, 0xFFA9C8FFL, 0xFF2F62B0L),
+    Purple("purple", "Morado",   0xFFDDCBFFL, 0xFFC9B0FFL, 0xFF6E45B0L),
+    Orange("orange", "Naranja",  0xFFFFD7C4L, 0xFFFFC0A6L, 0xFFC25A30L),
+    Pink("pink",     "Rosa",     0xFFFFCFE2L, 0xFFFFB3D0L, 0xFFB04D78L),
+    Yellow("yellow", "Amarillo", 0xFFFFEEA8L, 0xFFFFE27AL, 0xFF9A7400L),
+    Gray("gray",     "Gris",     0xFFDCDCDCL, 0xFFC4C4C4L, 0xFF5A5A5AL),
+    Dark("dark",     "Oscuro",   0xFF1A1A2EL, 0xFF2D2D44L, 0xFF7FE0B0L);
 
     companion object {
         fun fromStorage(value: String?): QuickTakeWidgetColor =
