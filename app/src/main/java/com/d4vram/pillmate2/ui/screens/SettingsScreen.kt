@@ -88,6 +88,7 @@ fun SettingsScreen(
     val quickTakeWidgetColor by themeManager.quickTakeWidgetColor.collectAsState(initial = QuickTakeWidgetColor.Green)
     val quickTakeWidgetSize by themeManager.quickTakeWidgetSize.collectAsState(initial = QuickTakeWidgetSize.Normal)
     val quickTakeMedicationIds by themeManager.quickTakeMedicationIds.collectAsState(initial = emptyList())
+    val quickTakeNotificationEnabled by themeManager.quickTakeNotificationEnabled.collectAsState(initial = false)
     var previewSlots by remember { mutableStateOf<List<Medication?>>(List(4) { null }) }
 
     LaunchedEffect(quickTakeMedicationIds) {
@@ -638,6 +639,30 @@ fun SettingsScreen(
                                 NotificationHelper.openExactAlarmSettings(context)
                             } else {
                                 snackbarMessage = "Configura recordatorios en cada medicamento individual"
+                            }
+                        }
+                    )
+
+                    SettingsItem(
+                        title = "Notificación de toma rápida",
+                        description = if (quickTakeNotificationEnabled)
+                            "Notificación siempre presente para registrar una toma con un toque"
+                        else
+                            "Añade una notificación fija para registrar tomas sin abrir la app",
+                        hasSwitch = true,
+                        checked = quickTakeNotificationEnabled,
+                        icon = Icons.Default.Bolt,
+                        onCheckedChange = { enabled ->
+                            if (enabled && !hasNotificationPermission &&
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                            ) {
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                            scope.launch { themeManager.setQuickTakeNotificationEnabled(enabled) }
+                            if (enabled) {
+                                NotificationHelper.showQuickTakeNotification(context)
+                            } else {
+                                NotificationHelper.cancelQuickTakeNotification(context)
                             }
                         }
                     )
