@@ -2,6 +2,8 @@ package com.d4vram.pillmate2.widget
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
@@ -47,14 +49,20 @@ import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetShape
 import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetSize
 import com.d4vram.pillmate2.ui.theme.dataStore
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 
 class QuickTakeWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val data = QuickTakeWidgetRepository.load(context)
-
         provideContent {
+            // Leer datos DENTRO de provideContent y de forma reactiva.
+            // provideGlance solo corre 1 vez por sesión; un valor capturado aquí
+            // quedaría congelado. collectAsState sobre el flow re-pinta el widget
+            // cada vez que DataStore (color/forma/tamaño) o Room (medicación) cambian.
+            val data by QuickTakeWidgetRepository.observe(context)
+                .collectAsState(initial = QuickTakeWidgetData.EMPTY)
             QuickTakeWidgetContent(data = data)
         }
     }
@@ -83,34 +91,51 @@ private data class QuickTakeWidgetData(
     val shape: QuickTakeWidgetShape,
     val color: QuickTakeWidgetColor,
     val size: QuickTakeWidgetSize
-)
+) {
+    companion object {
+        val EMPTY = QuickTakeWidgetData(
+            slots = List(QuickTakeSettings.SLOT_COUNT) { null },
+            shape = QuickTakeWidgetShape.Rounded,
+            color = QuickTakeWidgetColor.Green,
+            size = QuickTakeWidgetSize.Normal
+        )
+    }
+}
 
 private object QuickTakeWidgetRepository {
-    suspend fun load(context: Context): QuickTakeWidgetData = withContext(Dispatchers.IO) {
-        val preferences = context.dataStore.data.first()
-        val slots = QuickTakeSettings.run {
-            preferences[MEDICATION_IDS_KEY].decodeSlots()
-        }
-        val shape = QuickTakeWidgetShape.fromStorage(
-            preferences[QuickTakeSettings.WIDGET_SHAPE_KEY]
-        )
-        val color = QuickTakeWidgetColor.fromStorage(
-            preferences[QuickTakeSettings.WIDGET_COLOR_KEY]
-        )
-        val size = QuickTakeWidgetSize.fromStorage(
-            preferences[QuickTakeSettings.WIDGET_SIZE_KEY]
-        )
-        val medicationsById = PillMateDatabase.getInstance(context)
+    /**
+     * Flow reactivo: combina las preferencias (DataStore) con las medicaciones (Room).
+     * Emite un nuevo QuickTakeWidgetData cada vez que cambia cualquiera de las dos
+     * fuentes, lo que dispara la recomposición del widget con datos frescos.
+     */
+    fun observe(context: Context): Flow<QuickTakeWidgetData> {
+        val prefsFlow = context.dataStore.data
+        val medsFlow = PillMateDatabase.getInstance(context)
             .medicationDao()
-            .getAllMedications()
-            .associateBy { it.id }
+            .observeMedications()
 
-        QuickTakeWidgetData(
-            slots = slots.map { id -> id?.let { medicationsById[it] } },
-            shape = shape,
-            color = color,
-            size = size
-        )
+        return combine(prefsFlow, medsFlow) { preferences, medications ->
+            val slots = QuickTakeSettings.run {
+                preferences[MEDICATION_IDS_KEY].decodeSlots()
+            }
+            val shape = QuickTakeWidgetShape.fromStorage(
+                preferences[QuickTakeSettings.WIDGET_SHAPE_KEY]
+            )
+            val color = QuickTakeWidgetColor.fromStorage(
+                preferences[QuickTakeSettings.WIDGET_COLOR_KEY]
+            )
+            val size = QuickTakeWidgetSize.fromStorage(
+                preferences[QuickTakeSettings.WIDGET_SIZE_KEY]
+            )
+            val medicationsById = medications.associateBy { it.id }
+
+            QuickTakeWidgetData(
+                slots = slots.map { id -> id?.let { medicationsById[it] } },
+                shape = shape,
+                color = color,
+                size = size
+            )
+        }.flowOn(Dispatchers.IO)
     }
 
     suspend fun takeMedication(context: Context, medicationId: String) = withContext(Dispatchers.IO) {
@@ -136,7 +161,9 @@ private fun QuickTakeWidgetContent(data: QuickTakeWidgetData) {
         Text(
             text = "Toma rápida",
             style = TextStyle(
-                color = ColorProvider(Color(0xFF234236)),
+                // Color del tema (accent) → el header cambia de tono al cambiar color,
+                // y contrasta tanto en fondos claros como en el tema Oscuro.
+                color = ColorProvider(Color(data.color.accentArgb)),
                 fontWeight = FontWeight.Bold
             ),
             modifier = GlanceModifier.fillMaxWidth()
