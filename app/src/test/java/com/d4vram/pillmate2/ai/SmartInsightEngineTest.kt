@@ -3,7 +3,7 @@ package com.d4vram.pillmate2.ai
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class PblFallbackEngineTest {
+class SmartInsightEngineTest {
 
     @Test
     fun `fallback answer cites numbers without forcing pbl sections`() {
@@ -32,7 +32,7 @@ class PblFallbackEngineTest {
             )
         )
 
-        val response = PblFallbackEngine().respond(
+        val response = SmartInsightEngine().generateInsight(
             question = "¿Qué día fue el más activo?",
             snapshot = snapshot
         )

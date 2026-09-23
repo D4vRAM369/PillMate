@@ -10,8 +10,8 @@ class CsvUtilsTest {
         val csv = """
             # PillMate CSV v1
             [MEDICATIONS]
-            id,name,dose,type,colorArgb,emoji,totalTaken,dailyGoal,lastTaken,isPrn,sortOrder,scheduleTime,scheduleDays,photoPath,usePhotoInstead
-            med-1,Ibuprofeno,400mg,Pastilla,-1,💊,0,1,,false,0,,,
+            id,name,dose,type,colorArgb,emoji,totalTaken,dailyGoal,lastTaken,sortOrder,scheduleTime,scheduleDays,photoPath,usePhotoInstead
+            med-1,Ibuprofeno,400mg,Pastilla,-1,💊,0,1,,0,,,
 
             [HISTORY]
             id,medicationId,medicationName,time,date,colorArgb,emoji,quantity,notes,timestampIso,audioNoteUri
@@ -34,7 +34,7 @@ class CsvUtilsTest {
         val csv = """
             # PillMate CSV v1
             [MEDICATIONS]
-            id,name,dose,type,colorArgb,emoji,totalTaken,dailyGoal,lastTaken,isPrn,sortOrder,scheduleTime,scheduleDays,photoPath,usePhotoInstead
+            id,name,dose,type,colorArgb,emoji,totalTaken,dailyGoal,lastTaken,sortOrder,scheduleTime,scheduleDays,photoPath,usePhotoInstead
 
             [HISTORY]
             id,medicationId,medicationName,dose,time,date,colorArgb,emoji,quantity,notes,timestampIso,audioNoteUri
@@ -47,5 +47,48 @@ class CsvUtilsTest {
         assertEquals("400mg", entry.dose)
         assertEquals("08:00", entry.time)
         assertEquals("audio-1", entry.audioNoteUri)
+    }
+
+    @Test
+    fun parseCsv_newFormatParsesMedicationWithoutIsPrn() {
+        val csv = """
+            # PillMate CSV v1
+            [MEDICATIONS]
+            id,name,dose,type,colorArgb,emoji,totalTaken,dailyGoal,lastTaken,sortOrder,scheduleTime,scheduleDays,photoPath,usePhotoInstead
+            med-1,Omeprazol,20mg,Cápsula,-8355712,💊,2,1,08:15,0,08:00,L|M|X|J|V,,
+
+            [HISTORY]
+            id,medicationId,medicationName,dose,time,date,colorArgb,emoji,quantity,notes,timestampIso,audioNoteUri
+        """.trimIndent()
+
+        val parsed = CsvUtils.parseCsv(csv)
+
+        val med = parsed.medications.first()
+        assertEquals("med-1", med.id)
+        assertEquals("Omeprazol", med.name)
+        assertEquals(2, med.takenToday)
+        assertEquals("08:15", med.lastTaken)
+        assertEquals(listOf("L", "M", "X", "J", "V"), med.scheduleDays)
+    }
+
+    @Test
+    fun parseCsv_legacyIsPrnColumnIsIgnored() {
+        val csv = """
+            # PillMate CSV v1
+            [MEDICATIONS]
+            id,name,dose,type,colorArgb,emoji,totalTaken,dailyGoal,lastTaken,isPrn,sortOrder,scheduleTime,scheduleDays,photoPath,usePhotoInstead
+            med-1,Omeprazol,20mg,Cápsula,-8355712,💊,2,1,08:15,false,0,08:00,L|M|X|J|V,,
+
+            [HISTORY]
+            id,medicationId,medicationName,dose,time,date,colorArgb,emoji,quantity,notes,timestampIso,audioNoteUri
+        """.trimIndent()
+
+        val parsed = CsvUtils.parseCsv(csv)
+
+        val med = parsed.medications.first()
+        assertEquals("med-1", med.id)
+        assertEquals(2, med.takenToday)
+        assertEquals(0, med.sortOrder)
+        assertEquals(listOf("L", "M", "X", "J", "V"), med.scheduleDays)
     }
 }

@@ -136,7 +136,7 @@ class ThemeManager(private val context: Context) {
             clearCorruptedPreferences()
         }
         .map { preferences ->
-            preferences[IS_DARK_MODE_KEY] ?: false // Por defecto modo claro
+            preferences[IS_DARK_MODE_KEY] ?: true // Por defecto modo oscuro
         }
 
     val uiStyle: Flow<AppUiStyle> = context.dataStore.data

@@ -8,7 +8,7 @@ import org.junit.Test
 class PrivacyContractTest {
 
     @Test
-    fun `manifest allows explicit model download but still forbids telemetry state permission`() {
+    fun `manifest has no network permissions - app is fully offline`() {
         val manifest = listOf(
             File("app/src/main/AndroidManifest.xml"),
             File("src/main/AndroidManifest.xml")
@@ -17,7 +17,7 @@ class PrivacyContractTest {
         assertTrue("No se encontró AndroidManifest.xml", manifest != null)
 
         val content = manifest!!.readText()
-        assertTrue(content.contains("android.permission.INTERNET"))
+        assertFalse(content.contains("android.permission.INTERNET"))
         assertFalse(content.contains("android.permission.ACCESS_NETWORK_STATE"))
     }
 }

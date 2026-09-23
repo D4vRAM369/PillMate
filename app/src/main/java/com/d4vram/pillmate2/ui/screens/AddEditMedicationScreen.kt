@@ -68,7 +68,6 @@ fun AddEditMedicationScreen(
     var minute by remember { mutableStateOf("00") }
     var selectedDays by remember { mutableStateOf(setOf<String>()) }
     var reminderEnabled by remember { mutableStateOf(false) }
-    var isPrn by remember { mutableStateOf(false) }
     var existingMedication by remember { mutableStateOf<Medication?>(null) }
     var showEmojiPicker by remember { mutableStateOf(false) }
     var emojiSearchQuery by remember { mutableStateOf("") }
@@ -109,7 +108,6 @@ fun AddEditMedicationScreen(
                 }
                 selectedEmoji = it.emoji
                 dailyGoal = it.dailyGoal.toString()
-                isPrn = it.isPrn
 
                 // Cargar datos de horario si existen
                 it.scheduleTime?.let { time ->
@@ -180,7 +178,6 @@ fun AddEditMedicationScreen(
                             color = selectedColor,
                             emoji = selectedEmoji,
                             dailyGoal = dailyGoal.toIntOrNull() ?: baseMedication.dailyGoal,
-                            isPrn = isPrn,
                             scheduleTime = savedScheduleTime,
                             scheduleDays = savedScheduleDays,
                             reminderEnabled = reminderEnabled,
@@ -405,6 +402,7 @@ fun AddEditMedicationScreen(
                         onDismissRequest = { expandedCombine = false },
                         title = { Text("Selecciona medicamento principal") },
                         text = {
+                            Box(modifier = Modifier.heightIn(max = 320.dp)) {
                             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                                 // Opción para desvincular
                                 Row(
@@ -438,6 +436,7 @@ fun AddEditMedicationScreen(
                                         Text("${med.name} (${med.dose})")
                                     }
                                 }
+                            }
                             }
                         },
                         confirmButton = {

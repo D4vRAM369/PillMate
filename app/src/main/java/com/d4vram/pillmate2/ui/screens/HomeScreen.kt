@@ -87,7 +87,6 @@ fun HomeScreen(
     repository: MedicationRepository,
     navController: NavController,
     themeManager: com.d4vram.pillmate2.ui.theme.ThemeManager,
-    onOpenAiIntro: () -> Unit,
     onAddMedication: () -> Unit,
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {}

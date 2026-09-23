@@ -25,7 +25,7 @@ object CsvUtils {
         val builder = StringBuilder()
         builder.appendLine(HEADER)
         builder.appendLine(SECTION_MEDICATIONS)
-        builder.appendLine("id,name,dose,type,colorArgb,emoji,totalTaken,dailyGoal,lastTaken,isPrn,sortOrder,scheduleTime,scheduleDays,photoPath,usePhotoInstead")
+        builder.appendLine("id,name,dose,type,colorArgb,emoji,totalTaken,dailyGoal,lastTaken,sortOrder,scheduleTime,scheduleDays,photoPath,usePhotoInstead")
         medications.forEach { medication ->
             builder.appendLine(
                 listOf(
@@ -38,7 +38,6 @@ object CsvUtils {
                     medication.takenToday.toString(),
                     medication.dailyGoal.toString(),
                     medication.lastTaken ?: "",
-                    medication.isPrn.toString(),
                     medication.sortOrder.toString(),
                     medication.scheduleTime ?: "",
                     medication.scheduleDays.joinToString("|"),
@@ -94,8 +93,12 @@ object CsvUtils {
             if (tokens.size < 11) {
                 throw IllegalArgumentException("Fila de medicamentos incompleta")
             }
-            val hasSchedule = tokens.size >= 13
-            val hasPhotoFields = tokens.size >= 15
+            // Columnas posicionales. Las exportaciones v1 antiguas incluían una
+            // columna `isPrn` entre lastTaken y sortOrder; las nuevas no. Un
+            // offset desplaza los índices según detectemos el formato legado.
+            val legacyOffset = if (tokens[9].toBooleanStrictOrNull() != null) 1 else 0
+            val hasSchedule = tokens.size >= 12 + legacyOffset
+            val hasPhotoFields = tokens.size >= 14 + legacyOffset
             medications.add(
                 Medication(
                     id = tokens[0],
@@ -107,12 +110,11 @@ object CsvUtils {
                     takenToday = tokens[6].toIntOrNull() ?: 0,
                     dailyGoal = tokens[7].toIntOrNull() ?: 1,
                     lastTaken = tokens[8].ifBlank { null },
-                    isPrn = tokens[9].toBooleanStrictOrNull() ?: false,
-                    sortOrder = tokens[10].toIntOrNull() ?: 0,
-                    scheduleTime = if (hasSchedule) tokens[11].ifBlank { null } else null,
-                    scheduleDays = if (hasSchedule) tokens[12].split('|').mapNotNull { it.trim().takeIf { value -> value.isNotEmpty() } } else emptyList(),
-                    photoPath = if (hasPhotoFields) tokens[13].ifBlank { null } else null, // 📸 Será reconstruida al restaurar
-                    usePhotoInstead = if (hasPhotoFields) tokens[14].toBooleanStrictOrNull() ?: false else false // 🖼️ Preferencia
+                    sortOrder = tokens[9 + legacyOffset].toIntOrNull() ?: 0,
+                    scheduleTime = if (hasSchedule) tokens[10 + legacyOffset].ifBlank { null } else null,
+                    scheduleDays = if (hasSchedule) tokens[11 + legacyOffset].split('|').mapNotNull { it.trim().takeIf { value -> value.isNotEmpty() } } else emptyList(),
+                    photoPath = if (hasPhotoFields) tokens[12 + legacyOffset].ifBlank { null } else null, // 📸 Será reconstruida al restaurar
+                    usePhotoInstead = if (hasPhotoFields) tokens[13 + legacyOffset].toBooleanStrictOrNull() ?: false else false // 🖼️ Preferencia
                 )
             )
             index++
