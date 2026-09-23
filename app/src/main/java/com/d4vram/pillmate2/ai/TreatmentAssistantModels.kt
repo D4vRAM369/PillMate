@@ -81,19 +81,9 @@ data class TreatmentStatsSnapshot(
     }
 }
 
-data class LocalModelStatus(
-    val activeModelPath: String?,
-    val candidatePaths: List<String>
-) {
-    val isModelAvailable: Boolean = !activeModelPath.isNullOrBlank()
-}
-
 data class TreatmentAssistantReply(
     val text: String,
-    val sourceLabel: String,
-    val modelStatus: LocalModelStatus,
-    val isFallback: Boolean,
-    val failureHint: String? = null
+    val sourceLabel: String
 )
 
 fun StatisticsUiState.toTreatmentStatsSnapshot(): TreatmentStatsSnapshot {

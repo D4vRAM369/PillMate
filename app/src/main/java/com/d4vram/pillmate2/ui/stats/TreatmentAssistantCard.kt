@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.ai.AssistantChatMessage
 import com.d4vram.pillmate2.ai.AssistantMessageRole
 import com.d4vram.pillmate2.ai.TreatmentAssistantUiState
-import java.io.File
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -63,7 +62,7 @@ fun TreatmentAssistantCard(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Asistente privado",
+                        text = "Analizador de Salud",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -92,38 +91,7 @@ fun TreatmentAssistantCard(
                 )
             }
 
-            Text(
-                text = if (uiState.activeModelPath != null) {
-                    "Modelo activo: ${File(uiState.activeModelPath).name}"
-                } else {
-                    "No hay modelo local cargado todavía. Se usa el analizador privado embebido."
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (uiState.activeModelPath == null && uiState.candidatePaths.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    uiState.candidatePaths.take(2).forEach { path ->
-                        Text(
-                            text = path,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
-
             HorizontalDivider()
-
-            uiState.lastFailureHint?.let { hint ->
-                Text(
-                    text = "⚠️ $hint",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(vertical = 4.dp)
-                )
-            }
 
             Column(
                 modifier = Modifier
@@ -141,9 +109,10 @@ fun TreatmentAssistantCard(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 listOf(
-                    "¿Cuál es mi patrón esta semana?",
-                    "¿Qué día fue el más activo?",
-                    "Resume el periodo visible"
+                    "Resumen general",
+                    "Análisis de horas",
+                    "Riesgos de olvido",
+                    "Consejo del Profe"
                 ).forEach { prompt ->
                     AssistChip(
                         onClick = { onSuggestionSelected(prompt) },
@@ -162,12 +131,9 @@ fun TreatmentAssistantCard(
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Pregunta sobre tus estadísticas") },
                     placeholder = { Text("Ej. ¿Hay una franja horaria dominante?") },
-                    minLines = 2,
-                    maxLines = 4,
-                    enabled = !uiState.isGenerating,
+                    singleLine = true,
                     keyboardActions = KeyboardActions(onSend = { onSend() }),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                    singleLine = false
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send)
                 )
 
                 Row(
@@ -176,7 +142,7 @@ fun TreatmentAssistantCard(
                 ) {
                     FilledTonalIconButton(
                         onClick = onSend,
-                        enabled = uiState.draft.isNotBlank() && !uiState.isGenerating
+                        enabled = uiState.draft.isNotBlank()
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,

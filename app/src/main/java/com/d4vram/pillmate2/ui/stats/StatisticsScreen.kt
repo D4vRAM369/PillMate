@@ -40,12 +40,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import com.d4vram.pillmate2.ai.toTreatmentStatsSnapshot
 import com.d4vram.pillmate2.ui.export.PdfExportSheet
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -213,46 +215,19 @@ fun StatisticsScreen(
                 lastRecord = uiState.timeSinceLastRecord
             )
 
-            if (navController != null) {
-                ElevatedCard(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    colors = CardDefaults.elevatedCardColors(containerColor = Color.Transparent),
-                    shape = RoundedCornerShape(24.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                brush = androidx.compose.ui.graphics.Brush.linearGradient(
-                                    colors = listOf(Color(0xFF071325), Color(0xFF0F3B66), Color(0xFF0EA5E9))
-                                )
-                            )
-                            .padding(20.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            Text(
-                                text = "Abrir PillMate AI",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            )
-                            Text(
-                                text = "Lleva este periodo al chat privado con modelos locales, sesiones guardadas e importación/exportación.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color(0xFFD6F2FF)
-                            )
-                        }
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Abrir IA",
-                            tint = Color.White
-                        )
-                    }
-                }
+            val assistantViewModel: com.d4vram.pillmate2.ai.TreatmentAssistantViewModel = viewModel(
+                factory = com.d4vram.pillmate2.ai.TreatmentAssistantViewModel.provideFactory()
+            )
+            val assistantUiState by assistantViewModel.uiState.collectAsState()
+            LaunchedEffect(uiState) {
+                assistantViewModel.updateContext(uiState.toTreatmentStatsSnapshot())
             }
+            TreatmentAssistantCard(
+                uiState = assistantUiState,
+                onDraftChange = assistantViewModel::updateDraft,
+                onSend = assistantViewModel::sendDraft,
+                onSuggestionSelected = assistantViewModel::sendSuggestion
+            )
 
             // Gráfica lineal semanal (nueva, con protagonismo)
             if (uiState.activityData.isNotEmpty()) {

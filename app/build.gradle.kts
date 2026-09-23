@@ -6,7 +6,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     alias(libs.plugins.compose.compiler)
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.10"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.2.21"
     id("org.jetbrains.kotlin.kapt")
 }
 
@@ -24,8 +24,8 @@ android {
         applicationId = "com.d4vram.pillmate.ai"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.2.3-aihubfix"
+        versionCode = 10
+        versionName = "2.0.0-alpha"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -91,49 +91,77 @@ android {
 }
 
 dependencies {
-    implementation(platform("androidx.compose:compose-bom:2024.02.00"))
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.core:core-splashscreen:1.0.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
-    implementation("androidx.activity:activity-compose:1.8.2")
+    // Compose BOM — base para todas las libs de Compose
+    implementation(platform("androidx.compose:compose-bom:2024.12.01"))
 
+    // Core Android
+    implementation("androidx.core:core-ktx:1.13.1")
+    implementation("androidx.core:core-splashscreen:1.0.1")
+
+    // Lifecycle
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
+
+    // Activity
+    implementation("androidx.activity:activity-compose:1.9.3")
+
+    // Compose UI (versiones gestionadas por BOM)
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
 
+    // Material 3
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.navigation:navigation-compose:2.7.6")
+    implementation("androidx.compose.material:material-icons-extended")
+
+    // Navigation
+    implementation("androidx.navigation:navigation-compose:2.8.5")
+
+    // Biometric
     implementation("androidx.biometric:biometric:1.1.0")
 
-    implementation("androidx.compose.material:material-icons-extended")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
-    implementation("androidx.compose.foundation:foundation:1.6.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
+    // Foundation
+    implementation("androidx.compose.foundation:foundation")
 
+    // AppCompat
+    implementation("androidx.appcompat:appcompat:1.7.0")
+
+    // Room — base de datos local
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
 
+    // DataStore — preferencias async
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    // Glance — widget con sintaxis Compose-like (NUEVO en v2.0-alpha)
+    implementation("androidx.glance:glance-appwidget:1.1.0")
+    implementation("androidx.glance:glance-material3:1.1.0")
+
+    // Utilidades
     implementation("com.github.skydoves:colorpicker-compose:1.0.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
     implementation("net.lingala.zip4j:zip4j:2.11.5")
-    implementation("com.google.accompanist:accompanist-permissions:0.34.0")
-    implementation("io.coil-kt:coil-compose:2.5.0")
+    implementation("com.google.accompanist:accompanist-permissions:0.36.0")
+
+    // Imágenes
+    implementation("io.coil-kt:coil-compose:2.7.0")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("androidx.documentfile:documentfile:1.0.1")
-    implementation("com.google.mediapipe:tasks-genai:0.10.27")
 
+    // MediaPipe — motor LLM local (sin cambio de versión — ligado a modelos descargados)
+    implementation("com.google.mediapipe:tasks-genai:0.10.27")
 
     // Vico Charts
     implementation("com.patrykandpatrick.vico:compose:1.15.0")
     implementation("com.patrykandpatrick.vico:compose-m3:1.15.0")
 
+    // Testing
     testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2024.02.00"))
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation(platform("androidx.compose:compose-bom:2024.12.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
     debugImplementation("androidx.compose.ui:ui-tooling")

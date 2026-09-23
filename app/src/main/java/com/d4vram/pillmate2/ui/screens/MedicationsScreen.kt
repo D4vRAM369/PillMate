@@ -46,7 +46,7 @@ fun MedicationsScreen(
     val itemListState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
-    var searchQuery by remember { mutableStateOf("") }
+    var searchQuery by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
 
     val filteredMedications = remember(medications, searchQuery) {
         if (searchQuery.isBlank()) medications
@@ -133,7 +133,13 @@ fun MedicationsScreen(
             }
         }
     ) { paddingValues ->
-        if (isListView) {
+        if (filteredMedications.isEmpty()) {
+            EmptyMedicationState(
+                searching = searchQuery.isNotBlank(),
+                onAction = { if (searchQuery.isNotBlank()) searchQuery = "" else onAddMedication() },
+                modifier = Modifier.padding(paddingValues).padding(16.dp)
+            )
+        } else if (isListView) {
             // VISTA LISTA — filas con color-stripe
             LazyColumn(
                 modifier = Modifier
@@ -180,8 +186,9 @@ fun MedicationsScreen(
                         onDeleteMedication = onDeleteMedication,
                         onAddMedication = onAddMedication,
                         onReorder = { fromIndex, toIndex ->
-                            repository.reorderMedications(fromIndex, toIndex)
+                            if (searchQuery.isBlank()) repository.reorderMedications(fromIndex, toIndex)
                         },
+                        dragEnabled = searchQuery.isBlank(),
                         parentListState = gridListState,
                         modifier = Modifier.fillMaxWidth()
                     )

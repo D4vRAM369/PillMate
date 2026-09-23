@@ -1,12 +1,9 @@
 package com.d4vram.pillmate2.ui.onboarding
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,7 +18,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoGraph
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.MonitorHeart
@@ -49,7 +45,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 private data class OnboardingPageModel(
     val eyebrow: String,
@@ -231,167 +226,8 @@ fun MainOnboardingScreen(
                         .height(58.dp),
                     shape = RoundedCornerShape(20.dp)
                 ) {
-                    Text(if (isLast) "Entrar en PillMate AI" else "Continuar")
+                    Text(if (isLast) "Comenzar" else "Continuar")
                 }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun AiOnboardingScreen(
-    onFinish: () -> Unit,
-    onImportModel: () -> Unit,
-    onDownloadModel: () -> Unit,
-    onNavigateBack: () -> Unit
-) {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = Color(0xFF071325)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(Color(0xFF071325), Color(0xFF0B1F3B), Color(0xFF13345A))
-                    )
-                )
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(20.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "PILLMATE AI",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF7DD3FC)
-                        )
-                        IconButton(onClick = onNavigateBack) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Volver",
-                                tint = Color.White
-                            )
-                        }
-                    }
-
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "Chatea con tus estadísticas.\nTodo en tu teléfono.",
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = Color.White
-                        )
-                        Text(
-                            text = "Sin conexión a internet. Sin servidores. El modelo de IA corre directamente en tu dispositivo.",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = Color(0xFFB6CCE6)
-                        )
-                    }
-
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        listOf(
-                            "🔒 Sin red",
-                            "💬 Sesiones guardadas",
-                            "📊 Contexto de estadísticas",
-                            "🛡️ Sin telemetría"
-                        ).forEach { chip ->
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .background(Color.White.copy(alpha = 0.08f))
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
-                            ) {
-                                Text(
-                                    text = chip,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color(0xFFB6CCE6)
-                                )
-                            }
-                        }
-                    }
-
-                    HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
-
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text(
-                            text = "CÓMO EMPEZAR",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF7DD3FC),
-                            letterSpacing = 1.5.sp
-                        )
-                        AiInfoCard(
-                            emoji = "📦",
-                            title = "Necesitas un modelo .task",
-                            description = "Un archivo de IA que corre 100% en tu móvil. Sin cuenta ni internet una vez instalado."
-                        )
-                        AiInfoCard(
-                            emoji = "⭐",
-                            title = "Gemma 2B — recomendado",
-                            description = "Modelo de Google, ~1.5 GB, compatible con esta app. Puedes descargarlo directo desde aquí."
-                        )
-                    }
-                }
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.padding(top = 4.dp)
-                ) {
-                    Button(
-                        onClick = onDownloadModel,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(54.dp),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text("⬇️  Descargar modelo Gemma")
-                    }
-                    OutlinedButton(
-                        onClick = onImportModel,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.dp, Color(0xFF0EA5E9).copy(alpha = 0.5f))
-                    ) {
-                        Text(
-                            "📂  Importar .task que ya tengo",
-                            color = Color(0xFF7DD3FC)
-                        )
-                    }
-                    TextButton(
-                        onClick = onFinish,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            "Explorar sin modelo por ahora",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color(0xFF6B8BAF)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
@@ -422,43 +258,5 @@ private fun OnboardingBullet(
             style = MaterialTheme.typography.bodyLarge,
             color = Color(0xFF193650)
         )
-    }
-}
-
-@Composable
-private fun AiInfoCard(
-    emoji: String,
-    title: String,
-    description: String
-) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.05f)
-        ),
-        border = BorderStroke(1.dp, Color(0xFF0EA5E9).copy(alpha = 0.25f))
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(text = emoji, style = MaterialTheme.typography.headlineSmall)
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color.White,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFB6CCE6)
-                )
-            }
-        }
     }
 }

@@ -405,6 +405,7 @@ fun AddEditMedicationScreen(
                         onDismissRequest = { expandedCombine = false },
                         title = { Text("Selecciona medicamento principal") },
                         text = {
+                            Box(modifier = Modifier.heightIn(max = 320.dp)) {
                             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                                 // Opción para desvincular
                                 Row(
@@ -438,6 +439,7 @@ fun AddEditMedicationScreen(
                                         Text("${med.name} (${med.dose})")
                                     }
                                 }
+                            }
                             }
                         },
                         confirmButton = {
