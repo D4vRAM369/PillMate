@@ -32,7 +32,8 @@ fun MedicationListItem(
     onTakeMedication: (String, Int, LocalDateTime?) -> Unit,
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    busy: Boolean = false
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showQuantityDialog by remember { mutableStateOf(false) }
@@ -45,7 +46,7 @@ fun MedicationListItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClickLabel = "Registrar toma de ${medication.name}") { showQuantityDialog = true },
+            .clickable(enabled = !busy, onClickLabel = "Registrar toma de ${medication.name}") { showQuantityDialog = true },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -165,6 +166,7 @@ fun MedicationListItem(
         TakeMedicationDialog(
             medication = medication,
             family = family,
+            busy = busy,
             onDismiss = { showQuantityDialog = false },
             onConfirm = { finalId, qty, ts ->
                 onTakeMedication(finalId, qty, ts)

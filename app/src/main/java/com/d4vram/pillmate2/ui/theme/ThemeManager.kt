@@ -123,6 +123,7 @@ class ThemeManager(private val context: Context) {
     companion object {
         private val IS_DARK_MODE_KEY = booleanPreferencesKey("is_dark_mode")
         private val UI_STYLE_KEY = stringPreferencesKey("ui_style")
+        private val APP_DESIGN_KEY = stringPreferencesKey("app_design")
         private val CHIP_COUNT_PERIOD_KEY = stringPreferencesKey("chip_count_period")
         private val SORT_MODE_KEY = stringPreferencesKey("sort_mode")
         private val IS_LIST_VIEW_KEY = booleanPreferencesKey("is_list_view")
@@ -149,6 +150,16 @@ class ThemeManager(private val context: Context) {
             val stored = preferences[UI_STYLE_KEY]
             AppUiStyle.fromStorage(stored)
         }
+
+    val appDesign: Flow<AppDesign> = context.dataStore.data
+        .catch { throwable ->
+            if (throwable is java.io.IOException) emit(emptyPreferences()) else throw throwable
+        }
+        .map { AppDesign.fromStorage(it[APP_DESIGN_KEY]) }
+
+    suspend fun setAppDesign(design: AppDesign) {
+        context.dataStore.edit { it[APP_DESIGN_KEY] = design.storageValue }
+    }
 
     val chipCountPeriod: Flow<ChipCountPeriod> = context.dataStore.data
         .catch { throwable ->

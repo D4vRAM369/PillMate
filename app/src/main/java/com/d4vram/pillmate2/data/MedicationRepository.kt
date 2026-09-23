@@ -30,10 +30,9 @@ import com.d4vram.pillmate2.model.SortMode
 class MedicationRepository(
     private val database: PillMateDatabase,
     private val medicationDao: MedicationDao,
-    private val historyDao: HistoryDao
+    private val historyDao: HistoryDao,
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 ) {
-
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val historyFlow = historyDao.observeHistory()
 
@@ -176,9 +175,10 @@ class MedicationRepository(
         medicationId: String,
         quantity: Int = 1,
         customTimestamp: LocalDateTime? = null
-    ) {
-        database.withTransaction {
-            val medication = medicationDao.getMedicationById(medicationId) ?: return@withTransaction
+    ): String? {
+        return database.withTransaction {
+            val medication = medicationDao.getMedicationById(medicationId) ?: return@withTransaction null
+            val entryId = UUID.randomUUID().toString()
             val safeQuantity = quantity.coerceAtLeast(1)
             val now = (customTimestamp ?: LocalDateTime.now()).withSecond(0).withNano(0)
             val updated = medication.copy(
@@ -189,7 +189,7 @@ class MedicationRepository(
 
             historyDao.insert(
                 HistoryEntryEntity(
-                    id = UUID.randomUUID().toString(),
+                    id = entryId,
                     medicationId = medication.id,
                     medicationName = updated.name,
                     time = formatTime(now),
@@ -202,7 +202,30 @@ class MedicationRepository(
                     dose = updated.dose
                 )
             )
+            entryId
         }
+    }
+
+    /** Deletes exactly the confirmed entry; retrying an undo is a no-op. */
+    suspend fun undoMedicationTaken(entryId: String): Boolean = database.withTransaction {
+        val entry = historyDao.getById(entryId) ?: return@withTransaction false
+        historyDao.deleteById(entryId)
+        val medication = medicationDao.getMedicationById(entry.medicationId)
+        if (medication != null) {
+            val latest = historyDao.getAllHistory()
+                .filter {
+                    it.medicationId == medication.id ||
+                        (it.medicationId.isBlank() && it.medicationName == medication.name)
+                }
+                .mapNotNull { parseTimestampOrNull(it.timestampIso) }
+                .maxOrNull()
+            medicationDao.upsertMedication(medication.copy(
+                // This legacy field stores cumulative quantity (CSV: totalTaken).
+                takenToday = (medication.takenToday - entry.quantity).coerceAtLeast(0),
+                lastTaken = latest?.let(::formatDateTime)
+            ))
+        }
+        true
     }
 
     fun addMedication(medication: Medication) {

@@ -6,9 +6,12 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,7 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.data.MedicationRepository
@@ -35,6 +38,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
+import com.d4vram.pillmate2.ui.theme.AppDesign
 import com.d4vram.pillmate2.ui.theme.AppUiStyle
 import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetColor
 import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetShape
@@ -82,6 +86,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val isDarkMode by themeManager.isDarkMode.collectAsState(initial = false)
+    val appDesign by themeManager.appDesign.collectAsState(initial = AppDesign.Astra)
     val uiStyle by themeManager.uiStyle.collectAsState(initial = AppUiStyle.Default)
     val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)
     val quickTakeWidgetShape by themeManager.quickTakeWidgetShape.collectAsState(initial = QuickTakeWidgetShape.Rounded)
@@ -372,7 +377,33 @@ fun SettingsScreen(
                         )
                     }
 
-                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    Text("Diseño de pantallas", style = MaterialTheme.typography.titleMedium)
+                    AppDesign.entries.forEach { design ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().selectable(
+                                selected = appDesign == design,
+                                role = Role.RadioButton,
+                                onClick = { scope.launch { themeManager.setAppDesign(design) } }
+                            ).padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = appDesign == design,
+                                onClick = null
+                            )
+                            Column(Modifier.weight(1f)) {
+                                Text(design.title)
+                                Text(
+                                    if (design == AppDesign.Astra) "Accesos rápidos y ritmo diario"
+                                    else "Volver a las pantallas anteriores",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                     SettingsItem(
                         title = "Estilo de interfaz",
@@ -381,7 +412,7 @@ fun SettingsScreen(
                         onClick = { showUiDialog = true }
                     )
 
-                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                     SettingsItem(
                         title = "Chips de recuento",
@@ -390,7 +421,7 @@ fun SettingsScreen(
                         onClick = { showChipPeriodDialog = true }
                     )
 
-                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                     WidgetCustomizationCard(
                         color = quickTakeWidgetColor,
@@ -425,7 +456,7 @@ fun SettingsScreen(
                     SettingsItem(
                         title = "Ordenar medicamentos por",
                         description = "Actual: ${sortMode.title}",
-                        icon = Icons.Default.Sort,
+                        icon = Icons.AutoMirrored.Filled.Sort,
                         onClick = { showSortModeDialog = true }
                     )
                 }
@@ -670,7 +701,7 @@ fun SettingsScreen(
                     SettingsItem(
                         title = "Sonido",
                         description = "Configurar tono de notificación",
-                        icon = Icons.Default.VolumeUp,
+                        icon = Icons.AutoMirrored.Filled.VolumeUp,
                         onClick = {
                             // Abrir ajustes de notificación de la app
                             val intent = Intent().apply {
@@ -1840,7 +1871,7 @@ private fun SettingsItem(
             )
         } else {
             Icon(
-                imageVector = Icons.Default.KeyboardArrowRight,
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )

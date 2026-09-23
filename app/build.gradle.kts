@@ -21,7 +21,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.d4vram.pillmate.ai"
+        applicationId = "dev.d4vram.pillmate"
         minSdk = 26
         targetSdk = 35
         versionCode = 10

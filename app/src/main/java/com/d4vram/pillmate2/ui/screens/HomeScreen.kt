@@ -92,6 +92,10 @@ fun HomeScreen(
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {}
 ) {
+    if (com.d4vram.pillmate2.ui.theme.LocalAppDesign.current == com.d4vram.pillmate2.ui.theme.AppDesign.Astra) {
+        AstraHomeScreen(repository, navController, themeManager, onAddMedication, onEditMedication, onDeleteMedication)
+        return
+    }
     // Estados observables del repositorio
     val medicationsRaw by repository.medications.collectAsState()
     val historyEntries by repository.historyEntries.collectAsState()
@@ -633,7 +637,7 @@ private fun QuickTakeSlotCard(
 }
 
 @Composable
-private fun QuickTakeSlotPickerDialog(
+internal fun QuickTakeSlotPickerDialog(
     slotNumber: Int,
     medications: List<Medication>,
     selectedMedicationId: String?,
