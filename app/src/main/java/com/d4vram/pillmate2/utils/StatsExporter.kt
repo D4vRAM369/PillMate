@@ -85,7 +85,7 @@ class StatsExporter(private val context: Context) {
                 appendLine("Medicamento,Dosis Totales Registradas,Tipo")
                 medications.forEach { med ->
                     val totalDosesForMed = history.filter { it.medicationId == med.id }.sumOf { it.quantity }
-                    appendLine("${med.name},$totalDosesForMed,${if (med.isPrn) "Según necesidad" else "Regular"}")
+                    appendLine("${med.name},$totalDosesForMed,Regular")
                 }
             }
 

@@ -6,6 +6,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
 import androidx.glance.Image
@@ -101,7 +102,7 @@ private data class QuickTakeWidgetData(
         val EMPTY = QuickTakeWidgetData(
             slots = List(QuickTakeSettings.SLOT_COUNT) { null },
             shape = QuickTakeWidgetShape.Rounded,
-            color = QuickTakeWidgetColor.Green,
+            color = QuickTakeWidgetColor.Dark,
             size = QuickTakeWidgetSize.Normal
         )
     }
@@ -155,6 +156,8 @@ private object QuickTakeWidgetRepository {
 
 @Composable
 private fun QuickTakeWidgetContent(data: QuickTakeWidgetData) {
+    // Grado 2 de personalización: color por defecto Oscuro; las celdas usan el
+    // color real de cada medicamento. El header/acento usa el accent del tema.
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
@@ -166,23 +169,21 @@ private fun QuickTakeWidgetContent(data: QuickTakeWidgetData) {
         Text(
             text = "Toma rápida",
             style = TextStyle(
-                // Color del tema (accent) → el header cambia de tono al cambiar color,
-                // y contrasta tanto en fondos claros como en el tema Oscuro.
                 color = ColorProvider(Color(data.color.accentArgb)),
                 fontWeight = FontWeight.Bold
             ),
             modifier = GlanceModifier.fillMaxWidth()
         )
-        Spacer(modifier = GlanceModifier.height(8.dp))
+        Spacer(modifier = GlanceModifier.height(6.dp))
         Row(modifier = GlanceModifier.fillMaxWidth()) {
             WidgetCell(data.slots.getOrNull(0), data.shape, data.color, data.size, GlanceModifier.defaultWeight())
-            Spacer(modifier = GlanceModifier.width(8.dp))
+            Spacer(modifier = GlanceModifier.width(6.dp))
             WidgetCell(data.slots.getOrNull(1), data.shape, data.color, data.size, GlanceModifier.defaultWeight())
         }
-        Spacer(modifier = GlanceModifier.height(8.dp))
+        Spacer(modifier = GlanceModifier.height(6.dp))
         Row(modifier = GlanceModifier.fillMaxWidth()) {
             WidgetCell(data.slots.getOrNull(2), data.shape, data.color, data.size, GlanceModifier.defaultWeight())
-            Spacer(modifier = GlanceModifier.width(8.dp))
+            Spacer(modifier = GlanceModifier.width(6.dp))
             WidgetCell(data.slots.getOrNull(3), data.shape, data.color, data.size, GlanceModifier.defaultWeight())
         }
     }
@@ -217,8 +218,7 @@ private fun WidgetCell(
             .height(size.cellHeightDp.dp)
             .background(background)
             .cornerRadius(radius)
-            .clickable(clickAction)
-            .padding(6.dp),
+            .clickable(clickAction),
         contentAlignment = Alignment.Center
     ) {
         if (medication == null) {
@@ -232,9 +232,11 @@ private fun WidgetCell(
 @Composable
 private fun MedicationCell(medication: MedicationEntity) {
     Column(
+        modifier = GlanceModifier.fillMaxSize().padding(6.dp),
         horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
         verticalAlignment = Alignment.Vertical.CenterVertically
     ) {
+        // Emoji
         Text(
             text = medication.emoji.ifBlank { "✓" },
             style = TextStyle(
@@ -243,6 +245,7 @@ private fun MedicationCell(medication: MedicationEntity) {
                 textAlign = TextAlign.Center
             )
         )
+        // Nombre
         Text(
             text = medication.name.take(14),
             style = TextStyle(
@@ -252,6 +255,18 @@ private fun MedicationCell(medication: MedicationEntity) {
             ),
             maxLines = 1
         )
+        // Dosis → refuerza la legibilidad y aprovecha el dato ya disponible.
+        if (medication.dose.isNotBlank()) {
+            Text(
+                text = medication.dose.take(10),
+                style = TextStyle(
+                    color = ColorProvider(Color.White.copy(alpha = 0.8f)),
+                    fontSize = 9.sp,
+                    textAlign = TextAlign.Center
+                ),
+                maxLines = 1
+            )
+        }
     }
 }
 

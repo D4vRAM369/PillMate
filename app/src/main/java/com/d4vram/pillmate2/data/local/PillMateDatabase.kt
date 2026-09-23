@@ -10,7 +10,7 @@ import java.util.Locale
 
 @Database(
     entities = [MedicationEntity::class, HistoryEntryEntity::class, VoiceNoteEntity::class],
-    version = 14,
+    version = 15,
     exportSchema = false
 )
 abstract class PillMateDatabase : RoomDatabase() {
@@ -40,7 +40,8 @@ abstract class PillMateDatabase : RoomDatabase() {
                     MIGRATION_10_11,
                     MIGRATION_11_12,
                     MIGRATION_12_13,
-                    MIGRATION_13_14
+                    MIGRATION_13_14,
+                    MIGRATION_14_15
                 ).build().also { INSTANCE = it }
             }
         }
@@ -135,6 +136,48 @@ abstract class PillMateDatabase : RoomDatabase() {
             override fun migrate(database: SupportSQLiteDatabase) {
                 // 🔔 Añadir campo para activar recordatorios
                 database.execSQL("ALTER TABLE medications ADD COLUMN reminderEnabled INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        private val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // 🧹 Eliminar la columna isPrn (PRN era redundante: la app es
+                // un tracker de toma a demanda). SQLite no soporta DROP COLUMN
+                // en versiones antiguas, así que se recrea la tabla conservando datos.
+                database.execSQL(
+                    "CREATE TABLE medications_new (" +
+                        "id TEXT NOT NULL PRIMARY KEY, " +
+                        "name TEXT NOT NULL, " +
+                        "dose TEXT NOT NULL, " +
+                        "type TEXT NOT NULL, " +
+                        "colorArgb INTEGER NOT NULL, " +
+                        "emoji TEXT NOT NULL, " +
+                        "takenToday INTEGER NOT NULL, " +
+                        "dailyGoal INTEGER NOT NULL, " +
+                        "lastTaken TEXT, " +
+                        "sortOrder INTEGER NOT NULL, " +
+                        "scheduleTime TEXT, " +
+                        "scheduleDays TEXT NOT NULL DEFAULT '', " +
+                        "reminderEnabled INTEGER NOT NULL DEFAULT 0, " +
+                        "createdAt INTEGER NOT NULL DEFAULT 0, " +
+                        "photoPath TEXT DEFAULT NULL, " +
+                        "usePhotoInstead INTEGER NOT NULL DEFAULT 0, " +
+                        "parentMedicationId TEXT DEFAULT NULL" +
+                        ")"
+                )
+                database.execSQL(
+                    "INSERT INTO medications_new (" +
+                        "id, name, dose, type, colorArgb, emoji, takenToday, dailyGoal, " +
+                        "lastTaken, sortOrder, scheduleTime, scheduleDays, reminderEnabled, " +
+                        "createdAt, photoPath, usePhotoInstead, parentMedicationId" +
+                        ") SELECT " +
+                        "id, name, dose, type, colorArgb, emoji, takenToday, dailyGoal, " +
+                        "lastTaken, sortOrder, scheduleTime, scheduleDays, reminderEnabled, " +
+                        "createdAt, photoPath, usePhotoInstead, parentMedicationId" +
+                        " FROM medications"
+                )
+                database.execSQL("DROP TABLE medications")
+                database.execSQL("ALTER TABLE medications_new RENAME TO medications")
             }
         }
 

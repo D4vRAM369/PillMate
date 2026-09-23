@@ -138,7 +138,6 @@ fun MedicationCard(
                     CountBadge(
                         current = takenCount,
                         goal = medication.dailyGoal,
-                        isPrn = medication.isPrn,
                         isTaken = isTakenToday,
                         chipCountPeriod = chipCountPeriod
                     )
@@ -279,7 +278,6 @@ fun MedicationCard(
 private fun CountBadge(
     current: Int,
     goal: Int,
-    isPrn: Boolean,
     isTaken: Boolean,
     chipCountPeriod: com.d4vram.pillmate2.ui.theme.ChipCountPeriod,
     modifier: Modifier = Modifier

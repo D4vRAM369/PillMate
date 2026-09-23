@@ -15,7 +15,6 @@ data class MedicationEntity(
     val takenToday: Int,
     val dailyGoal: Int,
     val lastTaken: String?,
-    val isPrn: Boolean,
     val sortOrder: Int,
     val scheduleTime: String? = null,
     @ColumnInfo(defaultValue = "") val scheduleDays: String = "",
