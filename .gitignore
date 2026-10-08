@@ -32,3 +32,9 @@ docs/2026-02-07-pbl-refactor-completo-pdf-export.md
 # Personal learning docs (never track)
 docs/
 .omx/
+
+# IDE config, Kotlin daemon logs and build outputs (local only)
+.idea/
+.kotlin/
+app/debug/
+app/release/
