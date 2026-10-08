@@ -150,9 +150,6 @@ dependencies {
     implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("androidx.documentfile:documentfile:1.0.1")
 
-    // MediaPipe — motor LLM local (sin cambio de versión — ligado a modelos descargados)
-    implementation("com.google.mediapipe:tasks-genai:0.10.27")
-
     // Vico Charts
     implementation("com.patrykandpatrick.vico:compose:1.15.0")
     implementation("com.patrykandpatrick.vico:compose-m3:1.15.0")
