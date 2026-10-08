@@ -83,6 +83,13 @@ android {
         textReport = true
     }
 
+    // Room exporta el esquema de cada versión a app/schemas/ (base para testear migraciones)
+    kapt {
+        arguments {
+            arg("room.schemaLocation", "$projectDir/schemas")
+        }
+    }
+
     testOptions {
         unitTests {
             isReturnDefaultValues = true

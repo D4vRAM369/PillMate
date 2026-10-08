@@ -11,7 +11,7 @@ import java.util.Locale
 @Database(
     entities = [MedicationEntity::class, HistoryEntryEntity::class, VoiceNoteEntity::class],
     version = 15,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class PillMateDatabase : RoomDatabase() {
     abstract fun medicationDao(): MedicationDao
