@@ -18,11 +18,12 @@ class SmartInsightEngine {
         val lowerQuestion = question.lowercase()
         
         // 1. Análisis de Adherencia (Estimado basado en regularidad y tendencia)
-        val adherenceScore = when (snapshot.loggingConsistency.lowercase()) {
-            "excelente", "alta" -> 90
-            "buena", "regular" -> 70
-            "baja" -> 40
-            else -> 50
+        val adherenceScore = when (LoggingConsistency.fromLabel(snapshot.loggingConsistency)) {
+            LoggingConsistency.VERY_FREQUENT -> 90
+            LoggingConsistency.FREQUENT -> 70
+            LoggingConsistency.INFREQUENT -> 40
+            LoggingConsistency.SPARSE -> 20
+            null -> 50
         }
 
         // 2. Detección de Patrón Dominante
@@ -48,7 +49,11 @@ class SmartInsightEngine {
     }
 
     private fun buildGeneralSummary(snapshot: TreatmentStatsSnapshot, score: Int, slot: Map.Entry<String, Int>?): String {
-        val trendText = if (snapshot.loggingTrend.startsWith("+")) "al alza" else "a la baja"
+        val trendText = when {
+            snapshot.loggingTrend.startsWith("+") -> "al alza"
+            snapshot.loggingTrend.startsWith("-") -> "a la baja"
+            else -> "estable"
+        }
         val slotText = slot?.let { " con mayor actividad en la ${it.key.lowercase()}" } ?: ""
         
         return "📊 **Resumen de ${snapshot.scopeLabel}** (${snapshot.filterLabel}):\n\n" +
@@ -70,7 +75,7 @@ class SmartInsightEngine {
 
     private fun buildWarningAnalysis(snapshot: TreatmentStatsSnapshot): String {
         val consistency = snapshot.loggingConsistency.lowercase()
-        return if (consistency == "baja" || consistency == "irregular") {
+        return if (LoggingConsistency.fromLabel(snapshot.loggingConsistency)?.isLow == true) {
             "⚠️ **Detección de Riesgos**:\n\n" +
             "He detectado una regularidad $consistency en los ${snapshot.filterLabel}. " +
             "Los registros muestran lagunas que podrían indicar olvidos o falta de seguimiento de la pauta.\n\n" +

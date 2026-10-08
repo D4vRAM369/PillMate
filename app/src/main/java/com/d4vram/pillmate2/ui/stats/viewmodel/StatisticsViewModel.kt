@@ -1,6 +1,7 @@
 // kotlin
 package com.d4vram.pillmate2.ui.stats.viewmodel
 
+import com.d4vram.pillmate2.ai.LoggingConsistency
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -522,12 +523,9 @@ class StatisticsViewModel(
 
         val monthlyActivityData = calculateMonthlyActivityData(history, selectedMedicationId)
 
-        val loggingConsistency = when {
-            totalDaysWithRecords.toFloat() / totalDays.coerceAtLeast(1) >= 0.8f -> "Muy frecuente"
-            totalDaysWithRecords.toFloat() / totalDays.coerceAtLeast(1) >= 0.5f -> "Frecuente"
-            totalDaysWithRecords.toFloat() / totalDays.coerceAtLeast(1) >= 0.2f -> "Poco frecuente"
-            else -> "Espaciado"
-        }
+        val loggingConsistency = LoggingConsistency.fromDayRatio(
+            totalDaysWithRecords.toFloat() / totalDays.coerceAtLeast(1)
+        ).label
 
         val hourlyPattern = calculateHourlyPattern(history)
 
