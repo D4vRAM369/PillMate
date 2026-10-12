@@ -396,8 +396,8 @@ fun SettingsScreen(
                             Column(Modifier.weight(1f)) {
                                 Text(design.title)
                                 Text(
-                                    if (design == AppDesign.Astra) "Accesos rápidos y ritmo diario"
-                                    else "Volver a las pantallas anteriores",
+                                    if (design == AppDesign.Astra) "Accesos rápidos y reloj de 24 horas"
+                                    else "Las pantallas de siempre",
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
