@@ -9,6 +9,15 @@
   Sin alarmas que te persigan. Sin cuentas. Sin internet.
 </p>
 
+<p align="center">
+  <img src="screenshots/01-home.png" width="23%" alt="Pantalla principal: accesos rápidos y reloj del día">
+  <img src="screenshots/02-historial-dia.png" width="23%" alt="Historial de un día con una toma seleccionada en el reloj">
+  <img src="screenshots/03-historial-semana.png" width="23%" alt="Historial de una semana: barras por hora">
+  <img src="screenshots/04-estadisticas.png" width="23%" alt="Estadísticas: ritmo de 24 horas y datos calculados">
+</p>
+
+<p align="center"><sub>Capturas con datos de ejemplo.</sub></p>
+
 ---
 
 ## Qué es
