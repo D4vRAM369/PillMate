@@ -189,7 +189,8 @@ private fun LineChartCanvas(
         val bottomPadding = 45.dp.toPx()
         val topPadding = 10.dp.toPx()
 
-        val chartWidth = width - leftPadding
+        // Margen derecho: la fecha del último punto va centrada bajo él y se cortaba contra el borde.
+        val chartWidth = width - leftPadding - 14.dp.toPx()
         val chartHeight = height - bottomPadding - topPadding
 
         // Limpiar posiciones previas

@@ -555,7 +555,7 @@ fun HorizontalActivityChart(
     selectedDate: java.time.LocalDate?
 ) {
     val maxValue = data.maxOfOrNull { it.totalValue } ?: 1f
-    val today = data.lastOrNull()
+    val today = java.time.LocalDate.now()
 
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -575,7 +575,8 @@ fun HorizontalActivityChart(
                 fontWeight = FontWeight.SemiBold
             )
             data.forEach { point ->
-                val isToday = point == today
+                // Antes era "la última fila", que marcaba como hoy el domingo de una semana pasada.
+                val isToday = point.date == today
                 val barColor = if (isToday) {
                     MaterialTheme.colorScheme.tertiary
                 } else if (point.date != null && point.date == selectedDate) {
