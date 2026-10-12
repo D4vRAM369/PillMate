@@ -219,8 +219,17 @@ fun StatisticsScreen(
             // Reloj de 24 h del periodo y filtro activos
             RhythmSection(entries = uiState.periodEntries)
 
-            // Gráfica lineal semanal (nueva, con protagonismo)
-            if (uiState.activityData.isNotEmpty()) {
+            // La línea mide cantidad (mg, ml, gotas). Cuando la unidad es "tomas" (todos los medicamentos,
+            // o uno sin dosis medible) repetiría las barras de abajo: se oculta y solo queda su navegación de fechas.
+            val lineDuplicatesBars = uiState.displayUnit == "tomas"
+            if (lineDuplicatesBars && uiState.activityData.isNotEmpty() && uiState.activeFilter != FilterRange.ALL_TIME) {
+                DateNavigation(
+                    dateRangeText = uiState.dateRangeText,
+                    onPrevious = { viewModel.previousPeriod() },
+                    onNext = { viewModel.nextPeriod() }
+                )
+            }
+            if (!lineDuplicatesBars && uiState.activityData.isNotEmpty()) {
                 WeeklyLineChart(
                     data = uiState.activityData,
                     unit = uiState.displayUnit,
