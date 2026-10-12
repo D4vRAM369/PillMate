@@ -47,7 +47,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import com.d4vram.pillmate2.ai.toTreatmentStatsSnapshot
+import com.d4vram.pillmate2.ai.SmartInsightEngine
+import com.d4vram.pillmate2.ui.timeline.RhythmClock
 import com.d4vram.pillmate2.ui.export.PdfExportSheet
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -215,19 +216,8 @@ fun StatisticsScreen(
                 lastRecord = uiState.timeSinceLastRecord
             )
 
-            val assistantViewModel: com.d4vram.pillmate2.ai.TreatmentAssistantViewModel = viewModel(
-                factory = com.d4vram.pillmate2.ai.TreatmentAssistantViewModel.provideFactory()
-            )
-            val assistantUiState by assistantViewModel.uiState.collectAsState()
-            LaunchedEffect(uiState) {
-                assistantViewModel.updateContext(uiState.toTreatmentStatsSnapshot())
-            }
-            TreatmentAssistantCard(
-                uiState = assistantUiState,
-                onDraftChange = assistantViewModel::updateDraft,
-                onSend = assistantViewModel::sendDraft,
-                onSuggestionSelected = assistantViewModel::sendSuggestion
-            )
+            // Reloj de 24 h del periodo y filtro activos
+            RhythmSection(entries = uiState.periodEntries)
 
             // Gráfica lineal semanal (nueva, con protagonismo)
             if (uiState.activityData.isNotEmpty()) {
@@ -257,21 +247,6 @@ fun StatisticsScreen(
                     accentColor = uiState.selectedMedicationColor ?: MaterialTheme.colorScheme.primary,
                     onDaySelected = { date -> viewModel.selectDay(date) },
                     selectedDate = uiState.selectedDate
-                )
-            }
-
-            // Distribución horaria (6 franjas)
-            if (uiState.hourlyPattern.isNotEmpty() && uiState.hourlyPattern.values.any { it > 0 }) {
-                HourlyDistributionSection(
-                    hourlyPattern = uiState.hourlyPattern,
-                    accentColor = uiState.selectedMedicationColor ?: MaterialTheme.colorScheme.primary
-                )
-            }
-
-            // Historial reciente
-            if (uiState.recentHistoryWithUnits.isNotEmpty()) {
-                RecentHistorySection(
-                    history = uiState.recentHistoryWithUnits
                 )
             }
 
@@ -668,157 +643,6 @@ fun HorizontalActivityChart(
 }
 
 @Composable
-fun HourlyDistributionSection(
-    hourlyPattern: Map<String, Int>,
-    accentColor: Color
-) {
-    val slots = listOf("Madrugada", "Mañana", "Mediodía", "Tarde", "Noche", "Nocturno")
-    val slotRanges = listOf("00-06", "06-12", "12-15", "15-19", "19-23", "23-00")
-    val maxValue = hourlyPattern.values.maxOrNull()?.toFloat() ?: 1f
-
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = "Distribución por horario",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 4.dp)
-        )
-
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.large,
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                slots.forEachIndexed { index, slot ->
-                    val value = hourlyPattern[slot] ?: 0
-                    val fraction = if (maxValue > 0) (value.toFloat() / maxValue).coerceIn(0f, 1f) else 0f
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        // Nombre del slot (ancho suficiente para "Madrugada")
-                        Column(modifier = Modifier.width(85.dp)) {
-                            Text(
-                                text = slot,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1
-                            )
-                            Text(
-                                text = slotRanges[index],
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        // Barra horizontal
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(16.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                        ) {
-                            if (fraction > 0) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxHeight()
-                                        .fillMaxWidth(fraction)
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(accentColor.copy(alpha = 0.8f))
-                                )
-                            }
-                        }
-
-                        // Valor
-                        Text(
-                            text = value.toString(),
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.width(28.dp)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun RecentHistorySection(
-    history: List<HistoryEntryWithUnit>
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = "Historial reciente",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 4.dp)
-        )
-
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.large,
-            colors = CardDefaults.elevatedCardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                history.forEachIndexed { index, item ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 10.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = item.entry.medicationName,
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "${item.entry.date} · ${item.entry.time}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        Text(
-                            text = "${item.displayValue} ${item.displayUnit}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-
-                    if (index < history.lastIndex) {
-                        HorizontalDivider(
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                            modifier = Modifier.padding(vertical = 2.dp)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
 fun DateNavigation(
     dateRangeText: String,
     onPrevious: () -> Unit,
@@ -905,6 +729,36 @@ fun FilterButtons(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+            }
+        }
+    }
+}
+
+
+/**
+ * Reloj de 24 h + datos calculados del mismo conjunto de tomas.
+ * Sustituye al antiguo chat "Analizador de Salud" y a las barras de 6 franjas.
+ */
+@Composable
+fun RhythmSection(entries: List<com.d4vram.pillmate2.model.HistoryEntry>) {
+    val insights = remember(entries) { SmartInsightEngine.insights(entries) }
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("Ritmo de 24 horas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            RhythmClock(entries, modifier = Modifier.fillMaxWidth())
+            insights.forEach { insight ->
+                HorizontalDivider()
+                Column {
+                    Text(insight.title, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(insight.value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text(insight.detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     }

@@ -40,6 +40,8 @@ data class StatisticsUiState(
     val activeFilter: FilterRange = FilterRange.WEEK,
     val dateRangeText: String = "",
     val recentHistory: List<com.d4vram.pillmate2.model.HistoryEntry> = emptyList(),
+    // Todas las tomas del periodo y filtro activos (alimenta el reloj de 24 h y los insights)
+    val periodEntries: List<com.d4vram.pillmate2.model.HistoryEntry> = emptyList(),
     val topMedications: List<Triple<String, Int, String>> = emptyList(), // name, count, id
     val availableMedications: List<com.d4vram.pillmate2.model.Medication> = emptyList(),
     val selectedMedicationId: String? = null,
@@ -354,6 +356,7 @@ class StatisticsViewModel(
                     activeFilter = range,
                     dateRangeText = dateRangeText,
                     recentHistory = recentHistoryList,
+                    periodEntries = filteredHistory,
                     topMedications = topMedicationsList,
                     availableMedications = allMedications, // Incluir todos (padres e hijos) para mostrar familias completas
                     selectedMedicationId = currentSelectedId,
