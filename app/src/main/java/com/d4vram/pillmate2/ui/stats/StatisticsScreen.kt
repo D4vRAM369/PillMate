@@ -45,7 +45,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.d4vram.pillmate2.ai.SmartInsightEngine
@@ -274,13 +273,9 @@ fun StatisticsScreen(
                     date = uiState.selectedDate!!,
                     history = uiState.selectedDateHistory,
                     onViewFullHistory = {
+                        val day = uiState.selectedDate
                         viewModel.selectDay(null)
-                        // Igual que al pulsar la pestaña History: sin apilar pantallas repetidas.
-                        navController?.navigate("history") {
-                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        if (day != null) navController?.navigate("history_day/${day.toEpochDay()}")
                     }
                 )
             }

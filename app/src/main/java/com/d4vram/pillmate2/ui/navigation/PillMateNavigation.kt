@@ -197,6 +197,16 @@ fun PillMateNavigation(
                 HistoryScreen(repository = repository, navController = navController)
             }
 
+            // Historial abierto en un día concreto (desde el detalle de un día en Estadísticas).
+            // Va apilado encima: "atrás" vuelve a Estadísticas.
+            composable("history_day/{epochDay}") { entry ->
+                HistoryScreen(
+                    repository = repository,
+                    navController = navController,
+                    initialDay = entry.arguments?.getString("epochDay")?.toLongOrNull()?.let(java.time.LocalDate::ofEpochDay)
+                )
+            }
+
             composable(Screen.VoiceNotes.route) {
                 VoiceNotesScreen(viewModel = voiceNotesViewModel)
             }

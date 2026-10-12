@@ -95,7 +95,11 @@ enum class TimePeriod(val label: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryScreen(repository: MedicationRepository, navController: NavController) {
+fun HistoryScreen(
+    repository: MedicationRepository,
+    navController: NavController,
+    initialDay: LocalDate? = null // Si llega (desde el detalle de un día en Estadísticas), se abre mostrando solo ese día.
+) {
     val historyEntries by repository.historyEntries.collectAsState()
     val stats by repository.stats.collectAsState()
 
@@ -108,13 +112,17 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
         }
     }
     var selectedPeriod by remember(astra) { mutableStateOf(if (astra) TimePeriod.TODAY else TimePeriod.ALL) }
+    // Día concreto: manda sobre el periodo hasta que se quita o se elige un periodo.
+    var selectedDay by remember { mutableStateOf(initialDay) }
     var selectedHistoryEntry by remember { mutableStateOf<HistoryEntry?>(null) }
     var isSearchVisible by remember { mutableStateOf(false) }
     var notesSearchQuery by remember { mutableStateOf("") }
 
     // Filtrar entradas según el período seleccionado
-    val entriesByPeriod = remember(historyEntries, selectedPeriod, today) {
-        when (selectedPeriod) {
+    val entriesByPeriod = remember(historyEntries, selectedPeriod, selectedDay, today) {
+        val day = selectedDay
+        if (day != null) historyEntries.filter { it.timestamp.toLocalDate() == day }
+        else when (selectedPeriod) {
             TimePeriod.ALL -> historyEntries
             TimePeriod.TODAY -> historyEntries.filter {
                 it.timestamp.toLocalDate() == today
@@ -194,11 +202,23 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    selectedDay?.let { day ->
+                        item {
+                            FilterChip(
+                                onClick = { selectedDay = null },
+                                label = { Text(day.format(DateTimeFormatter.ofPattern("EEE d/M", Locale("es", "ES")))) },
+                                selected = true,
+                                trailingIcon = {
+                                    Icon(Icons.Default.Close, contentDescription = "Quitar filtro de día", modifier = Modifier.size(18.dp))
+                                }
+                            )
+                        }
+                    }
                     items(TimePeriod.values()) { period ->
                         FilterChip(
-                            onClick = { selectedPeriod = period },
+                            onClick = { selectedDay = null; selectedPeriod = period },
                             label = { Text(period.label) },
-                            selected = selectedPeriod == period
+                            selected = selectedDay == null && selectedPeriod == period
                         )
                     }
                 }
@@ -212,7 +232,7 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Tu ritmo · ${selectedPeriod.label.lowercase()}",
+                            text = "Tu ritmo · " + (selectedDay?.format(DateTimeFormatter.ofPattern("d/M")) ?: selectedPeriod.label.lowercase()),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.fillMaxWidth()
