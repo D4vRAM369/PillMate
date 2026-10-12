@@ -45,6 +45,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.d4vram.pillmate2.ai.SmartInsightEngine
@@ -273,9 +274,13 @@ fun StatisticsScreen(
                     date = uiState.selectedDate!!,
                     history = uiState.selectedDateHistory,
                     onViewFullHistory = {
-                        // Navegar al historial completo o cerrar sheet
                         viewModel.selectDay(null)
-                        // Si hubiera navegación directa: navController?.navigate("history")
+                        // Igual que al pulsar la pestaña History: sin apilar pantallas repetidas.
+                        navController?.navigate("history") {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
                     }
                 )
             }
