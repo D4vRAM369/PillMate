@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PillMate AI</string>
+    <string name="app_name">PillMate</string>
     <string name="quick_take_widget_description">Acceso rápido 2x2 para registrar tomas de tus cuatro medicamentos favoritos.</string>
 
     <!-- Navigation -->
@@ -9,7 +9,7 @@
     <string name="nav_settings">Settings</string>
 
     <!-- Home Screen -->
-    <string name="home_title">💊 PillMate AI</string>
+    <string name="home_title">💊 PillMate</string>
     <string name="home_subtitle">Seguimiento Personal</string>
     <string name="stats_taken_today">Tomadas Hoy</string>
     <string name="stats_this_week">Esta Semana</string>

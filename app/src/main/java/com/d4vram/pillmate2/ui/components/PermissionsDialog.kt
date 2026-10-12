@@ -159,7 +159,7 @@ private fun PermissionsDialogContent(
                                     color = Color.White
                                 )
                                 Text(
-                                    text = "PillMate AI usa estos permisos solo para personalizar medicamentos con imágenes que se quedan en tu dispositivo.",
+                                    text = "PillMate usa estos permisos solo para personalizar medicamentos con imágenes que se quedan en tu dispositivo.",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = Color.White.copy(alpha = 0.92f)
                                 )

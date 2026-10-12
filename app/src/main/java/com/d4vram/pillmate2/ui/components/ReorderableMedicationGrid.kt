@@ -45,7 +45,8 @@ fun ReorderableMedicationGrid(
     onReorder: (Int, Int) -> Unit,
     dragEnabled: Boolean = true,
     parentListState: androidx.compose.foundation.lazy.LazyListState? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    busy: Boolean = false
 ) {
     var draggedItem by remember { mutableStateOf<Int?>(null) }
     var draggedItemKey by remember { mutableStateOf<String?>(null) }
@@ -206,7 +207,7 @@ fun ReorderableMedicationGrid(
             }
 
             val cardModifier = Modifier
-                .animateItemPlacement()
+                .animateItem()
                 .then(dragModifier)
                 .zIndex(if (isBeingDragged) 1f else 0f)
                 .graphicsLayer {
@@ -229,6 +230,7 @@ fun ReorderableMedicationGrid(
                 onEditMedication = if (isDragging) { {} } else { onEditMedication },
                 onDeleteMedication = if (isDragging) { {} } else { onDeleteMedication },
                 enabled = !isDragging,
+                busy = busy,
                 dragModifier = dragModifier,
                 modifier = cardModifier
             )
@@ -238,7 +240,7 @@ fun ReorderableMedicationGrid(
         item {
             AddMedicationCard(
                 onClick = if (isDragging) { {} } else { onAddMedication },
-                modifier = Modifier.animateItemPlacement()
+                modifier = Modifier.animateItem()
             )
         }
     }

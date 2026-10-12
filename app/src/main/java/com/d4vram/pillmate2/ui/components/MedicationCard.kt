@@ -57,7 +57,8 @@ fun MedicationCard(
     onDeleteMedication: (String) -> Unit = {},
     enabled: Boolean = true,
     dragModifier: Modifier = Modifier,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    busy: Boolean = false
 ) {
     // Estado para la animación al hacer click
     var isPressed by remember { mutableStateOf(false) }
@@ -95,7 +96,7 @@ fun MedicationCard(
     Card(
         modifier = combinedModifier
             .scale(scale)
-            .clickable(enabled = enabled) {
+            .clickable(enabled = enabled && !busy) {
                 isPressed = true
                 showQuantityDialog = true
             },
@@ -262,6 +263,7 @@ fun MedicationCard(
         TakeMedicationDialog(
             medication = medication,
             family = family,
+            busy = busy,
             onDismiss = { showQuantityDialog = false },
             onConfirm = { finalId, quantity, timestamp ->
                 onTakeMedication(finalId, quantity, timestamp)
@@ -398,8 +400,21 @@ internal fun TakeMedicationDialog(
     medication: Medication,
     family: List<Medication>,
     onDismiss: () -> Unit,
-    onConfirm: (String, Int, LocalDateTime?) -> Unit  // Añadido: timestamp
+    onConfirm: (String, Int, LocalDateTime?) -> Unit,
+    busy: Boolean = false  // Shared save state prevents accepting a discarded confirmation.
 ) {
+    if (com.d4vram.pillmate2.ui.theme.LocalAppDesign.current == com.d4vram.pillmate2.ui.theme.AppDesign.Astra) {
+        var selected by remember { mutableStateOf(medication) }
+        com.d4vram.pillmate2.ui.screens.AstraDoseSheet(
+            medication = selected,
+            busy = busy,
+            onDismiss = onDismiss,
+            onConfirm = { quantity, timestamp -> onConfirm(selected.id, quantity, timestamp) },
+            family = family,
+            onSelectMedication = { selected = it }
+        )
+        return
+    }
     var selectedMedication by remember { mutableStateOf(medication) }
     var quantity by remember { mutableStateOf(1) }
 

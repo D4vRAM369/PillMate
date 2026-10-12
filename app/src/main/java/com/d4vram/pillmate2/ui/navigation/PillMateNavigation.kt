@@ -124,7 +124,7 @@ fun PillMateNavigation(
                                 screen.icon?.let {
                                     Icon(
                                         imageVector = it,
-                                        contentDescription = screen.label
+                                        contentDescription = null
                                     )
                                 }
                             },

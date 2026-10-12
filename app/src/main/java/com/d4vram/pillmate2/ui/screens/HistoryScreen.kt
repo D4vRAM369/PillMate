@@ -41,6 +41,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.produceState
+import kotlinx.coroutines.delay
+import com.d4vram.pillmate2.ui.theme.AppDesign
+import com.d4vram.pillmate2.ui.theme.LocalAppDesign
+import com.d4vram.pillmate2.ui.timeline.DailyRhythmTimeline
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -91,15 +99,21 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
     val historyEntries by repository.historyEntries.collectAsState()
     val stats by repository.stats.collectAsState()
 
-    var selectedPeriod by remember { mutableStateOf(TimePeriod.ALL) }
+    val astra = LocalAppDesign.current == AppDesign.Astra
+    // Re-evaluate calendar filters while the screen stays open across midnight.
+    val today by produceState(LocalDate.now()) {
+        while (true) {
+            value = LocalDate.now()
+            delay(30_000)
+        }
+    }
+    var selectedPeriod by remember(astra) { mutableStateOf(if (astra) TimePeriod.TODAY else TimePeriod.ALL) }
     var selectedHistoryEntry by remember { mutableStateOf<HistoryEntry?>(null) }
     var isSearchVisible by remember { mutableStateOf(false) }
     var notesSearchQuery by remember { mutableStateOf("") }
 
     // Filtrar entradas según el período seleccionado
-    val entriesByPeriod = remember(historyEntries, selectedPeriod) {
-        val now = LocalDateTime.now()
-        val today = now.toLocalDate()
+    val entriesByPeriod = remember(historyEntries, selectedPeriod, today) {
         when (selectedPeriod) {
             TimePeriod.ALL -> historyEntries
             TimePeriod.TODAY -> historyEntries.filter {
@@ -136,7 +150,7 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
             TopAppBar(
                 title = {
                     Text(
-                        text = "📊 Historial",
+                        text = if (astra) "Historial" else "📊 Historial",
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Bold
                         )
@@ -166,8 +180,12 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
-                // Card clickeable para ir a estadísticas
-                StatisticsQuickCard(
+                if (astra) {
+                    DailyRhythmTimeline(historyEntries, today)
+                    androidx.compose.material3.TextButton(onClick = { navController.navigate("global_stats") }) {
+                        Text("Ver estadísticas")
+                    }
+                } else StatisticsQuickCard(
                     takenToday = stats.takenToday,
                     takenThisWeek = stats.takenThisWeek,
                     onClick = { navController.navigate("global_stats") }
@@ -287,7 +305,22 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
                 }
 
                 itemsIndexed(entries) { index, entry ->
-                    SwipeableHistoryItem(
+                    Row(verticalAlignment = Alignment.Top) {
+                        if (astra) {
+                            Column(
+                                Modifier.width(52.dp).padding(top = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(entry.timestamp.format(DateTimeFormatter.ofPattern("HH:mm")),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.primary)
+                                Spacer(Modifier.height(8.dp))
+                                Box(Modifier.size(8.dp).background(MaterialTheme.colorScheme.primary, CircleShape))
+                                Box(Modifier.width(2.dp).height(64.dp).background(MaterialTheme.colorScheme.outlineVariant))
+                            }
+                        }
+                        SwipeableHistoryItem(
+                        modifier = Modifier.weight(1f),
                         historyEntry = entry,
                         onEntryClick = { selectedHistoryEntry = it },
                         onEdit = { selectedHistoryEntry = it },
@@ -298,6 +331,7 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
                             }
                         }
                     )
+                    }
                     if (index < entries.lastIndex) {
                         Spacer(modifier = Modifier.height(8.dp))
                     }
@@ -380,7 +414,7 @@ private fun SwipeableHistoryItem(
             .pointerInput(totalRevealOffsetPx) {
                 detectHorizontalDragGestures(
                     onHorizontalDrag = { change, dragAmount ->
-                        change.consumePositionChange()
+                        change.consume()
                         animationJob?.cancel()
                         val newOffset = (offset + dragAmount).coerceIn(-totalRevealOffsetPx, 0f)
                         offset = newOffset

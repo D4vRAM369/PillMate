@@ -61,7 +61,7 @@ fun MainOnboardingScreen(
 ) {
     val pages = listOf(
         OnboardingPageModel(
-            eyebrow = "PILLMATE AI",
+            eyebrow = "PILLMATE",
             title = "Tu tratamiento con una experiencia mucho más clara",
             description = "Organiza medicación, registra tomas y entiende tu progreso con una interfaz más limpia, visual y útil desde el primer minuto.",
             accent = Color(0xFF14B8A6),
@@ -87,7 +87,7 @@ fun MainOnboardingScreen(
         OnboardingPageModel(
             eyebrow = "PRIVACIDAD",
             title = "Privacidad local, permisos visibles y controlables",
-            description = "PillMate AI trata datos sensibles con una filosofía local-first: control explícito, permisos comprensibles y funciones separadas.",
+            description = "PillMate trata datos sensibles con una filosofía local-first: control explícito, permisos comprensibles y funciones separadas.",
             accent = Color(0xFF0EA5E9),
             icon = Icons.Default.Lock,
             bullets = listOf(

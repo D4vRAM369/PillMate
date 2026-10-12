@@ -54,6 +54,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -91,6 +92,10 @@ fun HomeScreen(
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {}
 ) {
+    if (com.d4vram.pillmate2.ui.theme.LocalAppDesign.current == com.d4vram.pillmate2.ui.theme.AppDesign.Astra) {
+        AstraHomeScreen(repository, navController, themeManager, onAddMedication, onEditMedication, onDeleteMedication)
+        return
+    }
     // Estados observables del repositorio
     val medicationsRaw by repository.medications.collectAsState()
     val historyEntries by repository.historyEntries.collectAsState()
@@ -110,8 +115,8 @@ fun HomeScreen(
         repository.applySorting(medicationsRaw, sortMode)
     }
 
-    var searchQuery by remember { mutableStateOf("") }
-    var searchActive by remember { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
+    var searchActive by rememberSaveable { mutableStateOf(false) }
 
     val filteredMedications = remember(medications, searchQuery) {
         if (searchQuery.isBlank()) medications
@@ -191,7 +196,7 @@ fun HomeScreen(
                     trailingContent = {
                         IconButton(
                             onClick = { scope.launch { themeManager.setListView(!isListView) } },
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
                                 imageVector = if (isListView)
@@ -206,7 +211,15 @@ fun HomeScreen(
                 )
             }
 
-            if (isListView) {
+            if (filteredMedications.isEmpty()) {
+                item {
+                    EmptyMedicationState(
+                        searching = searchQuery.isNotBlank(),
+                        onAction = { if (searchQuery.isNotBlank()) searchQuery = "" else onAddMedication() },
+                        modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
+                    )
+                }
+            } else if (isListView) {
                 items(
                     items = filteredMedications,
                     key = { it.id }
@@ -236,11 +249,12 @@ fun HomeScreen(
                         onEditMedication = onEditMedication,
                         onDeleteMedication = onDeleteMedication,
                         onReorder = { fromIndex, toIndex ->
-                            if (sortMode == SortMode.MANUAL) {
+                            if (sortMode == SortMode.MANUAL && searchQuery.isBlank()) {
                                 repository.reorderMedications(fromIndex, toIndex)
                             }
                         },
-                        dragEnabled = sortMode == SortMode.MANUAL,
+                        // Los índices filtrados no corresponden al orden completo del repositorio.
+                        dragEnabled = sortMode == SortMode.MANUAL && searchQuery.isBlank(),
                         parentListState = listState,
                         modifier = Modifier.padding(horizontal = 24.dp)
                     )
@@ -298,133 +312,85 @@ fun HomeScreen(
  * 🎨 Header con gradiente y botón de agregar
  */
 @Composable
-private fun HeaderSection(
+internal fun HeaderSection(
     onAddMedication: () -> Unit,
     searchQuery: String,
     searchActive: Boolean,
     onSearchQueryChange: (String) -> Unit,
     onSearchActiveChange: (Boolean) -> Unit
 ) {
-    val uiStyle = LocalUiStyle.current
-    val headerModifier = Modifier
-        .fillMaxWidth()
-        .let { base ->
-            if (uiStyle == AppUiStyle.MaterialYou) {
-                base.background(MaterialTheme.colorScheme.primaryContainer)
-            } else {
-                base.background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(HeaderGradientStart, HeaderGradientEnd)
-                    )
-                )
+    val materialYou = LocalUiStyle.current == AppUiStyle.MaterialYou
+    val contentColor = if (materialYou) MaterialTheme.colorScheme.onPrimaryContainer else Color.White
+    val headerModifier = if (materialYou) {
+        Modifier.background(MaterialTheme.colorScheme.primaryContainer)
+    } else {
+        Modifier.background(Brush.horizontalGradient(listOf(HeaderGradientStart, HeaderGradientEnd)))
+    }
+
+    // La búsqueda ocupa su propia fila para que nunca quede debajo del botón de añadir.
+    Column(modifier = Modifier.fillMaxWidth().then(headerModifier).padding(horizontal = 24.dp, vertical = 20.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("PillMate", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = contentColor)
+                Text("Seguimiento personal", style = MaterialTheme.typography.bodyMedium, color = contentColor.copy(alpha = 0.9f))
             }
-        }
-
-    Box(
-        modifier = headerModifier
-            .padding(horizontal = 24.dp, vertical = 20.dp)
-    ) {
-        Column {
-            Text(
-                text = "PillMate",
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontWeight = FontWeight.Bold
-                ),
-                color = if (uiStyle == AppUiStyle.MaterialYou) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    Color.White
-                }
-            )
-            Text(
-                text = "Seguimiento Personal",
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (uiStyle == AppUiStyle.MaterialYou) {
-                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-                } else {
-                    Color.White.copy(alpha = 0.9f)
-                }
-            )
-
-            // Barra de búsqueda expandible
-            AnimatedVisibility(visible = searchActive) {
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = onSearchQueryChange,
-                    placeholder = { Text("Buscar medicamento…", color = Color.White.copy(alpha = 0.7f)) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = null,
-                            tint = Color.White.copy(alpha = 0.8f)
-                        )
-                    },
-                    trailingIcon = {
-                        IconButton(onClick = { onSearchActiveChange(false) }) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = "Cerrar búsqueda",
-                                tint = Color.White.copy(alpha = 0.8f)
-                            )
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp),
-                    shape = RoundedCornerShape(28.dp),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = Color.White.copy(alpha = 0.6f),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
-                        cursorColor = Color.White
-                    )
-                )
-            }
-        }
-
-        Row(
-            modifier = Modifier.align(Alignment.CenterEnd),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AnimatedVisibility(visible = !searchActive) {
-                IconButton(
-                    onClick = { onSearchActiveChange(true) },
-                    modifier = Modifier
-                        .size(40.dp)
-                        .background(
-                            color = Color.White.copy(alpha = 0.15f),
-                            shape = CircleShape
-                        )
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Buscar",
-                        tint = Color.White
-                    )
+            if (!searchActive) {
+                IconButton(onClick = { onSearchActiveChange(true) }, modifier = Modifier.size(48.dp)) {
+                    Icon(Icons.Default.Search, contentDescription = "Buscar", tint = contentColor)
                 }
             }
-
             FloatingActionButton(
                 onClick = onAddMedication,
                 modifier = Modifier.size(48.dp),
-                containerColor = if (uiStyle == AppUiStyle.MaterialYou) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    Color.White.copy(alpha = 0.2f)
-                },
-                contentColor = if (uiStyle == AppUiStyle.MaterialYou) {
-                    MaterialTheme.colorScheme.onPrimary
-                } else {
-                    Color.White
-                }
+                containerColor = if (materialYou) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.2f),
+                contentColor = if (materialYou) MaterialTheme.colorScheme.onPrimary else Color.White
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Agregar medicamento"
+                Icon(Icons.Default.Add, contentDescription = "Agregar medicamento")
+            }
+        }
+        AnimatedVisibility(visible = searchActive) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                placeholder = { Text("Buscar medicamento…") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                trailingIcon = {
+                    IconButton(onClick = { onSearchActiveChange(false) }) {
+                        Icon(Icons.Default.Close, contentDescription = "Cerrar búsqueda")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
+                shape = RoundedCornerShape(28.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = contentColor,
+                    unfocusedTextColor = contentColor,
+                    focusedPlaceholderColor = contentColor.copy(alpha = 0.8f),
+                    unfocusedPlaceholderColor = contentColor.copy(alpha = 0.8f),
+                    focusedLeadingIconColor = contentColor,
+                    unfocusedLeadingIconColor = contentColor,
+                    focusedTrailingIconColor = contentColor,
+                    unfocusedTrailingIconColor = contentColor,
+                    focusedBorderColor = contentColor,
+                    unfocusedBorderColor = contentColor.copy(alpha = 0.6f),
+                    cursorColor = contentColor
                 )
+            )
+        }
+    }
+}
+
+@Composable
+internal fun EmptyMedicationState(searching: Boolean, onAction: () -> Unit, modifier: Modifier = Modifier) {
+    Card(modifier = modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+        Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(if (searching) "Sin resultados" else "Tu primer medicamento", style = MaterialTheme.typography.titleMedium)
+            Text(
+                if (searching) "Prueba con otro nombre o dosis." else "Añade un medicamento para empezar a registrar tus tomas.",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            TextButton(onClick = onAction) {
+                Text(if (searching) "Limpiar búsqueda" else "Añadir medicamento")
             }
         }
     }
@@ -671,7 +637,7 @@ private fun QuickTakeSlotCard(
 }
 
 @Composable
-private fun QuickTakeSlotPickerDialog(
+internal fun QuickTakeSlotPickerDialog(
     slotNumber: Int,
     medications: List<Medication>,
     selectedMedicationId: String?,

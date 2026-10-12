@@ -38,3 +38,6 @@ docs/
 .kotlin/
 app/debug/
 app/release/
+
+# Agent tool state (local only)
+.omc/

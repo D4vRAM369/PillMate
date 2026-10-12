@@ -127,6 +127,9 @@ fun PillMateTheme(
     val uiStyle by (themeManager?.uiStyle?.collectAsState(initial = AppUiStyle.Default)
         ?: androidx.compose.runtime.remember { mutableStateOf(AppUiStyle.Default) })
 
+    val appDesign by (themeManager?.appDesign?.collectAsState(initial = AppDesign.Astra)
+        ?: androidx.compose.runtime.remember { mutableStateOf(AppDesign.Astra) })
+
     val context = LocalContext.current
     val useDynamicColors = uiStyle == AppUiStyle.MaterialYou && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
@@ -142,7 +145,7 @@ fun PillMateTheme(
     val shapes = if (uiStyle == AppUiStyle.MaterialYou) MaterialYouShapes else ClassicShapes
     val typography = if (uiStyle == AppUiStyle.MaterialYou) MaterialYouTypography else Typography
 
-    CompositionLocalProvider(LocalUiStyle provides uiStyle) {
+    CompositionLocalProvider(LocalUiStyle provides uiStyle, LocalAppDesign provides appDesign) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = typography,
