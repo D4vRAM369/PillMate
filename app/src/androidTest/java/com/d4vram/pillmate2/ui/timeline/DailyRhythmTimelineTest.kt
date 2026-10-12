@@ -12,15 +12,23 @@ import org.junit.Test
 class DailyRhythmTimelineTest {
     @get:Rule val compose = createComposeRule()
 
-    @Test fun clockIsOptionalAndDescribesRealEvents() {
-        val day = LocalDate.of(2026, 9, 23)
-        val entry = HistoryEntry("id", "med", "Ejemplo", "", "", Color.Blue, "", timestamp = day.atTime(6, 0))
-        compose.setContent { MaterialTheme { DailyRhythmTimeline(listOf(entry), day) } }
-        compose.onNodeWithText("1 registros · 23/9").assertExists()
-        compose.onNodeWithText("24 horas").assertDoesNotExist()
-        compose.onNodeWithText("Ver reloj de 24 horas").performClick()
+    private val day = LocalDate.of(2026, 9, 23)
+    private fun entry(id: String, offset: Long, hour: Int) =
+        HistoryEntry(id, "med", "Ejemplo", "", "", Color.Blue, "", timestamp = day.plusDays(offset).atTime(hour, 0), dose = "5mg")
+
+    @Test fun singleDayDescribesRealEventsAndInvitesToTapADot() {
+        compose.setContent { MaterialTheme { RhythmClock(listOf(entry("id", 0, 6))) } }
         compose.onNodeWithContentDescription("Reloj de 24 horas. 1 registros. 06:00 Ejemplo, 1 unidades").assertExists()
-        compose.onNodeWithText("Ocultar reloj").performClick()
-        compose.onNodeWithText("24 horas").assertDoesNotExist()
+        compose.onNodeWithText("Toca un punto para ver la toma.").assertExists()
+    }
+
+    @Test fun severalDaysSwitchToHourlyBars() {
+        compose.setContent { MaterialTheme { RhythmClock(listOf(entry("a", 0, 6), entry("b", -1, 6))) } }
+        compose.onNodeWithText("Toca una barra para ver qué se tomó a esa hora.").assertExists()
+    }
+
+    @Test fun nonInteractiveClockShowsNoHint() {
+        compose.setContent { MaterialTheme { RhythmClock(listOf(entry("id", 0, 6)), interactive = false) } }
+        compose.onNodeWithText("Toca un punto para ver la toma.").assertDoesNotExist()
     }
 }

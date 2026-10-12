@@ -45,7 +45,7 @@ import androidx.compose.runtime.produceState
 import kotlinx.coroutines.delay
 import com.d4vram.pillmate2.ui.theme.AppDesign
 import com.d4vram.pillmate2.ui.theme.LocalAppDesign
-import com.d4vram.pillmate2.ui.timeline.DailyRhythmTimeline
+import com.d4vram.pillmate2.ui.timeline.RhythmClock
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -180,12 +180,7 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
-                if (astra) {
-                    DailyRhythmTimeline(historyEntries, today)
-                    androidx.compose.material3.TextButton(onClick = { navController.navigate("global_stats") }) {
-                        Text("Ver estadísticas")
-                    }
-                } else StatisticsQuickCard(
+                if (!astra) StatisticsQuickCard(
                     takenToday = stats.takenToday,
                     takenThisWeek = stats.takenThisWeek,
                     onClick = { navController.navigate("global_stats") }
@@ -205,6 +200,33 @@ fun HistoryScreen(repository: MedicationRepository, navController: NavController
                             label = { Text(period.label) },
                             selected = selectedPeriod == period
                         )
+                    }
+                }
+            }
+
+            if (astra) {
+                item {
+                    // El reloj sigue al filtro: un día → puntos; varios días → barras por hora.
+                    Column(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Tu ritmo · ${selectedPeriod.label.lowercase()}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text(
+                            text = "Cada marca es una toma registrada, no un objetivo.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
+                        )
+                        RhythmClock(entriesByPeriod)
+                        androidx.compose.material3.TextButton(onClick = { navController.navigate("global_stats") }) {
+                            Text("Ver estadísticas")
+                        }
                     }
                 }
             }

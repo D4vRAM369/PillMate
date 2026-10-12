@@ -8,10 +8,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -22,13 +24,15 @@ import com.d4vram.pillmate2.model.Medication
 import com.d4vram.pillmate2.model.SortMode
 import com.d4vram.pillmate2.ui.components.MedicationListItem
 import com.d4vram.pillmate2.ui.components.ReorderableMedicationGrid
-import com.d4vram.pillmate2.ui.components.StatisticsEntryCard
 import com.d4vram.pillmate2.ui.quicktake.QuickTapPulseBar
+import com.d4vram.pillmate2.ui.timeline.RhythmClock
+import com.d4vram.pillmate2.ui.timeline.dailyRhythmEntries
 import com.d4vram.pillmate2.ui.theme.ChipCountPeriod
 import com.d4vram.pillmate2.ui.theme.ThemeManager
 import com.d4vram.pillmate2.widget.QuickTakeWidget
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -105,6 +109,7 @@ internal fun AstraHomeScreen(
                             Text("Tu día, a tu ritmo", style = MaterialTheme.typography.headlineMedium)
                             Text(LocalDateTime.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", java.util.Locale.getDefault())), style = MaterialTheme.typography.bodyMedium)
                         }
+                        IconButton(onClick = { navController.navigate("global_stats") }) { Icon(Icons.Default.BarChart, "Estadísticas") }
                         IconButton(onClick = { search = !search; if (!search) query = "" }) { Icon(Icons.Default.Search, "Buscar") }
                         FilledIconButton(onClick = onAddMedication) { Icon(Icons.Default.Add, "Agregar medicamento") }
                     }
@@ -112,12 +117,6 @@ internal fun AstraHomeScreen(
                         placeholder = { Text("Buscar medicamento…") }, modifier = Modifier.fillMaxWidth(),
                         trailingIcon = { IconButton(onClick = { search = false; query = "" }) { Icon(Icons.Default.Close, "Cerrar búsqueda") } })
                 }
-            }
-            item {
-                StatisticsEntryCard(
-                    onClick = { navController.navigate("global_stats") },
-                    modifier = Modifier.padding(horizontal = 24.dp)
-                )
             }
             item {
                 Column(Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -128,21 +127,26 @@ internal fun AstraHomeScreen(
                 }
             }
             item {
+                // Una sola tarjeta resume el día y lleva al Historial: sustituye a "Última toma" y a la tarjeta de Estadísticas.
+                val today = remember(history) { dailyRhythmEntries(history, LocalDate.now()) }
                 val latest = history.maxByOrNull { it.timestamp }
-                Card(Modifier.padding(horizontal = 24.dp).fillMaxWidth()) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Última toma", style = MaterialTheme.typography.titleMedium)
-                        Text(latest?.let { "${it.medicationName} · ${it.quantity} unidad(es)" } ?: "Todavía no hay tomas registradas")
-                        latest?.let { Text(it.timestamp.format(DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm"))) }
-                        TextButton(onClick = { navController.navigate("history") }) { Text("Ver historial") }
+                Card(onClick = { navController.navigate("history") }, modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth()) {
+                    Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                        RhythmClock(today, diameter = 132.dp, interactive = false)
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Hoy · ${today.size} ${if (today.size == 1) "toma" else "tomas"}", style = MaterialTheme.typography.titleMedium)
+                            if (latest == null) Text("Todavía no hay tomas registradas", style = MaterialTheme.typography.bodyMedium)
+                            else {
+                                Text("Última: ${latest.medicationName}", style = MaterialTheme.typography.bodyMedium)
+                                Text(latest.timestamp.format(DateTimeFormatter.ofPattern(if (latest.timestamp.toLocalDate() == LocalDate.now()) "HH:mm" else "dd/MM · HH:mm")),
+                                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Text("Ver historial", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 }
             }
             item {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    TextButton(onClick = { navController.navigate("global_stats") }) { Text("Estadísticas") }
-                    TextButton(onClick = { navController.navigate("medications") }) { Text("Medicamentos") }
-                }
                 Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("Mis medicamentos", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                     TextButton(onClick = { scope.launch { themeManager.setListView(!listView) } }) { Text(if (listView) "Cuadrícula" else "Lista") }
