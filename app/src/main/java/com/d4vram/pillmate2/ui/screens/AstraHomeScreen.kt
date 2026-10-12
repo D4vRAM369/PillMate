@@ -24,6 +24,7 @@ import com.d4vram.pillmate2.model.Medication
 import com.d4vram.pillmate2.model.SortMode
 import com.d4vram.pillmate2.ui.components.MedicationListItem
 import com.d4vram.pillmate2.ui.components.ReorderableMedicationGrid
+import com.d4vram.pillmate2.ui.navigation.navigateToTab
 import com.d4vram.pillmate2.ui.quicktake.QuickTapPulseBar
 import com.d4vram.pillmate2.ui.timeline.RhythmClock
 import com.d4vram.pillmate2.ui.timeline.dailyRhythmEntries
@@ -130,7 +131,7 @@ internal fun AstraHomeScreen(
                 // Una sola tarjeta resume el día y lleva al Historial: sustituye a "Última toma" y a la tarjeta de Estadísticas.
                 val today = remember(history) { dailyRhythmEntries(history, LocalDate.now()) }
                 val latest = history.maxByOrNull { it.timestamp }
-                Card(onClick = { navController.navigate("history") }, modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth()) {
+                Card(onClick = { navController.navigateToTab("history") }, modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth()) {
                     Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         RhythmClock(today, diameter = 132.dp, interactive = false)
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

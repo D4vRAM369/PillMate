@@ -138,13 +138,7 @@ fun PillMateNavigation(
                             },
                             selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                             onClick = {
-                                navController.navigate(screen.route) {
-                                    popUpTo(navController.graph.findStartDestination().id) {
-                                        saveState = true
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = true
-                                }
+                                navController.navigateToTab(screen.route)
                             }
                         )
                     }
@@ -301,3 +295,19 @@ private val bottomNavItems = listOf(
     Screen.VoiceNotes,
     Screen.Settings
 )
+
+/**
+ * Ir a una pantalla de la barra inferior. TODA navegación a una pestaña pasa por aquí, también
+ * la que sale de un botón dentro de otra pantalla.
+ *
+ * Un `navigate("history")` a secas apila Historial encima de Home. Al pulsar luego la pestaña Home,
+ * Navigation guarda ese Historial como "el estado de Home" y lo restaura acto seguido: la pestaña
+ * parece no reaccionar.
+ */
+fun androidx.navigation.NavController.navigateToTab(route: String) {
+    navigate(route) {
+        popUpTo(graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
+}
