@@ -58,6 +58,11 @@ android {
         }
     }
 
+    // La build debug se instala como app aparte: convive con la app real y no toca su base de datos.
+    androidComponents {
+        onVariants(selector().withBuildType("debug")) { it.applicationId.set("dev.d4vram.pillmate2") }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
