@@ -68,6 +68,13 @@ fun WeeklyLineChart(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Qué mide: sin esto se confunde con las barras de "Tomas por día"
+            Text(
+                text = if (unit == "tomas") "Tomas por día" else "Cantidad por día ($unit)",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
             // Navegación integrada
             if (showNavigation) {
                 Row(
@@ -227,21 +234,6 @@ private fun LineChartCanvas(
             )
         }
 
-        // Etiqueta de unidad en la esquina superior izquierda
-        val unitPaint = android.graphics.Paint().apply {
-            color = labelColor
-            textSize = 11.sp.toPx()
-            textAlign = android.graphics.Paint.Align.LEFT
-            isAntiAlias = true
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-        }
-        drawContext.canvas.nativeCanvas.drawText(
-            unit,
-            8.dp.toPx(),
-            topPadding + 12.dp.toPx(),
-            unitPaint
-        )
-
         // 2. Calcular posiciones de puntos
         val pointSpacing = if (data.size > 1) chartWidth / (data.size - 1) else chartWidth
         val points = data.mapIndexed { index, point ->
@@ -359,15 +351,13 @@ private fun LineChartCanvas(
             isAntiAlias = true
         }
 
-        // Determinar intervalo de etiquetas según cantidad de datos
-        val labelInterval = when {
-            data.size <= 7 -> 1
-            data.size <= 15 -> 2
-            else -> 5
-        }
+        // Como mucho ~8 fechas, sea cual sea el periodo, para que no se pisen.
+        val labelInterval = (data.size + 6) / 7
 
         data.forEachIndexed { index, dataPoint ->
-            if (index % labelInterval == 0 || index == data.lastIndex || selectedPointIndex == index) {
+            // La última siempre; las demás cada `labelInterval`, salvo que queden pegadas a la última.
+            // El punto seleccionado no añade fecha: ya la lleva el globo.
+            if (index == data.lastIndex || (index % labelInterval == 0 && data.lastIndex - index >= labelInterval)) {
                 val x = leftPadding + (index * pointSpacing)
 
                 // Extraer inicial del día y fecha
@@ -397,7 +387,7 @@ private fun LineChartCanvas(
                 val dataPoint = data[index]
 
                 val valueText = formatValue(dataPoint.valueInUnit) + " " + unit
-                val dateText = dataPoint.fullDate.take(10) // Primeros caracteres de la fecha
+                val dateText = extractDateFromDayName(dataPoint.dayName, dataPoint.fullDate)
 
                 val tooltipPaint = android.graphics.Paint().apply {
                     color = tooltipTextColor

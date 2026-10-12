@@ -569,6 +569,11 @@ fun HorizontalActivityChart(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            Text(
+                text = "Tomas por día",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
             data.forEach { point ->
                 val isToday = point == today
                 val barColor = if (isToday) {
@@ -594,7 +599,9 @@ fun HorizontalActivityChart(
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
                         color = if (isToday) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.width(40.dp)
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.width(44.dp)
                     )
 
                     // Barra horizontal
