@@ -41,3 +41,16 @@ app/release/
 
 # Agent tool state (local only)
 .omc/
+
+# Build logs and editor settings (local only)
+build_*.txt
+build_*.log
+*.log
+.vscode/
+
+# AI assistant / agent tool state and session exports (local only)
+.claude/
+.codex
+.grok/
+.superpowers/
+tools.jsonl

@@ -66,7 +66,7 @@ data class StatisticsUiState(
     // Desglose por variantes de dosis (para familias de medicamentos)
     val doseBreakdown: List<DoseBreakdownItem> = emptyList(),
     val showingFamilyStats: Boolean = false, // true si se está mostrando una familia
-    val familyName: String = "", // Nombre de la familia (ej: "Ibuprofeno/Paracetamol")
+    val familyName: String = "", // Nombre de la familia (ej: "Ibuprofeno 400/600")
 
     // Campos legacy (mantener por compatibilidad temporal)
     val narrativeSummary: String = "",
