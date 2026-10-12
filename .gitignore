@@ -55,5 +55,3 @@ build_*.log
 .superpowers/
 tools.jsonl
 
-# Local analysis notes
-CODEX.md

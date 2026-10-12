@@ -75,3 +75,11 @@ Un solo módulo, arquitectura MVVM: pantallas en Compose, `ViewModel` con `State
 ## Contribuir
 
 Los *issues* con fallos o ideas son bienvenidos. Antes de proponer una función, ten en cuenta tres principios que no son negociables: la app funciona sin internet, no usa IA y no juzga al usuario.
+
+## Licencia
+
+Copyright © 2025-2026 D4vRAM369
+
+PillMate es software libre: puedes redistribuirlo y modificarlo bajo los términos de la [GNU General Public License, versión 3](LICENSE) o, si lo prefieres, cualquier versión posterior. Se distribuye con la esperanza de que sea útil, pero **sin ninguna garantía**.
+
+En corto: puedes usarla, estudiarla, cambiarla y compartirla. Si distribuyes una versión modificada, tiene que seguir siendo libre y bajo esta misma licencia.
