@@ -162,4 +162,71 @@
     <string name="photo_camera">Cámara</string>
     <string name="photo_gallery">Galería</string>
     <string name="photo_resize_note">La imagen se redimensionará automáticamente para optimizar espacio</string>
+
+    <!-- Acciones comunes (3) -->
+    <string name="action_search">Buscar</string>
+    <string name="action_add_medication">Agregar medicamento</string>
+    <string name="stats_title">Estadísticas</string>
+
+    <!-- Home (los dos diseños) -->
+    <string name="home_tagline">Tu día, a tu ritmo</string>
+    <string name="home_subtitle">Seguimiento personal</string>
+    <string name="home_search_placeholder">Buscar medicamento…</string>
+    <string name="home_quick_access">Accesos rápidos</string>
+    <plurals name="home_today_doses">
+        <item quantity="one">Hoy · %1$d toma</item>
+        <item quantity="other">Hoy · %1$d tomas</item>
+    </plurals>
+    <string name="home_no_doses_yet">Todavía no hay tomas registradas</string>
+    <string name="home_last_dose">Última: %1$s</string>
+    <string name="home_view_history">Ver historial</string>
+    <string name="home_my_medications">Mis medicamentos</string>
+    <string name="home_view_grid">Cuadrícula</string>
+    <string name="home_view_list">Lista</string>
+    <string name="home_view_as_grid">Ver como grid</string>
+    <string name="home_view_as_list">Ver como lista</string>
+    <string name="home_recent_history">Historial reciente</string>
+    <string name="home_global_stats">Estadísticas globales</string>
+    <string name="home_global_stats_hint">Ver resumen y progreso</string>
+    <string name="home_notes_title">Notas</string>
+    <string name="home_notes_none">Sin notas para esta entrada.</string>
+    <string name="home_empty_no_results">Sin resultados</string>
+    <string name="home_empty_first">Tu primer medicamento</string>
+    <string name="home_empty_no_results_hint">Prueba con otro nombre o dosis.</string>
+    <string name="home_empty_first_hint">Añade un medicamento para empezar a registrar tus tomas.</string>
+    <string name="home_clear_search">Limpiar búsqueda</string>
+    <string name="home_add_medication">Añadir medicamento</string>
+
+    <!-- Casillas de toma rápida -->
+    <string name="quick_take_title">Toma rápida</string>
+    <string name="quick_take_slots">4 casillas</string>
+    <string name="quick_take_choose">Elegir</string>
+    <string name="quick_take_slot">Casilla %1$d</string>
+    <string name="quick_take_slot_configure">Configurar casilla %1$d</string>
+    <string name="quick_take_unassigned">Sin asignar</string>
+    <string name="quick_take_one_dose">1 toma</string>
+    <string name="quick_take_setup">Configurar</string>
+    <string name="quick_take_take">Tomar</string>
+    <string name="quick_take_selected">Seleccionado</string>
+    <string name="quick_take_clear">Vaciar</string>
+
+    <!-- Registrar una toma (hoja y mensajes) -->
+    <string name="dose_logged">Toma registrada</string>
+    <string name="dose_undone">Toma deshecha</string>
+    <string name="dose_gone">La toma ya no existe</string>
+    <string name="dose_error_save">No se pudo guardar la toma. Inténtalo de nuevo.</string>
+    <string name="dose_error_undo">No se pudo deshacer la toma. Inténtalo desde Historial.</string>
+    <string name="dose_sheet_title">Registrar toma</string>
+    <string name="dose_sheet_doses">Dosis disponibles</string>
+    <string name="dose_sheet_units">Cantidad de unidades</string>
+    <string name="dose_sheet_decrease">Reducir cantidad</string>
+    <string name="dose_sheet_increase">Aumentar cantidad</string>
+    <string name="dose_now">Ahora</string>
+    <string name="dose_change_datetime">Cambiar fecha y hora</string>
+    <string name="dose_future_error">Selecciona una hora que ya haya pasado.</string>
+    <string name="dose_saving">Guardando…</string>
+    <plurals name="dose_log_units">
+        <item quantity="one">Registrar %1$d unidad</item>
+        <item quantity="other">Registrar %1$d unidades</item>
+    </plurals>
 </resources>

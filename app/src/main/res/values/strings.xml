@@ -164,4 +164,71 @@
     <string name="photo_camera">Camera</string>
     <string name="photo_gallery">Gallery</string>
     <string name="photo_resize_note">The image is resized automatically to save space</string>
+
+    <!-- Common actions (3) -->
+    <string name="action_search">Search</string>
+    <string name="action_add_medication">Add medication</string>
+    <string name="stats_title">Statistics</string>
+
+    <!-- Home (both designs) -->
+    <string name="home_tagline">Your day, your rhythm</string>
+    <string name="home_subtitle">Personal tracking</string>
+    <string name="home_search_placeholder">Search medication…</string>
+    <string name="home_quick_access">Quick access</string>
+    <plurals name="home_today_doses">
+        <item quantity="one">Today · %1$d dose</item>
+        <item quantity="other">Today · %1$d doses</item>
+    </plurals>
+    <string name="home_no_doses_yet">No doses logged yet</string>
+    <string name="home_last_dose">Last: %1$s</string>
+    <string name="home_view_history">View history</string>
+    <string name="home_my_medications">My medications</string>
+    <string name="home_view_grid">Grid</string>
+    <string name="home_view_list">List</string>
+    <string name="home_view_as_grid">View as grid</string>
+    <string name="home_view_as_list">View as list</string>
+    <string name="home_recent_history">Recent history</string>
+    <string name="home_global_stats">Global statistics</string>
+    <string name="home_global_stats_hint">See summary and progress</string>
+    <string name="home_notes_title">Notes</string>
+    <string name="home_notes_none">No notes for this entry.</string>
+    <string name="home_empty_no_results">No results</string>
+    <string name="home_empty_first">Your first medication</string>
+    <string name="home_empty_no_results_hint">Try another name or dose.</string>
+    <string name="home_empty_first_hint">Add a medication to start logging your doses.</string>
+    <string name="home_clear_search">Clear search</string>
+    <string name="home_add_medication">Add medication</string>
+
+    <!-- Quick-take slots -->
+    <string name="quick_take_title">Quick take</string>
+    <string name="quick_take_slots">4 slots</string>
+    <string name="quick_take_choose">Choose</string>
+    <string name="quick_take_slot">Slot %1$d</string>
+    <string name="quick_take_slot_configure">Set up slot %1$d</string>
+    <string name="quick_take_unassigned">Unassigned</string>
+    <string name="quick_take_one_dose">1 dose</string>
+    <string name="quick_take_setup">Set up</string>
+    <string name="quick_take_take">Take</string>
+    <string name="quick_take_selected">Selected</string>
+    <string name="quick_take_clear">Clear</string>
+
+    <!-- Logging a dose (sheet and messages) -->
+    <string name="dose_logged">Dose logged</string>
+    <string name="dose_undone">Dose undone</string>
+    <string name="dose_gone">That dose no longer exists</string>
+    <string name="dose_error_save">Couldn\'t save the dose. Try again.</string>
+    <string name="dose_error_undo">Couldn\'t undo the dose. Try from History.</string>
+    <string name="dose_sheet_title">Log dose</string>
+    <string name="dose_sheet_doses">Available doses</string>
+    <string name="dose_sheet_units">Number of units</string>
+    <string name="dose_sheet_decrease">Decrease quantity</string>
+    <string name="dose_sheet_increase">Increase quantity</string>
+    <string name="dose_now">Now</string>
+    <string name="dose_change_datetime">Change date and time</string>
+    <string name="dose_future_error">Pick a time that has already passed.</string>
+    <string name="dose_saving">Saving…</string>
+    <plurals name="dose_log_units">
+        <item quantity="one">Log %1$d unit</item>
+        <item quantity="other">Log %1$d units</item>
+    </plurals>
 </resources>
