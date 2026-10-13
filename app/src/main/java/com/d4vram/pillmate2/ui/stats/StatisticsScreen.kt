@@ -726,10 +726,10 @@ fun FilterButtons(
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         val filters = listOf(
-            "7 Días" to FilterRange.WEEK,
-            "15 Días" to FilterRange.DAYS_15,
-            "30 Días" to FilterRange.DAYS_30,
-            "Todos" to FilterRange.ALL_TIME
+            "7 días" to FilterRange.WEEK,
+            "15 días" to FilterRange.DAYS_15,
+            "30 días" to FilterRange.DAYS_30,
+            "Todo" to FilterRange.ALL_TIME
         )
 
         filters.forEach { (text, range) ->

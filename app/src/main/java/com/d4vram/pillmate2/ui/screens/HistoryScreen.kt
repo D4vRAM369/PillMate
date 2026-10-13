@@ -90,9 +90,21 @@ enum class TimePeriod(val label: String) {
     // El orden de aquí es el orden de los chips en pantalla
     TODAY("Hoy"),
     YESTERDAY("Ayer"),
-    WEEK("Esta semana"),
-    MONTH("Este mes"),
+    WEEK("7 días"),
+    MONTH("30 días"),
     ALL("Todo")
+}
+
+/**
+ * ¿Entra [date] en el periodo, siendo [today] el día actual? Ventanas móviles e iguales a las de
+ * Estadísticas: "7 días" es hoy y los 6 anteriores.
+ */
+internal fun TimePeriod.includes(date: LocalDate, today: LocalDate): Boolean = when (this) {
+    TimePeriod.TODAY -> date == today
+    TimePeriod.YESTERDAY -> date == today.minusDays(1)
+    TimePeriod.WEEK -> date in today.minusDays(6)..today
+    TimePeriod.MONTH -> date in today.minusDays(29)..today
+    TimePeriod.ALL -> true
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -124,21 +136,7 @@ fun HistoryScreen(
     val entriesByPeriod = remember(historyEntries, selectedPeriod, selectedDay, today) {
         val day = selectedDay
         if (day != null) historyEntries.filter { it.timestamp.toLocalDate() == day }
-        else when (selectedPeriod) {
-            TimePeriod.ALL -> historyEntries
-            TimePeriod.TODAY -> historyEntries.filter {
-                it.timestamp.toLocalDate() == today
-            }
-            TimePeriod.YESTERDAY -> historyEntries.filter {
-                it.timestamp.toLocalDate() == today.minusDays(1)
-            }
-            TimePeriod.WEEK -> historyEntries.filter {
-                ChronoUnit.DAYS.between(it.timestamp.toLocalDate(), today) <= 7
-            }
-            TimePeriod.MONTH -> historyEntries.filter {
-                ChronoUnit.DAYS.between(it.timestamp.toLocalDate(), today) <= 30
-            }
-        }
+        else historyEntries.filter { selectedPeriod.includes(it.timestamp.toLocalDate(), today) }
     }
 
     // Filtrar por búsqueda en notas (case-insensitive)
