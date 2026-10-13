@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.components
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.*
@@ -277,7 +279,7 @@ private fun AddMedicationCard(
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = "Agregar medicamento",
+                contentDescription = stringResource(R.string.action_add_medication),
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(48.dp)
             )
@@ -285,7 +287,7 @@ private fun AddMedicationCard(
             Spacer(modifier = Modifier.height(12.dp))
             
             Text(
-                text = "Agregar\nMedicamento",
+                text = stringResource(R.string.grid_add_medication),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold
                 ),

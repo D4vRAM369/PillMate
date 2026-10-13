@@ -7,6 +7,15 @@ import com.d4vram.pillmate2.model.Medication
 import java.io.File
 import java.time.LocalDateTime
 
+enum class CsvImportError {
+    INVALID_FORMAT,
+    MEDICATIONS_SECTION_MISSING,
+    MEDICATION_ROW_INCOMPLETE,
+    HISTORY_SECTION_MISSING
+}
+
+class CsvImportException(val reason: CsvImportError) : IllegalArgumentException()
+
 /**
  * 🧾 Utilidad sencilla para transformar datos a CSV y viceversa.
  * Formato:
@@ -78,12 +87,12 @@ object CsvUtils {
             .filter { it.isNotBlank() }
             .toList()
         if (lines.isEmpty() || lines.first() != HEADER) {
-            throw IllegalArgumentException("Formato CSV no reconocido")
+            throw CsvImportException(CsvImportError.INVALID_FORMAT)
         }
 
         var index = 1
         if (lines.getOrNull(index) != SECTION_MEDICATIONS) {
-            throw IllegalArgumentException("Sección de medicamentos no encontrada")
+            throw CsvImportException(CsvImportError.MEDICATIONS_SECTION_MISSING)
         }
         index += 2 // saltamos cabecera de columnas
 
@@ -91,7 +100,7 @@ object CsvUtils {
         while (index < lines.size && lines[index] != SECTION_HISTORY) {
             val tokens = parseCsvLine(lines[index])
             if (tokens.size < 11) {
-                throw IllegalArgumentException("Fila de medicamentos incompleta")
+                throw CsvImportException(CsvImportError.MEDICATION_ROW_INCOMPLETE)
             }
             // Columnas posicionales. Las exportaciones v1 antiguas incluían una
             // columna `isPrn` entre lastTaken y sortOrder; las nuevas no. Un
@@ -121,7 +130,7 @@ object CsvUtils {
         }
 
         if (index >= lines.size || lines[index] != SECTION_HISTORY) {
-            throw IllegalArgumentException("Sección de historial no encontrada")
+            throw CsvImportException(CsvImportError.HISTORY_SECTION_MISSING)
         }
         index += 2
 

@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.widget
 
+import com.d4vram.pillmate2.R
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -43,6 +44,8 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
+import androidx.glance.semantics.contentDescription
+import androidx.glance.semantics.semantics
 import com.d4vram.pillmate2.MainActivity
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.local.MedicationEntity
@@ -229,7 +232,7 @@ private fun QuickTakeWidgetContent(data: QuickTakeWidgetData) {
     ) {
         if (showHeader) {
             Text(
-                text = "Toma rápida",
+                text = LocalContext.current.getString(R.string.quick_take_title),
                 style = TextStyle(
                     color = ColorProvider(Color(data.color.accentArgb)),
                     fontWeight = FontWeight.Bold,
@@ -269,8 +272,9 @@ private fun WidgetCell(
     cellHeight: Dp,
     modifier: GlanceModifier
 ) {
+    val context = LocalContext.current
     val textSp = data.size.textSp
-    val fontScale = LocalContext.current.resources.configuration.fontScale
+    val fontScale = context.resources.configuration.fontScale
     val fill = medication?.let { Color(it.colorArgb) } ?: Color(data.color.emptyCellArgb)
     val clickAction = medication?.let {
         actionRunCallback<QuickTakeActionCallback>(
@@ -280,6 +284,12 @@ private fun WidgetCell(
             )
         )
     } ?: actionStartActivity<MainActivity>()
+    val contentDescription = medication?.let {
+        context.getString(R.string.quick_take_cell_log, it.name)
+    } ?: context.getString(R.string.quick_take_cell_configure)
+    val accessibleModifier = modifier
+        .semantics { this.contentDescription = contentDescription }
+        .clickable(clickAction)
 
     if (data.shape == QuickTakeWidgetShape.Circle) {
         // Un círculo de verdad necesita una caja cuadrada: su lado es lo que quepa
@@ -290,7 +300,7 @@ private fun WidgetCell(
         val diameter = (if (cellWidth < available) cellWidth else available) - 2.dp
 
         Column(
-            modifier = modifier.clickable(clickAction),
+            modifier = accessibleModifier,
             horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
             verticalAlignment = Alignment.Vertical.CenterVertically
         ) {
@@ -317,10 +327,9 @@ private fun WidgetCell(
 
     val radius = if (data.shape == QuickTakeWidgetShape.Rounded) 16.dp else 4.dp
     Box(
-        modifier = modifier
+        modifier = accessibleModifier
             .background(ColorProvider(fill))
-            .cornerRadius(radius)
-            .clickable(clickAction),
+            .cornerRadius(radius),
         contentAlignment = Alignment.Center
     ) {
         if (medication == null) {

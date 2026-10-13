@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.components
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import android.Manifest
 import android.os.Build
 import androidx.compose.foundation.background
@@ -153,13 +155,13 @@ private fun PermissionsDialogContent(
 
                             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 Text(
-                                    text = "Fotos y galería con un permiso claro",
+                                    text = stringResource(R.string.perm_title),
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = Color.White
                                 )
                                 Text(
-                                    text = "PillMate usa estos permisos solo para personalizar medicamentos con imágenes que se quedan en tu dispositivo.",
+                                    text = stringResource(R.string.perm_body),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = Color.White.copy(alpha = 0.92f)
                                 )
@@ -171,8 +173,8 @@ private fun PermissionsDialogContent(
 
                     PermissionFeatureCard(
                         icon = Icons.Default.CameraAlt,
-                        title = "Cámara",
-                        description = "Haz fotos rápidas de tus medicamentos para reconocerlos mejor.",
+                        title = stringResource(R.string.photo_camera),
+                        description = stringResource(R.string.perm_camera_desc),
                         accent = Color(0xFF0EA5E9)
                     )
 
@@ -180,8 +182,8 @@ private fun PermissionsDialogContent(
 
                     PermissionFeatureCard(
                         icon = Icons.Default.PhotoLibrary,
-                        title = "Galería de fotos",
-                        description = "Elige imágenes ya existentes sin repetir trabajo.",
+                        title = stringResource(R.string.perm_gallery),
+                        description = stringResource(R.string.perm_gallery_desc),
                         accent = Color(0xFF14B8A6)
                     )
 
@@ -189,15 +191,15 @@ private fun PermissionsDialogContent(
 
                     PermissionFeatureCard(
                         icon = Icons.Default.VerifiedUser,
-                        title = "Privacidad garantizada",
-                        description = "Nada de estas fotos se envía a servicios externos.",
+                        title = stringResource(R.string.perm_privacy),
+                        description = stringResource(R.string.perm_privacy_desc),
                         accent = Color(0xFF22C55E)
                     )
 
                     if (multiplePermissionsState.shouldShowRationale) {
                         Spacer(modifier = Modifier.height(18.dp))
                         Text(
-                            text = "Antes rechazaste estos permisos. Si quieres usar fotos en tus medicamentos, concédelos en el siguiente paso.",
+                            text = stringResource(R.string.perm_denied_before),
                             style = MaterialTheme.typography.bodySmall,
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.error
@@ -224,9 +226,9 @@ private fun PermissionsDialogContent(
                         ) {
                             Text(
                                 text = if (multiplePermissionsState.allPermissionsGranted) {
-                                    "Permisos concedidos"
+                                    stringResource(R.string.perm_granted)
                                 } else {
-                                    "Continuar y conceder permisos"
+                                    stringResource(R.string.perm_continue)
                                 }
                             )
                         }
@@ -238,7 +240,7 @@ private fun PermissionsDialogContent(
                                 .height(52.dp),
                             shape = RoundedCornerShape(18.dp)
                         ) {
-                            Text("Ahora no")
+                            Text(stringResource(R.string.perm_not_now))
                         }
                     }
                 }

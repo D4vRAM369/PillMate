@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.screens
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import com.d4vram.pillmate2.widget.fittedNameSp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextOverflow
@@ -194,7 +196,7 @@ fun HomeScreen(
 
             item {
                 SectionTitle(
-                    title = "Mis Medicamentos",
+                    title = stringResource(R.string.home_my_medications),
                     leadingIcon = Icons.Default.Medication,
                     modifier = Modifier.padding(horizontal = 24.dp),
                     trailingContent = {
@@ -207,7 +209,7 @@ fun HomeScreen(
                                     Icons.Default.GridView
                                 else
                                     Icons.AutoMirrored.Filled.ViewList,
-                                contentDescription = if (isListView) "Ver como grid" else "Ver como lista",
+                                contentDescription = stringResource(if (isListView) R.string.home_view_as_grid else R.string.home_view_as_list),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -272,7 +274,7 @@ fun HomeScreen(
             item {
                 // Título del historial
                 SectionTitle(
-                    title = "Historial Reciente",
+                    title = stringResource(R.string.home_recent_history),
                     leadingIcon = Icons.Default.History,
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
@@ -297,14 +299,14 @@ fun HomeScreen(
         selectedHistoryEntry?.let { entry ->
             AlertDialog(
                 onDismissRequest = { selectedHistoryEntry = null },
-                title = { Text(text = "Notas") },
+                title = { Text(text = stringResource(R.string.home_notes_title)) },
                 text = {
-                    val notesText = entry.notes.ifBlank { "Sin notas para esta entrada." }
+                    val notesText = entry.notes.ifBlank { stringResource(R.string.home_notes_none) }
                     Text(notesText)
                 },
                 confirmButton = {
                     TextButton(onClick = { selectedHistoryEntry = null }) {
-                        Text("Cerrar")
+                        Text(stringResource(R.string.action_close))
                     }
                 }
             )
@@ -336,11 +338,11 @@ internal fun HeaderSection(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("PillMate", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold, color = contentColor)
-                Text("Seguimiento personal", style = MaterialTheme.typography.bodyMedium, color = contentColor.copy(alpha = 0.9f))
+                Text(stringResource(R.string.home_subtitle), style = MaterialTheme.typography.bodyMedium, color = contentColor.copy(alpha = 0.9f))
             }
             if (!searchActive) {
                 IconButton(onClick = { onSearchActiveChange(true) }, modifier = Modifier.size(48.dp)) {
-                    Icon(Icons.Default.Search, contentDescription = "Buscar", tint = contentColor)
+                    Icon(Icons.Default.Search, contentDescription = stringResource(R.string.action_search), tint = contentColor)
                 }
             }
             FloatingActionButton(
@@ -349,18 +351,18 @@ internal fun HeaderSection(
                 containerColor = if (materialYou) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.2f),
                 contentColor = if (materialYou) MaterialTheme.colorScheme.onPrimary else Color.White
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Agregar medicamento")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.action_add_medication))
             }
         }
         AnimatedVisibility(visible = searchActive) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = onSearchQueryChange,
-                placeholder = { Text("Buscar medicamento…") },
+                placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 trailingIcon = {
                     IconButton(onClick = { onSearchActiveChange(false) }) {
-                        Icon(Icons.Default.Close, contentDescription = "Cerrar búsqueda")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.history_search_close))
                     }
                 },
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
@@ -388,13 +390,13 @@ internal fun HeaderSection(
 internal fun EmptyMedicationState(searching: Boolean, onAction: () -> Unit, modifier: Modifier = Modifier) {
     Card(modifier = modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
         Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(if (searching) "Sin resultados" else "Tu primer medicamento", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(if (searching) R.string.home_empty_no_results else R.string.home_empty_first), style = MaterialTheme.typography.titleMedium)
             Text(
-                if (searching) "Prueba con otro nombre o dosis." else "Añade un medicamento para empezar a registrar tus tomas.",
+                stringResource(if (searching) R.string.home_empty_no_results_hint else R.string.home_empty_first_hint),
                 style = MaterialTheme.typography.bodyMedium
             )
             TextButton(onClick = onAction) {
-                Text(if (searching) "Limpiar búsqueda" else "Añadir medicamento")
+                Text(stringResource(if (searching) R.string.home_clear_search else R.string.home_add_medication))
             }
         }
     }
@@ -450,14 +452,14 @@ private fun StatisticsEntryCard(
                 
                 Column {
                     Text(
-                        text = "Estadísticas Globales",
+                        text = stringResource(R.string.home_global_stats),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold
                         ),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Ver resumen y progreso",
+                        text = stringResource(R.string.home_global_stats_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -466,7 +468,7 @@ private fun StatisticsEntryCard(
             
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Ver estadísticas",
+                contentDescription = stringResource(R.string.history_view_stats),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -485,8 +487,8 @@ private fun QuickTakeSection(
 
     Column(modifier = modifier.fillMaxWidth()) {
         SectionTitle(
-            title = "Toma rápida",
-            subtitle = "4 casillas",
+            title = stringResource(R.string.quick_take_title),
+            subtitle = stringResource(R.string.quick_take_slots),
             leadingIcon = Icons.Default.Bolt,
             modifier = Modifier.padding(horizontal = 24.dp)
         )
@@ -577,7 +579,7 @@ private fun QuickTakeSlotCard(
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
-                    val name = medication?.name ?: "Elegir"
+                    val name = medication?.name ?: stringResource(R.string.quick_take_choose)
                     Text(
                         text = name,
                         // 92 dp = ancho de la tarjeta menos márgenes, avatar y botón de editar
@@ -590,7 +592,7 @@ private fun QuickTakeSlotCard(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = medication?.dose ?: "Casilla $slotNumber",
+                        text = medication?.dose ?: stringResource(R.string.quick_take_slot, slotNumber),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1
@@ -603,7 +605,7 @@ private fun QuickTakeSlotCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,
-                        contentDescription = "Configurar casilla $slotNumber",
+                        contentDescription = stringResource(R.string.quick_take_slot_configure, slotNumber),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
@@ -616,7 +618,7 @@ private fun QuickTakeSlotCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = if (medication == null) "Sin asignar" else "1 toma",
+                    text = stringResource(if (medication == null) R.string.quick_take_unassigned else R.string.quick_take_one_dose),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
@@ -631,7 +633,7 @@ private fun QuickTakeSlotCard(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = if (medication == null) "Configurar" else "Tomar",
+                        text = stringResource(if (medication == null) R.string.quick_take_setup else R.string.quick_take_take),
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.Bold
                         ),
@@ -655,7 +657,7 @@ internal fun QuickTakeSlotPickerDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Casilla $slotNumber") },
+        title = { Text(stringResource(R.string.quick_take_slot, slotNumber)) },
         text = {
             LazyColumn(
                 modifier = Modifier.heightIn(max = 360.dp),
@@ -705,7 +707,7 @@ internal fun QuickTakeSlotPickerDialog(
                         if (medication.id == selectedMedicationId) {
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
-                                contentDescription = "Seleccionado",
+                                contentDescription = stringResource(R.string.quick_take_selected),
                                 tint = medication.color,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -716,12 +718,12 @@ internal fun QuickTakeSlotPickerDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cerrar")
+                Text(stringResource(R.string.action_close))
             }
         },
         dismissButton = {
             TextButton(onClick = onClearSlot) {
-                Text("Vaciar")
+                Text(stringResource(R.string.quick_take_clear))
             }
         }
     )

@@ -1,31 +1,850 @@
 <resources>
-    <string name="app_name">PillMate</string>
-    <string name="quick_take_widget_description">Registra una toma de tus cuatro medicamentos habituales con un toque.</string>
+    <string name="app_name" translatable="false">PillMate</string>
+    <string name="export_csv">Export CSV</string>
+    <string name="export_pdf">Export PDF</string>
+    <string name="all_medications">All medications</string>
+    <string name="quick_take_widget_description">Log a dose of your four usual medications with one tap.</string>
+    <string name="quick_take_cell_log">Log a dose of %1$s</string>
+    <string name="quick_take_cell_configure">Set up quick access</string>
 
-    <!-- Navigation -->
-    <string name="nav_home">Home</string>
-    <string name="nav_medications">Meds</string>
-    <string name="nav_history">History</string>
-    <string name="nav_settings">Settings</string>
-
-    <!-- Home Screen -->
-    <string name="home_title">💊 PillMate</string>
-    <string name="home_subtitle">Seguimiento Personal</string>
-    <string name="stats_taken_today">Tomadas Hoy</string>
-    <string name="stats_this_week">Esta Semana</string>
-    <string name="stats_adherence">Adherencia</string>
-
-    <!-- Medications -->
-    <string name="medications_title">Mis Medicamentos</string>
-    <string name="medications_subtitle">Presiona para registrar</string>
-    <string name="add_medication">Agregar Medicamento</string>
+    <!-- Time periods (History and Statistics filters) -->
+    <string name="period_today">Today</string>
+    <string name="period_yesterday">Yesterday</string>
+    <string name="period_7_days">7 days</string>
+    <string name="period_30_days">30 days</string>
+    <string name="period_all">All</string>
 
     <!-- History -->
-    <string name="history_title">Historial Reciente</string>
-    <string name="history_taken">Tomada</string>
+    <string name="history_title">History</string>
+    <string name="history_search_open">Search notes</string>
+    <string name="history_search_close">Close search</string>
+    <string name="history_search_clear">Clear search</string>
+    <string name="history_search_placeholder">Search history notes…</string>
+    <string name="history_search_hint">Type to filter by note content</string>
+    <plurals name="history_search_results">
+        <item quantity="one">%1$d result in notes</item>
+        <item quantity="other">%1$d results in notes</item>
+    </plurals>
+    <string name="history_no_matching_notes">No notes match \"%1$s\"</string>
+    <string name="history_empty_filter">No entries for this filter</string>
+    <string name="history_remove_day_filter">Remove day filter</string>
+    <!-- %1$s: the selected period in lowercase ("today", "7 days") or a date -->
+    <string name="history_rhythm_title">Your rhythm · %1$s</string>
+    <string name="history_rhythm_caption">Each mark is a logged dose, not a goal.</string>
+    <string name="history_view_stats">View statistics</string>
+    <string name="history_stats_summary">Today: %1$d • 7 days: %2$d</string>
 
-    <!-- Settings -->
-    <string name="settings_notifications">Notificaciones</string>
-    <string name="settings_data">Datos</string>
-    <string name="settings_info">Información</string>
+    <!-- Common actions -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_ok">OK</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_close">Close</string>
+    <string name="action_save_changes">Save changes</string>
+
+    <!-- History entry and its notes dialog -->
+    <string name="entry_taken">Taken</string>
+    <plurals name="history_drops_accessibility">
+        <item quantity="one">%1$d drop</item>
+        <item quantity="other">%1$d drops</item>
+    </plurals>
+    <string name="entry_quantity_logged">Logged quantity: x%1$d</string>
+    <string name="entry_time_section">⏰ Time of the dose</string>
+    <string name="entry_date">Date</string>
+    <string name="entry_time">Time</string>
+    <string name="entry_change_date">Change date</string>
+    <string name="entry_change_time">Change time</string>
+    <string name="entry_pick_time">Pick the time</string>
+    <string name="notes_section">📝 Additional notes</string>
+    <string name="notes_edit">Edit notes</string>
+    <string name="notes_delete">Delete notes</string>
+    <string name="notes_field_label">Notes (optional)</string>
+    <string name="notes_empty">No additional notes</string>
+    <string name="notes_add">Add notes</string>
+    <string name="voice_note_record">Record voice note</string>
+    <string name="voice_note_recording">Recording…</string>
+    <string name="voice_note_stop">Stop recording</string>
+    <string name="voice_note_title">🎤 Voice note</string>
+    <string name="voice_note_share">Share voice note</string>
+    <string name="voice_note_share_audio">Share audio</string>
+    <string name="voice_note_delete_audio">Delete audio</string>
+    <string name="voice_note_play">Play</string>
+    <string name="voice_note_pause">Pause</string>
+
+    <!-- Onboarding (the four intro pages) -->
+    <string name="action_undo">Undo</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_start">Get started</string>
+    <string name="onboarding_log_eyebrow">LOG</string>
+    <string name="onboarding_log_title">Log the dose when you take it</string>
+    <string name="onboarding_log_body">PillMate is for as-needed medication: the kind you take when you need it. There are no schedules to keep and no alarms chasing you.</string>
+    <string name="onboarding_log_note">One tap is enough. Also from the widget and from the notification, without opening the app.</string>
+    <string name="onboarding_clock_eyebrow">THE CLOCK</string>
+    <string name="onboarding_clock_title">Your day on a 24-hour clock</string>
+    <string name="onboarding_clock_body">Each dot is a dose, placed at its time and in the colour of its medication. 00 is at the top and it turns like a normal clock.</string>
+    <string name="onboarding_clock_note">Try it: tap a dot to see what it was.</string>
+    <string name="onboarding_rhythm_eyebrow">YOUR RHYTHM</string>
+    <string name="onboarding_rhythm_title">With more days, your pattern shows up</string>
+    <string name="onboarding_rhythm_body">Put several days together and the dots turn into bars: the longer the bar, the more doses at that hour. PillMate works out your most active hour and how often you usually take a dose.</string>
+    <string name="onboarding_rhythm_note">It describes, it doesn\'t judge: no scores, no goals and no medical advice.</string>
+    <string name="onboarding_privacy_eyebrow">PRIVACY</string>
+    <string name="onboarding_privacy_title">What you log never leaves your phone</string>
+    <string name="onboarding_privacy_body">No accounts, no ads and no analytics. Your data is yours and stays with you.</string>
+    <string name="onboarding_tap_hint">Tap the tile</string>
+    <plurals name="onboarding_today_doses">
+        <item quantity="one">Today: %1$d dose</item>
+        <item quantity="other">Today: %1$d doses</item>
+    </plurals>
+    <string name="onboarding_dose_logged">Dose logged</string>
+    <plurals name="onboarding_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="onboarding_fact_offline_title">No internet</string>
+    <string name="onboarding_fact_offline_text">The app has no network permission: it can\'t send anything.</string>
+    <string name="onboarding_fact_backup_title">Backups whenever you want</string>
+    <string name="onboarding_fact_backup_text">Full backup as a ZIP and export to CSV or PDF.</string>
+    <string name="onboarding_fact_lock_title">Optional lock</string>
+    <string name="onboarding_fact_lock_text">Protect the app with your fingerprint.</string>
+    <string name="onboarding_sample_painkiller">Painkiller</string>
+    <string name="onboarding_sample_antihistamine">Antihistamine</string>
+    <string name="onboarding_sample_vitamin">Vitamin</string>
+
+    <!-- Common actions (2) -->
+    <string name="action_back">Back</string>
+    <string name="action_add">Add</string>
+    <string name="action_save">Save</string>
+    <string name="action_update">Update</string>
+
+    <!-- Short weekday names -->
+    <string name="day_short_mon">Mon</string>
+    <string name="day_short_tue">Tue</string>
+    <string name="day_short_wed">Wed</string>
+    <string name="day_short_thu">Thu</string>
+    <string name="day_short_fri">Fri</string>
+    <string name="day_short_sat">Sat</string>
+    <string name="day_short_sun">Sun</string>
+
+    <!-- Add / edit medication -->
+    <string name="med_form_title_add">Add medication</string>
+    <string name="med_form_title_edit">Edit medication</string>
+    <string name="med_form_preview">Preview</string>
+    <string name="med_form_preview_hint">This is how it will look in your medication list</string>
+    <string name="med_form_name">Medication name</string>
+    <string name="med_form_dose">Dose</string>
+    <string name="med_form_type">Type (e.g. Tablet, Capsule, Syrup, Drops)</string>
+    <string name="med_form_type_placeholder">Tablet</string>
+    <string name="med_form_color">Medication colour</string>
+    <string name="med_form_color_hint">Pick one from the palette or add a custom shade</string>
+    <string name="med_form_color_custom">Custom colour</string>
+    <string name="med_form_color_new">New custom colour</string>
+    <string name="med_form_emoji">Emoji (optional)</string>
+    <string name="med_form_emoji_hint">It helps you spot the medication quickly</string>
+    <string name="med_form_emoji_more">Search more emojis</string>
+    <string name="med_form_emoji_search">Search emoji</string>
+    <string name="med_form_emoji_search_hint">Search: pill, heart, sun…</string>
+    <string name="med_form_emoji_none">No emojis match your search.</string>
+    <string name="med_form_combine">Combine medication</string>
+    <string name="med_form_combine_hint">Link it to another one to group them in statistics (e.g. different doses of the same medication)</string>
+    <string name="med_form_linked_to">Linked to: %1$s</string>
+    <string name="med_form_not_linked">Not linked (standalone)</string>
+    <string name="med_form_pick_parent">Pick the main medication</string>
+    <string name="med_form_no_link">Don\'t link (keep separate)</string>
+    <string name="med_form_schedule">Schedule</string>
+    <string name="med_form_schedule_hint">Set the time and how often you take it</string>
+    <string name="med_form_reminders">Turn on reminders</string>
+    <string name="med_form_reminders_hint">Get a notification at the scheduled time</string>
+    <string name="med_form_hour">Hour</string>
+    <string name="med_form_minute">Minute</string>
+    <string name="med_form_days">Days</string>
+    <string name="med_form_times_per_day">Times per day</string>
+
+    <!-- Medication photo -->
+    <string name="photo_title">Medication photo</string>
+    <string name="photo_subtitle">Optional - helps you recognise it at a glance</string>
+    <string name="photo_description">Photo of the medication</string>
+    <string name="photo_delete">Delete photo</string>
+    <string name="photo_use_as_id">Use the photo to identify it</string>
+    <string name="photo_use_on">The photo will be shown instead of the emoji</string>
+    <string name="photo_use_off">Emoji and colour will still be shown</string>
+    <string name="photo_camera">Camera</string>
+    <string name="photo_gallery">Gallery</string>
+    <string name="photo_resize_note">The image is resized automatically to save space</string>
+
+    <!-- Common actions (3) -->
+    <string name="action_search">Search</string>
+    <string name="action_add_medication">Add medication</string>
+    <string name="stats_title">Statistics</string>
+
+    <!-- Home (both designs) -->
+    <string name="home_tagline">Your day, your rhythm</string>
+    <string name="home_subtitle">Personal tracking</string>
+    <string name="home_search_placeholder">Search medication…</string>
+    <string name="home_quick_access">Quick access</string>
+    <plurals name="home_today_doses">
+        <item quantity="one">Today · %1$d dose</item>
+        <item quantity="other">Today · %1$d doses</item>
+    </plurals>
+    <string name="home_no_doses_yet">No doses logged yet</string>
+    <string name="home_last_dose">Last: %1$s</string>
+    <string name="home_view_history">View history</string>
+    <string name="home_my_medications">My medications</string>
+    <string name="home_view_grid">Grid</string>
+    <string name="home_view_list">List</string>
+    <string name="home_view_as_grid">View as grid</string>
+    <string name="home_view_as_list">View as list</string>
+    <string name="home_recent_history">Recent history</string>
+    <string name="home_global_stats">Global statistics</string>
+    <string name="home_global_stats_hint">See summary and progress</string>
+    <string name="home_notes_title">Notes</string>
+    <string name="home_notes_none">No notes for this entry.</string>
+    <string name="home_empty_no_results">No results</string>
+    <string name="home_empty_first">Your first medication</string>
+    <string name="home_empty_no_results_hint">Try another name or dose.</string>
+    <string name="home_empty_first_hint">Add a medication to start logging your doses.</string>
+    <string name="home_clear_search">Clear search</string>
+    <string name="home_add_medication">Add medication</string>
+
+    <!-- Quick-take slots -->
+    <string name="quick_take_title">Quick take</string>
+    <string name="quick_take_slots">4 slots</string>
+    <string name="quick_take_choose">Choose</string>
+    <string name="quick_take_slot">Slot %1$d</string>
+    <string name="quick_take_slot_configure">Set up slot %1$d</string>
+    <string name="quick_take_unassigned">Unassigned</string>
+    <string name="quick_take_one_dose">1 dose</string>
+    <string name="quick_take_setup">Set up</string>
+    <string name="quick_take_take">Take</string>
+    <string name="quick_take_selected">Selected</string>
+    <string name="quick_take_clear">Clear</string>
+
+    <!-- Logging a dose (sheet and messages) -->
+    <string name="dose_logged">Dose logged</string>
+    <string name="dose_undone">Dose undone</string>
+    <string name="dose_gone">That dose no longer exists</string>
+    <string name="dose_error_save">Couldn\'t save the dose. Try again.</string>
+    <string name="dose_error_undo">Couldn\'t undo the dose. Try from History.</string>
+    <string name="dose_sheet_title">Log dose</string>
+    <string name="dose_sheet_doses">Available doses</string>
+    <string name="dose_sheet_units">Number of units</string>
+    <string name="dose_sheet_decrease">Decrease quantity</string>
+    <string name="dose_sheet_increase">Increase quantity</string>
+    <string name="dose_now">Now</string>
+    <string name="dose_change_datetime">Change date and time</string>
+    <string name="dose_future_error">Pick a time that has already passed.</string>
+    <string name="dose_saving">Saving…</string>
+    <plurals name="dose_log_units">
+        <item quantity="one">Log %1$d unit</item>
+        <item quantity="other">Log %1$d units</item>
+    </plurals>
+
+    <!-- Common actions (4) -->
+    <string name="action_delete">Delete</string>
+    <string name="action_confirm">Confirm</string>
+    <string name="action_log">Log</string>
+
+    <!-- Medication cards, list rows and grid -->
+    <string name="card_reorder">Reorder</string>
+    <string name="card_options">Options</string>
+    <string name="list_item_log_dose">Log a dose of %1$s</string>
+    <string name="list_item_options">Options for %1$s</string>
+    <string name="grid_add_medication">Add\nmedication</string>
+
+    <!-- Classic dose dialog and pickers -->
+    <string name="dose_dialog_which_dose">Which dose of %1$s are you logging?</string>
+    <string name="dose_dialog_pick_dose">Pick the dose:</string>
+    <string name="dose_dialog_time_label">Time of the dose:</string>
+    <string name="dose_other_time">Another time</string>
+    <string name="time_picker_title">Select time</string>
+    <string name="time_picker_to_keyboard">Switch to keyboard</string>
+    <string name="time_picker_to_clock">Switch to clock</string>
+
+    <!-- Common actions (5) -->
+    <string name="action_share">Share</string>
+
+    <!-- Voice notes: screen -->
+    <string name="voice_notes_title">Voice notes</string>
+    <string name="vn_err_no_mic">Microphone permission denied</string>
+    <string name="vn_export_all">Export all notes</string>
+    <string name="vn_setup_title">Protect your notes</string>
+    <string name="vn_setup_body">Create a password to encrypt your voice notes with AES-256</string>
+    <string name="vn_password">Password</string>
+    <string name="vn_password_confirm">Confirm password</string>
+    <string name="vn_hint_optional">Hint (optional)</string>
+    <string name="vn_password_save">Save password</string>
+    <string name="vn_unlock_title">Enter your password</string>
+    <string name="vn_hint">Hint: %1$s</string>
+    <string name="vn_unlock">Unlock</string>
+    <string name="vn_duration">Duration %1$s • %2$s</string>
+    <string name="vn_stop">Stop</string>
+    <string name="vn_more_options">More options</string>
+    <string name="vn_rename">Rename</string>
+    <string name="vn_change_category">Change category</string>
+    <string name="vn_edit_tags">Edit tags</string>
+    <string name="vn_recording_time">Recording… %1$s</string>
+    <string name="vn_auto_title">Automatic title</string>
+    <string name="vn_default_title">Note %1$s</string>
+    <string name="vn_ready">Ready to record</string>
+    <string name="vn_empty_title">No voice notes</string>
+    <string name="vn_empty_body">Record spoken reminders and keep them encrypted.</string>
+    <string name="vn_empty_start">Start recording</string>
+    <string name="vn_rename_title">Rename note</string>
+    <string name="vn_title_label">Title</string>
+    <string name="vn_delete_title">Delete note</string>
+    <string name="vn_delete_confirm">Delete \"%1$s\"? This can\'t be undone.</string>
+    <string name="vn_category_pick">Select category</string>
+    <string name="vn_tags_hint">Separate tags with commas</string>
+    <string name="vn_tags_label">Tags</string>
+    <string name="vn_tags_placeholder">urgent, important, work</string>
+
+    <!-- Voice notes: categories -->
+    <string name="vn_category_general">General</string>
+    <string name="vn_category_work">Work</string>
+    <string name="vn_category_personal">Personal</string>
+    <string name="vn_category_medical">Medical</string>
+    <string name="vn_category_ideas">Ideas</string>
+    <string name="vn_category_reminders">Reminders</string>
+
+    <!-- Voice notes: messages from the ViewModel and the exporter -->
+    <string name="vn_err_password_empty">Password can\'t be empty</string>
+    <string name="vn_err_password_mismatch">Passwords don\'t match</string>
+    <string name="vn_info_password_set">Password set</string>
+    <string name="vn_err_password_save">Couldn\'t save the password</string>
+    <string name="vn_err_password_verify">Couldn\'t verify the password</string>
+    <string name="vn_info_unlocked">Notes unlocked</string>
+    <string name="vn_err_wrong_password">Wrong password</string>
+    <string name="vn_err_unlock_first">Unlock the notes first</string>
+    <string name="vn_err_start_recording">Couldn\'t start recording</string>
+    <string name="vn_err_stop_recording">Couldn\'t stop recording</string>
+    <string name="vn_info_saved">Voice note saved</string>
+    <string name="vn_err_save">Couldn\'t save the note</string>
+    <string name="vn_err_playback">Error playing the note</string>
+    <string name="vn_err_play">Couldn\'t play the note</string>
+    <string name="vn_info_deleted">Note deleted</string>
+    <string name="vn_err_delete">Couldn\'t delete the note</string>
+    <string name="vn_info_updated">Note updated</string>
+    <string name="vn_err_rename">Couldn\'t rename the note</string>
+    <string name="vn_info_category_updated">Category updated</string>
+    <string name="vn_err_category">Couldn\'t update the category</string>
+    <string name="vn_info_tags_updated">Tags updated</string>
+    <string name="vn_err_tags">Couldn\'t update the tags</string>
+    <string name="vn_share_text">Voice note: %1$s</string>
+    <string name="vn_info_sharing">Getting ready to share…</string>
+    <string name="vn_err_share">Couldn\'t share the note</string>
+    <string name="vn_info_exporting">Exporting notes…</string>
+    <string name="vn_export_subject">Voice notes backup</string>
+    <string name="vn_export_chooser">Export notes backup</string>
+    <string name="vn_err_export">Export failed</string>
+    <string name="vn_err_export_empty">There are no notes to export</string>
+    <string name="vn_err_export_failed">Export failed: %1$s</string>
+    <plurals name="vn_export_text">
+        <item quantity="one">Backup file with %1$d encrypted voice note</item>
+        <item quantity="other">Backup file with %1$d encrypted voice notes</item>
+    </plurals>
+    <plurals name="vn_info_exported">
+        <item quantity="one">Backup exported: %1$d note</item>
+        <item quantity="other">Backup exported: %1$d notes</item>
+    </plurals>
+
+    <!-- Settings: enum labels (design, style, chip period, sort mode, widget) -->
+    <string name="design_rhythm">Rhythm</string>
+    <string name="design_classic">Classic</string>
+    <string name="ui_style_classic">Classic</string>
+    <string name="ui_style_classic_desc">PillMate\'s current style</string>
+    <string name="ui_style_material_you">Material You</string>
+    <string name="ui_style_material_you_desc">Native Material Design 3 components</string>
+    <string name="chip_period_daily">Daily</string>
+    <string name="chip_period_daily_desc">Show today\'s doses</string>
+    <string name="chip_period_weekly">Weekly</string>
+    <string name="chip_period_weekly_desc">Show this week\'s doses</string>
+    <string name="chip_period_monthly">Monthly</string>
+    <string name="chip_period_monthly_desc">Show this month\'s doses</string>
+    <string name="chip_period_total">Total</string>
+    <string name="chip_period_total_desc">Show every logged dose</string>
+    <string name="chip_period_hidden">Don\'t show</string>
+    <string name="chip_period_hidden_desc">Hide the count chip</string>
+    <string name="sort_manual">Manual order</string>
+    <string name="sort_manual_desc">Drag to reorder. The order is saved automatically</string>
+    <string name="sort_last_taken">By last dose</string>
+    <string name="sort_last_taken_desc">Recently taken ones come first</string>
+    <string name="sort_most_used">Most used (week)</string>
+    <string name="sort_most_used_desc">Most used in the last 7 days first</string>
+    <string name="sort_alphabetical">Alphabetical</string>
+    <string name="sort_alphabetical_desc">Sorted A to Z by name</string>
+    <string name="sort_creation">By creation order</string>
+    <string name="sort_creation_desc">Oldest medications first</string>
+    <string name="widget_shape_rounded">Rounded</string>
+    <string name="widget_shape_circle">Circle</string>
+    <string name="widget_shape_square">Square</string>
+    <string name="widget_size_compact">Compact</string>
+    <string name="widget_size_normal">Normal</string>
+    <string name="widget_size_large">Large</string>
+
+    <!-- Settings: top of the screen -->
+    <string name="settings_title">⚙️ Settings</string>
+    <string name="settings_notifications_on">✅ Notifications enabled</string>
+    <string name="settings_notifications_denied">❌ Permission denied. Enable it in the system settings.</string>
+    <string name="settings_no_backups">No backups</string>
+    <string name="settings_configured">Set up</string>
+    <string name="settings_not_configured">Not set up</string>
+    <string name="settings_backup_created">✅ Backup created successfully</string>
+    <string name="settings_backup_create_failed">❌ Couldn\'t create the backup</string>
+    <string name="settings_error_with_message">❌ Error: %1$s</string>
+    <string name="settings_autobackup_folder_set">✅ Auto-backup folder set</string>
+    <string name="settings_autobackup_folder_failed">❌ Couldn\'t set the folder: %1$s</string>
+    <string name="settings_pick_zip">⚠️ Please pick a .zip file</string>
+    <string name="settings_restore_backup_title">Restore backup</string>
+    <string name="settings_restore_backup_desc">Your current data will be replaced by the contents of the selected backup. A local safety copy is made first.</string>
+    <string name="settings_restore_failed">❌ Couldn\'t restore the backup: %1$s</string>
+    <string name="settings_pick_csv">⚠️ Please pick a .csv file</string>
+    <string name="settings_import_csv_title">Import CSV</string>
+    <string name="settings_import_csv_desc">Your current data will be replaced by %1$d medications and %2$d history entries. A local safety copy is made first.</string>
+    <string name="settings_import_csv_failed">❌ Couldn\'t import the CSV: %1$s</string>
+    <string name="settings_import_unknown_error">The file could not be imported. Check that it is a valid PillMate file and try again.</string>
+    <string name="csv_import_invalid_format">This is not a recognized PillMate CSV file.</string>
+    <string name="csv_import_medications_missing">The medications section is missing.</string>
+    <string name="csv_import_medication_row_incomplete">A medication row is incomplete.</string>
+    <string name="csv_import_history_missing">The history section is missing.</string>
+    <string name="backup_import_csv_missing">The backup does not contain backup.csv.</string>
+
+    <!-- Settings: appearance, sorting, security (header) -->
+    <string name="settings_appearance">🎨 Appearance</string>
+    <string name="settings_dark_mode">Dark mode</string>
+    <string name="settings_on">On</string>
+    <string name="settings_off">Off</string>
+    <string name="settings_screen_design">Screen design</string>
+    <string name="settings_design_rhythm_desc">Quick access and 24-hour clock</string>
+    <string name="settings_design_classic_desc">The classic screens</string>
+    <string name="settings_ui_style">Interface style</string>
+    <string name="settings_current">Current: %1$s</string>
+    <string name="settings_chip_count">Count chips</string>
+    <string name="settings_chip_period">Period: %1$s</string>
+    <string name="settings_sorting">🔢 Sorting</string>
+    <string name="settings_sort_by">Sort medications by</string>
+    <string name="settings_sort_changed">Sorting changed to: %1$s</string>
+    <string name="settings_security">🔒 Security</string>
+    <string name="settings_app_lock">App lock</string>
+    <string name="settings_set_pin_first">Set up a PIN to turn the lock on</string>
+
+    <!-- Settings: security, notifications, data -->
+    <string name="settings_change_pin">Change PIN</string>
+    <string name="settings_change_pin_desc">Update access code</string>
+    <string name="settings_fingerprint">Unlock with fingerprint</string>
+    <string name="settings_no_biometrics">Your device doesn\'t support strong biometric authentication.</string>
+    <string name="settings_lock_timeout">Time before locking</string>
+    <string name="settings_setup_pin">Set up PIN</string>
+    <string name="settings_setup_pin_desc">Set a code to protect your information</string>
+    <string name="settings_notifications">🔔 Notifications</string>
+    <string name="settings_permission_required">Permission required</string>
+    <string name="settings_permission_required_desc">Allow notifications to receive reminders</string>
+    <string name="action_enable">Enable</string>
+    <string name="action_allow">Allow</string>
+    <string name="settings_exact_alarms_off">Exact alarms are off</string>
+    <string name="settings_exact_alarms_off_desc">Without this permission reminders may be delayed</string>
+    <string name="settings_reminders">Reminders</string>
+    <string name="settings_reminders_need_permission">Turn on the notification permission first</string>
+    <string name="settings_reminders_need_exact">Allow exact alarms for maximum precision</string>
+    <string name="settings_reminders_per_medication">Reminders are set up on each medication</string>
+    <string name="settings_reminders_hint">Set up reminders on each individual medication</string>
+    <string name="settings_quick_notification">Quick-take notification</string>
+    <string name="settings_quick_notification_on">A permanent notification to log a dose with one tap</string>
+    <string name="settings_quick_notification_off">Add a pinned notification to log doses without opening the app</string>
+    <string name="settings_sound">Sound</string>
+    <string name="settings_sound_desc">Set the notification tone</string>
+    <string name="settings_data">📊 Data</string>
+    <string name="settings_export_csv_desc">Create a CSV file with medications and history</string>
+    <string name="settings_csv_exported">✅ CSV exported: %1$s</string>
+    <string name="settings_export_failed">❌ Export failed: %1$s</string>
+    <string name="settings_export_pdf_desc">Generate a visual report for your doctor or your records</string>
+    <string name="settings_export_audio">Export history with audio</string>
+    <string name="settings_export_audio_desc">Export the full history with encrypted voice notes</string>
+    <string name="settings_restore_backup">Restore backup</string>
+    <string name="settings_restore_backup_hint">Import from a .zip file (includes photos)</string>
+    <string name="settings_import_csv_hint">Load data from a .csv file (no photos)</string>
+    <string name="settings_clear_all">Clear all data</string>
+    <string name="settings_clear_all_desc">Delete all medications and entries</string>
+    <string name="settings_create_backup">Create backup</string>
+    <string name="settings_create_backup_desc">Choose where to save a full backup</string>
+    <string name="settings_autobackup_folder">Auto-backup folder</string>
+    <string name="settings_clear_folder">Clear folder setting</string>
+    <string name="settings_clear_folder_desc">Reset the auto-backup folder</string>
+    <string name="settings_folder_cleared">✅ Setting cleared. Set it up again.</string>
+    <string name="settings_last_autobackup">Last auto-backup</string>
+    <string name="settings_autobackup">Auto-backup</string>
+    <string name="settings_autobackup_on_every">On, every %1$s</string>
+    <string name="settings_choose_folder_first">⚠️ Set up an auto-backup folder first</string>
+    <string name="settings_autobackup_enabled">✅ Auto-backup on</string>
+    <string name="settings_autobackup_disabled">Auto-backup off</string>
+    <string name="settings_autobackup_frequency">Auto-backup frequency</string>
+    <string name="settings_every">Every %1$s</string>
+    <string name="settings_backup_now">Create a safety backup now</string>
+    <string name="settings_backup_now_desc">Save a backup in the configured folder</string>
+    <string name="settings_backup_in_folder">✅ Backup created in the configured folder</string>
+    <string name="settings_backup_failed">❌ Couldn\'t create the backup: %1$s</string>
+    <string name="settings_export_backup">Export backup</string>
+    <string name="settings_export_backup_desc">Share a full backup with photos (encrypted or not)</string>
+    <string name="settings_view_backups">View backups folder</string>
+    <string name="settings_view_backups_desc">Open the backup location</string>
+
+    <!-- Settings: voice notes, information -->
+    <string name="settings_voice_notes">🎙️ Voice notes</string>
+    <string name="settings_voice_password">Change notes password</string>
+    <string name="settings_voice_password_desc">Change the voice notes password and hint</string>
+    <string name="settings_voice_reset">Reset notes password</string>
+    <string name="settings_voice_reset_desc">Create a new password (needs the app PIN)</string>
+    <string name="settings_info">ℹ️ Information</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_show_intro">View the introduction</string>
+    <string name="settings_show_intro_desc">Review how PillMate works</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_desc">Author, source code and how to support the project</string>
+
+    <!-- Settings: messages shown after an action -->
+    <string name="settings_lock_enabled">Lock enabled</string>
+    <string name="settings_lock_disabled">Lock disabled</string>
+    <string name="settings_pin_saved">PIN saved</string>
+    <string name="settings_pin_save_failed">Couldn\'t save the PIN</string>
+    <string name="settings_pin_wrong">Current PIN is wrong</string>
+    <string name="settings_pin_updated">PIN updated</string>
+    <string name="settings_pin_update_failed">Couldn\'t update the PIN</string>
+    <string name="settings_timeout_updated">Lock time updated</string>
+    <string name="settings_voice_password_updated">Notes password updated</string>
+    <string name="settings_voice_password_wrong">Current password is wrong</string>
+    <string name="settings_voice_password_change_failed">Couldn\'t change the password</string>
+    <string name="settings_voice_password_reset_done">✅ Notes password reset</string>
+    <string name="settings_voice_password_reset_failed">Couldn\'t reset the password</string>
+    <string name="settings_history_exported">History exported with %1$dKB of audio</string>
+    <string name="settings_history_exported_no_audio">History exported without audio</string>
+    <string name="audio_export_readme">PillMate Export Package\n=======================\n\nContents:\n- backup.csv: Complete data in PillMate CSV format\n- audio_notes/: Encrypted voice notes (AES-256-GCM)\n\nAudio file types:\n- *.enc: Encrypted audio file\n- *.salt: Salt used to derive the key\n- *.iv: Initialization vector\n\nExported: %1$s</string>
+    <string name="settings_error_export">Export failed: %1$s</string>
+    <string name="settings_backup_encrypted_exported">✅ Encrypted backup exported: %1$s</string>
+    <string name="settings_backup_exported">✅ Backup exported: %1$s</string>
+    <string name="settings_backup_export_failed">❌ Couldn\'t export the backup: %1$s</string>
+    <string name="settings_restore_encrypted_title">Restore encrypted backup</string>
+    <string name="settings_restore_encrypted_desc">Your current data will be replaced by the contents of the selected encrypted backup. A local safety copy is made first.</string>
+    <string name="settings_data_restored">✅ Data restored successfully</string>
+    <string name="settings_restore_cancelled">❌ Restore cancelled: %1$s</string>
+    <string name="settings_clear_all_title">Delete all data</string>
+    <string name="settings_clear_all_body">A local safety copy is made before deleting. This removes the medications and history from the app.</string>
+    <string name="settings_data_deleted">✅ Data deleted</string>
+    <string name="settings_clear_failed">❌ No data was deleted: %1$s</string>
+    <string name="settings_frequency_updated">✅ Frequency updated</string>
+
+    <!-- Settings: times and intervals -->
+    <string name="lock_timeout_immediate">Immediately</string>
+    <string name="lock_timeout_30s">30 seconds</string>
+    <string name="lock_timeout_1m">1 minute</string>
+    <string name="lock_timeout_5m">5 minutes</string>
+    <string name="lock_timeout_10m">10 minutes</string>
+    <string name="lock_timeout_custom">Custom (%1$ds)</string>
+    <string name="interval_hours">%1$d h</string>
+    <plurals name="interval_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="autobackup_every_6h">Every 6 hours</string>
+    <string name="autobackup_every_12h">Every 12 hours</string>
+    <string name="autobackup_every_day">Every day</string>
+    <string name="autobackup_every_3d">Every 3 days</string>
+    <string name="autobackup_every_week">Every week</string>
+
+    <!-- Settings: PIN dialogs -->
+    <string name="action_change">Change</string>
+    <string name="action_verify">Verify</string>
+    <string name="action_reset">Reset</string>
+    <string name="action_decrypt">Decrypt</string>
+    <string name="settings_pin_setup_label">PIN (4-8 digits)</string>
+    <string name="settings_pin_confirm">Confirm PIN</string>
+    <string name="settings_pin_err_short">The PIN must be at least 4 digits</string>
+    <string name="settings_pin_err_mismatch">PINs don\'t match</string>
+    <string name="settings_pin_current">Current PIN</string>
+    <string name="settings_pin_new">New PIN</string>
+    <string name="settings_pin_new_confirm">Confirm new PIN</string>
+    <string name="settings_pin_err_new_short">The new PIN must be at least 4 digits</string>
+    <string name="settings_pin_err_new_mismatch">New PINs don\'t match</string>
+    <string name="settings_pin_err_new_same">The new PIN must be different</string>
+    <string name="settings_pin_verify_title">Verify PIN</string>
+    <string name="settings_pin_verify_body">Enter the app PIN to continue</string>
+    <string name="settings_pin_err_wrong">Wrong PIN</string>
+
+    <!-- Settings: widget card and About dialog -->
+    <string name="settings_widget_title">Quick-take widget</string>
+    <string name="settings_widget_color">Colour</string>
+    <string name="settings_widget_size">Size</string>
+    <string name="settings_widget_shape">Shape</string>
+    <string name="settings_about_title">About PillMate</string>
+    <string name="settings_about_author">Created by D4vRAM</string>
+    <string name="settings_about_license">Free software (GPL v3 or later). No ads, no accounts and no internet.</string>
+
+    <!-- Settings: file sharing and backup folder -->
+    <string name="settings_file_unavailable">File not available</string>
+    <string name="settings_share_csv">Share CSV</string>
+    <string name="settings_share_pdf">Share PDF</string>
+    <string name="settings_share_backup">Share backup</string>
+    <string name="settings_share_file">Share file</string>
+    <string name="settings_folder_uri_invalid">❌ Invalid saved URI. Set the auto-backup folder again.</string>
+    <string name="settings_folder_uri_empty">❌ Empty URI. Set the auto-backup folder again.</string>
+    <string name="settings_folder_open_failed">❌ Couldn\'t open the folder. Try setting it up again.</string>
+
+    <!-- Settings: voice notes password dialogs -->
+    <string name="settings_vp_current">Current password</string>
+    <string name="settings_vp_new">New password</string>
+    <string name="settings_vp_new_confirm">Confirm new password</string>
+    <string name="settings_vp_new_hint">New hint (optional)</string>
+    <string name="settings_vp_reset_title">Reset notes password</string>
+    <string name="settings_vp_reset_warning">⚠️ This creates a new password. Old notes can NOT be recovered.</string>
+    <string name="action_hide">Hide</string>
+    <string name="action_show">Show</string>
+
+    <!-- Settings: export and restore dialogs -->
+    <string name="settings_he_title">📦 Export history</string>
+    <string name="settings_he_choose">Choose how to export your medication history:</string>
+    <string name="settings_he_audio_note">Voice notes are always exported encrypted with AES-256</string>
+    <string name="settings_he_with_audio">With voice notes</string>
+    <string name="settings_he_text_only">Text only (CSV)</string>
+    <string name="settings_replace_data">Replace data</string>
+    <string name="settings_be_title">📦 Export full backup</string>
+    <string name="settings_be_choose">Choose how to export your full backup (medications, history, photos and audio):</string>
+    <string name="settings_be_encryption">🔒 AES-256 encryption</string>
+    <string name="settings_be_encryption_body">Encryption protects your data with AES-256. Recommended if you will store or share the backup outside your phone.</string>
+    <string name="settings_be_with_encryption">With AES-256 encryption</string>
+    <string name="settings_be_without_encryption">Without encryption</string>
+    <string name="settings_bp_title">🔐 Backup password</string>
+    <string name="settings_bp_body">Enter a strong password to encrypt the backup:</string>
+    <string name="settings_bp_label">Password (min. 12 characters)</string>
+    <string name="settings_bp_too_short">The password must be at least 12 characters</string>
+    <string name="settings_bp_export">Export encrypted</string>
+    <string name="settings_bi_title">🔐 Encrypted backup</string>
+    <string name="settings_bi_body">This backup is protected with AES-256 encryption. Enter the password to decrypt it:</string>
+
+    <!-- Bottom navigation bar -->
+    <string name="nav_home">Home</string>
+    <string name="nav_meds">Meds</string>
+    <string name="nav_history">History</string>
+    <string name="nav_notes">Notes</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- 24-hour clock -->
+    <plurals name="clock_description">
+        <item quantity="one">24-hour clock. %1$d entry. %2$s</item>
+        <item quantity="other">24-hour clock. %1$d entries. %2$s</item>
+    </plurals>
+    <string name="clock_now_suffix">Now: %1$s.</string>
+    <plurals name="clock_units">
+        <item quantity="one">%1$d unit</item>
+        <item quantity="other">%1$d units</item>
+    </plurals>
+    <string name="clock_doses_label">doses</string>
+    <string name="clock_empty">No entries in this period.</string>
+    <string name="clock_hint_bar">Tap a bar to see what was taken at that hour.</string>
+    <string name="clock_hint_dot">Tap a dot to see the dose.</string>
+    <string name="clock_legend_more">+%1$d more</string>
+    <string name="clock_hour_range">%1$02d:00–%2$02d:00 · %3$d doses</string>
+    <string name="clock_chip">%1$s · %2$s · %3$s</string>
+
+    <!-- Quick access bar and quick-take sheet -->
+    <string name="quick_take_for">Quick take for %1$s</string>
+    <string name="quick_take_configure_quick">Set up quick access %1$d</string>
+    <string name="quick_take_log_label">Log dose</string>
+    <string name="quick_take_configure_label">Set up slot</string>
+    <string name="quick_take_adjust_label">Adjust amount or date</string>
+    <string name="quick_sheet_title">Take medication</string>
+    <string name="quick_sheet_subtitle">Your most taken</string>
+    <string name="quick_sheet_empty">You don\'t have any medications yet.</string>
+
+    <!-- Medication types (shown translated, stored as always) -->
+    <string name="med_type_tablet">Tablet</string>
+    <string name="med_type_pill">Pill</string>
+    <string name="med_type_capsule">Capsule</string>
+    <string name="med_type_syrup">Syrup</string>
+    <string name="med_type_drops">Drops</string>
+
+    <!-- Statistics -->
+    <string name="stats_all_time">All time</string>
+    <string name="stats_export_data">Export data</string>
+    <string name="stats_share_subject">PillMate statistics</string>
+    <string name="stats_share_chooser">Share report</string>
+    <string name="stats_share_failed">Couldn\'t share: %1$s</string>
+    <string name="stats_export_failed">Couldn\'t export the data</string>
+    <string name="stats_storage_unavailable">Storage not available</string>
+    <plurals name="stats_doses_count">
+        <item quantity="one">%1$d dose</item>
+        <item quantity="other">%1$d doses</item>
+    </plurals>
+    <string name="stats_view_full_history">View full history</string>
+    <string name="stats_breakdown">Breakdown by dose</string>
+    <string name="stats_family">Family: %1$s</string>
+    <string name="stats_last_record">Last: %1$s</string>
+    <string name="stats_no_records">No entries</string>
+    <plurals name="stats_days_ago">
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+    <string name="stats_average_per_day">%1$s %2$s/day on average</string>
+    <string name="stats_doses_per_day">Doses per day</string>
+    <string name="stats_amount_per_day">Amount per day (%1$s)</string>
+    <string name="stats_no_data">No data in this period</string>
+    <string name="stats_rhythm_24h">24-hour rhythm</string>
+    <string name="action_previous">Previous</string>
+    <string name="action_next">Next</string>
+    <string name="period_15_days">15 days</string>
+    <string name="unit_drops">drops</string>
+    <string name="unit_units">units</string>
+    <plurals name="stats_trend_more">
+        <item quantity="one">%1$d dose more than the previous %2$d days</item>
+        <item quantity="other">%1$d doses more than the previous %2$d days</item>
+    </plurals>
+    <plurals name="stats_trend_less">
+        <item quantity="one">%1$d dose fewer than the previous %2$d days</item>
+        <item quantity="other">%1$d doses fewer than the previous %2$d days</item>
+    </plurals>
+    <string name="stats_trend_same">Same as the previous %1$d days</string>
+
+    <!-- Statistics of one medication -->
+    <string name="stats_period_week">Last week</string>
+    <string name="stats_period_month">Last month</string>
+    <string name="stats_doses_found">Doses found: %1$d</string>
+    <string name="stats_error_no_id">Error: medication ID not found.</string>
+    <string name="stats_prev_month">Previous month</string>
+    <string name="stats_next_month">Next month</string>
+    <string name="stats_medication_fallback">Medication</string>
+    <string name="stats_entry_time">Time: %1$s</string>
+    <string name="stats_entry_dose">Dose: %1$s</string>
+    <string name="stats_edit_notes">✏️ Edit notes</string>
+    <string name="stats_notes">📝 Notes: %1$s</string>
+    <string name="stats_voice_attached">🎤 Voice note attached</string>
+
+    <!-- PDF export: screens -->
+    <string name="pdf_share_subject">PillMate report</string>
+    <string name="pdf_share_failed">Couldn\'t share the PDF</string>
+    <string name="pdf_sheet_title">Generate PDF report</string>
+    <string name="pdf_style_title">Report style</string>
+    <string name="pdf_style_label">Style:</string>
+    <string name="pdf_style_clinical">Clinical</string>
+    <string name="pdf_style_clinical_desc">Formal and professional. Ideal for sharing with doctors or adding to a medical record. Neutral colours and a clear structure.</string>
+    <string name="pdf_style_clinical_short">Formal, professional medical look</string>
+    <string name="pdf_style_pillmate_desc">The app\'s colours and style. Includes a colour marker per medication and an attractive visual design.</string>
+    <string name="pdf_style_pillmate_short">The app\'s colours and style</string>
+    <string name="pdf_style_minimal">Minimal</string>
+    <string name="pdf_style_minimal_desc">Clean and compact. Only the essential data, no decoration. Perfect for printing.</string>
+    <string name="pdf_style_minimal_short">Clean, essential data only</string>
+    <string name="pdf_period">Period</string>
+    <string name="pdf_period_label">Period:</string>
+    <string name="pdf_sections">Sections to include</string>
+    <string name="pdf_sections_label">Sections to include:</string>
+    <string name="pdf_generating">Generating…</string>
+    <string name="pdf_generate">Generate PDF</string>
+    <string name="pdf_from">From</string>
+    <string name="pdf_to">To</string>
+    <string name="pdf_err_dates">The end date can\'t be before the start date</string>
+    <string name="pdf_err_generate">Couldn\'t generate the PDF</string>
+    <string name="pdf_err_unknown">Unknown error</string>
+
+    <!-- PDF export: sections -->
+    <string name="pdf_section_summary">General summary</string>
+    <string name="pdf_section_summary_desc">General summary with total doses and statistics</string>
+    <string name="pdf_section_medications">Medication list</string>
+    <string name="pdf_section_medications_desc">Medication list with total amounts</string>
+    <string name="pdf_section_weekly">Weekly chart</string>
+    <string name="pdf_section_weekly_desc">Visual chart of weekly use</string>
+    <string name="pdf_section_history">Dose history</string>
+    <string name="pdf_section_history_desc">Detailed history of every dose</string>
+    <string name="pdf_section_hourly">Hourly distribution</string>
+    <string name="pdf_section_hourly_desc">Chart of the distribution across time slots</string>
+    <string name="pdf_section_breakdown">Breakdown by dose</string>
+    <string name="pdf_section_breakdown_desc">Detailed breakdown by dose of each medication</string>
+    <string name="pdf_section_monthly">Monthly trends</string>
+    <string name="pdf_section_monthly_desc">Monthly use trends and patterns</string>
+    <string name="pdf_section_voice">Voice notes</string>
+    <string name="pdf_section_voice_desc">Transcriptions of attached voice notes</string>
+
+    <!-- PDF document -->
+    <plurals name="doses_count">
+        <item quantity="one">%1$d dose</item>
+        <item quantity="other">%1$d doses</item>
+    </plurals>
+    <string name="pdf_doc_title">Medication report</string>
+    <string name="pdf_doc_period">Period: %1$s - %2$s</string>
+    <string name="pdf_doc_generated">Generated: %1$s</string>
+    <string name="pdf_doc_summary">SUMMARY</string>
+    <string name="pdf_doc_total_label">Total doses:</string>
+    <string name="pdf_doc_avg_label">Daily average:</string>
+    <string name="pdf_doc_avg_value">%1$s doses/day</string>
+    <string name="pdf_doc_days_label">Days with entries:</string>
+    <string name="pdf_doc_days_value">%1$d of %2$d</string>
+    <string name="pdf_doc_active_label">Active medications:</string>
+    <string name="pdf_doc_medications">MEDICATIONS</string>
+    <string name="pdf_doc_weekly">WEEKLY CHART</string>
+    <string name="pdf_doc_weekly_empty">Not enough data for the chart</string>
+    <string name="pdf_doc_history">DOSE HISTORY</string>
+    <string name="pdf_doc_history_cont">DOSE HISTORY (continued)</string>
+    <string name="pdf_doc_hourly">HOURLY DISTRIBUTION</string>
+    <string name="pdf_slot_early">Early hours</string>
+    <string name="pdf_slot_morning">Morning</string>
+    <string name="pdf_slot_midday">Midday</string>
+    <string name="pdf_slot_afternoon">Afternoon</string>
+    <string name="pdf_slot_evening">Evening</string>
+    <string name="pdf_slot_night">Late night</string>
+    <string name="pdf_doc_breakdown">BREAKDOWN BY DOSE</string>
+    <string name="pdf_doc_breakdown_empty">No dose data available</string>
+    <string name="pdf_doc_and_more">… and %1$d more</string>
+    <string name="pdf_doc_monthly">MONTHLY TRENDS</string>
+    <string name="pdf_doc_monthly_empty">No monthly data available</string>
+    <string name="pdf_doc_voice">VOICE NOTES</string>
+    <string name="pdf_doc_voice_empty">No voice notes in this period</string>
+    <string name="pdf_doc_audio_attached">[Audio attached]</string>
+    <string name="pdf_doc_more_notes">… and %1$d more notes</string>
+
+    <!-- Summary CSV shared from Statistics -->
+    <string name="csv_metric">Metric</string>
+    <string name="csv_value">Value</string>
+    <string name="csv_total_doses">Total doses logged</string>
+    <string name="csv_daily_average">Daily dose average</string>
+    <string name="csv_active_meds">Total active medications</string>
+    <string name="csv_total_events">Total logged events</string>
+    <string name="csv_medication_amount">%1$s amount (%2$s)</string>
+    <string name="csv_col_total">Total doses logged</string>
+    <string name="csv_col_type">Type</string>
+    <string name="csv_regular">Regular</string>
+
+    <!-- Insights computed from the logged doses -->
+    <string name="insight_peak_title">Most active hour</string>
+    <string name="insight_share">%1$d of %2$d doses (%3$d %%)</string>
+    <string name="insight_gap_title">Usual interval between doses</string>
+    <string name="insight_gap_detail">Median of %1$d intervals · shortest: %2$s</string>
+    <string name="insight_top_title">Most logged</string>
+    <string name="insight_day_title">Day with most doses</string>
+    <string name="insight_day_detail">%1$d doses · average of %2$s over the %3$d days with entries</string>
+
+    <!-- Notifications and toasts -->
+    <string name="notif_channel_reminders">Medication reminders</string>
+    <string name="notif_channel_reminders_desc">Notifications that remind you to take your medications</string>
+    <string name="notif_quick_take_text">Tap to log a dose</string>
+    <string name="notif_reminder_title">%1$s Time to take %2$s</string>
+    <string name="notif_take_now">Take now</string>
+    <string name="notif_dose_logged">Dose logged ✓</string>
+    <string name="notif_dose_logged_named">Dose logged ✓ · %1$s</string>
+
+    <!-- App lock -->
+    <string name="lock_title">Protection enabled</string>
+    <string name="lock_pin_label">Enter your PIN</string>
+    <string name="lock_err_short">PIN too short</string>
+    <string name="lock_err_no_biometrics">Biometrics not available</string>
+    <string name="lock_err_enable_biometrics">Turn on biometrics in settings</string>
+    <string name="lock_err_auth_failed">Authentication failed</string>
+    <string name="lock_prompt_title">Unlock PillMate</string>
+    <string name="lock_prompt_subtitle">Use your fingerprint or face to continue</string>
+
+    <!-- Photo permissions dialog -->
+    <string name="perm_title">Photos and gallery with a clear permission</string>
+    <string name="perm_body">PillMate uses these permissions only to personalise medications with images that stay on your device.</string>
+    <string name="perm_camera_desc">Take quick photos of your medications to recognise them better.</string>
+    <string name="perm_gallery">Photo gallery</string>
+    <string name="perm_gallery_desc">Pick existing images without repeating work.</string>
+    <string name="perm_privacy">Privacy guaranteed</string>
+    <string name="perm_privacy_desc">None of these photos is sent to external services.</string>
+    <string name="perm_denied_before">You declined these permissions before. If you want to use photos on your medications, grant them in the next step.</string>
+    <string name="perm_granted">Permissions granted</string>
+    <string name="perm_continue">Continue and grant permissions</string>
+    <string name="perm_not_now">Not now</string>
 </resources>

@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.screens
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -78,7 +80,7 @@ fun MedicationStatsScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            text = "Estadísticas",
+                            text = stringResource(R.string.stats_title),
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold
                         )
@@ -87,7 +89,7 @@ fun MedicationStatsScreen(
                         IconButton(onClick = onNavigateBack) {
                             Icon(
                                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Volver"
+                                contentDescription = stringResource(R.string.action_back)
                             )
                         }
                     }
@@ -109,13 +111,13 @@ fun MedicationStatsScreen(
                         FilterChip(
                             selected = selectedPeriod == period,
                             onClick = { viewModel.setPeriod(period) },
-                            label = { Text(period.label) }
+                            label = { Text(stringResource(period.labelRes)) }
                         )
                     }
                 }
 
                 Text(
-                    text = "Número de tomas encontradas: ${filteredHistory.size}",
+                    text = stringResource(R.string.stats_doses_found, filteredHistory.size),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
@@ -170,7 +172,7 @@ fun MedicationStatsScreen(
     } else {
         Scaffold {
             Box(modifier = Modifier.fillMaxSize().padding(it), contentAlignment = Alignment.Center) {
-                Text("Error: ID del medicamento no encontrado.")
+                Text(stringResource(R.string.stats_error_no_id))
             }
         }
     }
@@ -264,7 +266,7 @@ private fun MonthNavigator(
         IconButton(onClick = onPrevious) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                contentDescription = "Mes anterior"
+                contentDescription = stringResource(R.string.stats_prev_month)
             )
         }
 
@@ -280,7 +282,7 @@ private fun MonthNavigator(
         IconButton(onClick = onNext) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = "Mes siguiente"
+                contentDescription = stringResource(R.string.stats_next_month)
             )
         }
     }
@@ -295,9 +297,11 @@ private fun DayDetailsModal(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            val medicationName = entries.firstOrNull()?.medicationName ?: "Medicamento"
+            val first = entries.firstOrNull()
+            val medicationName = first?.medicationName ?: stringResource(R.string.stats_medication_fallback)
+            val day = first?.let { com.d4vram.pillmate2.utils.relativeDayLabel(it.timestamp.toLocalDate()) }.orEmpty()
             Text(
-                text = "$medicationName - ${entries.firstOrNull()?.date}",
+                text = "$medicationName - $day",
                 style = MaterialTheme.typography.titleLarge
             )
         },
@@ -309,19 +313,19 @@ private fun DayDetailsModal(
                 items(entries) { entry ->
                     Column {
                         Text(
-                            text = "Hora: ${entry.time}",
+                            text = stringResource(R.string.stats_entry_time, entry.time),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Dosis: ${entry.dose}",
+                            text = stringResource(R.string.stats_entry_dose, entry.dose.orEmpty()),
                             style = MaterialTheme.typography.bodyMedium
                         )
                         TextButton(
                             onClick = { onEditEntry(entry) }
                         ) {
                             Text(
-                                text = "✏️ Editar notas",
+                                text = stringResource(R.string.stats_edit_notes),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -329,7 +333,7 @@ private fun DayDetailsModal(
                         // Mostrar notas de texto
                         if (entry.notes.isNotEmpty()) {
                             Text(
-                                text = "📝 Notas: ${entry.notes}",
+                                text = stringResource(R.string.stats_notes, entry.notes),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontStyle = FontStyle.Italic
                             )
@@ -337,7 +341,7 @@ private fun DayDetailsModal(
                         // Mostrar indicador de nota de audio
                         if (!entry.audioNoteUri.isNullOrBlank()) {
                             Text(
-                                text = "🎤 Nota de voz adjunta",
+                                text = stringResource(R.string.stats_voice_attached),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontStyle = FontStyle.Italic,
                                 color = MaterialTheme.colorScheme.primary
@@ -349,7 +353,7 @@ private fun DayDetailsModal(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cerrar")
+                Text(stringResource(R.string.action_close))
             }
         }
     )

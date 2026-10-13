@@ -1,14 +1,20 @@
 // kotlin
 package com.d4vram.pillmate2.ui.stats.viewmodel
 
-import com.d4vram.pillmate2.ai.LoggingConsistency
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.d4vram.pillmate2.data.MedicationRepository
 
 import com.d4vram.pillmate2.model.Medication
+import com.d4vram.pillmate2.model.MedicationType
 import com.d4vram.pillmate2.ui.stats.ActivityDataPoint
+import com.d4vram.pillmate2.ui.stats.formatStatisticsNumber
+import com.d4vram.pillmate2.utils.amountForMedication
+import com.d4vram.pillmate2.utils.amountsByMedication
+import com.d4vram.pillmate2.utils.averageTakeEvents
+import com.d4vram.pillmate2.utils.countTakeEvents
+import com.d4vram.pillmate2.utils.dailyDoseMetrics
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,8 +26,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
-import kotlin.math.roundToInt
-import kotlin.math.abs
 
 // Enums para los filtros de tiempo disponibles
 enum class FilterRange {
@@ -32,17 +36,13 @@ enum class FilterRange {
 }
 
 data class StatisticsUiState(
-    val dailyAverage: String = "0",
-    val dosesTaken: Int = 0,
-    val lastTaken: String = "Nunca",
-    val selectedMedicationName: String = "Todos",
     val activityData: List<ActivityDataPoint> = emptyList(),
     val activeFilter: FilterRange = FilterRange.WEEK,
-    val dateRangeText: String = "",
+    val rangeStart: LocalDate? = null, // null: todo el tiempo
+    val rangeEnd: LocalDate = LocalDate.now(),
     val recentHistory: List<com.d4vram.pillmate2.model.HistoryEntry> = emptyList(),
     // Todas las tomas del periodo y filtro activos (alimenta el reloj de 24 h y los insights)
     val periodEntries: List<com.d4vram.pillmate2.model.HistoryEntry> = emptyList(),
-    val topMedications: List<Triple<String, Int, String>> = emptyList(), // name, count, id
     val availableMedications: List<com.d4vram.pillmate2.model.Medication> = emptyList(),
     val selectedMedicationId: String? = null,
     val selectedMedicationColor: androidx.compose.ui.graphics.Color? = null,
@@ -50,34 +50,19 @@ data class StatisticsUiState(
     // Métricas principales
     val totalDosesLogged: Int = 0,
     val averageDailyDoses: String = "0",
-    val timeSinceLastRecord: String = "",
+    val daysSinceLastRecord: Long? = null, // null: sin registros en el periodo
 
     // Unidades dinámicas según tipo de medicamento
     val displayUnit: String = "tomas",
     val totalInUnit: String = "0",
     val averageInUnit: String = "0",
 
-    // Datos para historial con unidades
-    val recentHistoryWithUnits: List<HistoryEntryWithUnit> = emptyList(),
-
-    // Patrones temporales (6 franjas)
-    val hourlyPattern: Map<String, Int> = emptyMap(),
-
     // Desglose por variantes de dosis (para familias de medicamentos)
     val doseBreakdown: List<DoseBreakdownItem> = emptyList(),
     val showingFamilyStats: Boolean = false, // true si se está mostrando una familia
     val familyName: String = "", // Nombre de la familia (ej: "Ibuprofeno 400/600")
 
-    // Campos legacy (mantener por compatibilidad temporal)
-    val narrativeSummary: String = "",
-    val mostActiveDay: String = "",
-    val leastActiveDay: String = "",
-    val loggingTrend: String? = null, // null: no hay periodo anterior con el que comparar
-    val weeklyActivityPattern: Map<String, Int> = emptyMap(),
-    val monthlyActivityData: List<StatisticsViewModel.MonthlyActivityPoint> = emptyList(),
-    val loggingConsistency: String = "",
-    val totalDaysWithRecords: Int = 0,
-    val averageDosesPerActiveDay: String = "0",
+    val trend: Trend? = null, // null: no hay periodo anterior con el que comparar
 
     // --- Daily Details Selection ---
     val selectedDate: LocalDate? = null,
@@ -86,7 +71,7 @@ data class StatisticsUiState(
 
 data class HistoryEntryWithUnit(
     val entry: com.d4vram.pillmate2.model.HistoryEntry,
-    val displayValue: String,
+    val displayValue: Float,
     val displayUnit: String,
     val medicationColor: androidx.compose.ui.graphics.Color? = null
 )
@@ -113,6 +98,7 @@ class StatisticsViewModel(
 
     private val _filter = MutableStateFlow(FilterRange.WEEK)
     private var selectedMedicationId: String? = null
+    private var presentationLocale: java.util.Locale = java.util.Locale.getDefault()
 
     // Fecha fin del rango (normalmente hoy, pero permite navegar al pasado)
     private var currentEndDate: LocalDate = LocalDate.now()
@@ -130,6 +116,12 @@ class StatisticsViewModel(
 
     fun setFilter(range: FilterRange) {
         _filter.value = range
+    }
+
+    fun updateLocale(locale: java.util.Locale) {
+        if (presentationLocale == locale) return
+        presentationLocale = locale
+        loadStatistics()
     }
 
     fun selectMedication(medicationId: String?) {
@@ -201,7 +193,7 @@ class StatisticsViewModel(
                 }
                 HistoryEntryWithUnit(
                     entry = entry,
-                    displayValue = formatValueWithUnit(entryValue, entryUnit),
+                    displayValue = entryValue,
                     displayUnit = entryUnit,
                     medicationColor = entryMed?.color
                 )
@@ -266,7 +258,7 @@ class StatisticsViewModel(
                     queryStartDate.minusDays(1).toEpochDay()
                 )
                     .filter { currentSelectedId == null || it.medicationId in familyIds }
-                    .sumOf { it.quantity }
+                    .let(::countTakeEvents)
             }
 
             // Calcular desglose por variante si hay familia seleccionada
@@ -286,17 +278,10 @@ class StatisticsViewModel(
             }
 
             val totalDays = ChronoUnit.DAYS.between(effectiveStartDate, endDate) + 1
-            val dateRangeText = if (range == FilterRange.ALL_TIME) "Todo el tiempo" 
-                               else "${formatDate(effectiveStartDate)} - ${formatDate(endDate)}"
-
             val trackingMetrics = calculateTrackingMetrics(
                 startDate = effectiveStartDate,
                 endDate = endDate,
-                history = filteredHistory,
-                previousPeriodDoses = previousPeriodDoses,
-                medications = allMedications,
-                selectedMedicationId = currentSelectedId,
-                weeklyPatternHistory = allHistory.filter { it.timestamp.toLocalDate() in endDate.minusDays(27)..endDate }
+                history = filteredHistory
             )
 
             // Calcular unidades dinámicas (mover antes para usar en activityChartData)
@@ -307,69 +292,21 @@ class StatisticsViewModel(
                 end = endDate,
                 history = filteredHistory,
                 allMedications = allMedications,
-                selectedMedication = selectedMed,
                 displayUnit = displayUnit
             )
 
-            val topMedicationsList = filteredHistory.groupBy { entry ->
-                allMedications.find { it.id == entry.medicationId }?.parentMedicationId ?: entry.medicationId
-            }
-                .mapValues { entry -> entry.value.sumOf { it.quantity } }
-                .toList()
-                .sortedByDescending { it.second }
-                .take(5)
-                .map { (id, count) ->
-                    val medication = allMedications.find { it.id == id }
-                    val name = medication?.name ?: "Desconocido"
-                    Triple(name, count, id)
-                }
-
             val recentHistoryList = filteredHistory.take(5)
-            val totalInUnit = calculateTotalInUnit(filteredHistory, selectedMed, displayUnit)
+            val totalInUnit = calculateTotalInUnit(filteredHistory, displayUnit, allMedications)
             val averageInUnit = if (totalDays > 0) totalInUnit / totalDays else 0f
-
-            // Generar historial con unidades
-            val recentHistoryWithUnits = recentHistoryList.map { entry ->
-                val entryMed = allMedications.find { it.id == entry.medicationId }
-                val entryUnit = getDisplayUnitForMedication(entryMed)
-                val entryValue = when (entryUnit) {
-                    "mg" -> {
-                        val doseValue = entryMed?.dose?.let { extractDoseValue(it) } ?: 1f
-                        entry.quantity * doseValue
-                    }
-                    else -> entry.quantity.toFloat()
-                }
-                HistoryEntryWithUnit(
-                    entry = entry,
-                    displayValue = formatValueWithUnit(entryValue, entryUnit),
-                    displayUnit = entryUnit,
-                    medicationColor = entryMed?.color
-                )
-            }
-
-            // Generar Narrativa Humana
-            val narrative = generateNarrativeSummary(
-                history = filteredHistory,
-                range = range,
-                daysWithRecords = trackingMetrics.totalDaysWithRecords,
-                totalDays = totalDays,
-                trend = trackingMetrics.loggingTrend ?: 0
-            )
-
-            val lastTakenText = filteredHistory.firstOrNull()?.let { "${it.date} ${it.time}" } ?: "Nunca"
 
             _uiState.update {
                 it.copy(
-                    dailyAverage = String.format("%.1f", trackingMetrics.averageDailyDoses),
-                    dosesTaken = trackingMetrics.totalDosesLogged,
-                    lastTaken = lastTakenText,
-                    selectedMedicationName = selectedMed?.name ?: "Todos",
                     activityData = activityChartData,
                     activeFilter = range,
-                    dateRangeText = dateRangeText,
+                    rangeStart = effectiveStartDate.takeIf { range != FilterRange.ALL_TIME },
+                    rangeEnd = endDate,
                     recentHistory = recentHistoryList,
                     periodEntries = filteredHistory,
-                    topMedications = topMedicationsList,
                     availableMedications = allMedications, // Incluir todos (padres e hijos) para mostrar familias completas
                     selectedMedicationId = currentSelectedId,
                     selectedMedicationColor = selectedMed?.color,
@@ -377,22 +314,11 @@ class StatisticsViewModel(
                     displayUnit = displayUnit,
                     totalInUnit = formatValueWithUnit(totalInUnit, displayUnit),
                     averageInUnit = formatValueWithUnit(averageInUnit, displayUnit),
-                    recentHistoryWithUnits = recentHistoryWithUnits,
                     // Métricas principales
                     totalDosesLogged = trackingMetrics.totalDosesLogged,
-                    averageDailyDoses = String.format("%.1f", trackingMetrics.averageDailyDoses),
-                    timeSinceLastRecord = trackingMetrics.timeSinceLastRecord,
-                    // Legacy (mantener por compatibilidad)
-                    narrativeSummary = narrative,
-                    mostActiveDay = trackingMetrics.mostActiveDay,
-                    leastActiveDay = trackingMetrics.leastActiveDay,
-                    loggingTrend = trendText(trackingMetrics.totalDosesLogged, previousPeriodDoses, periodDays),
-                    weeklyActivityPattern = trackingMetrics.weeklyActivityPattern,
-                    monthlyActivityData = trackingMetrics.monthlyActivityData,
-                    loggingConsistency = trackingMetrics.loggingConsistency,
-                    totalDaysWithRecords = trackingMetrics.totalDaysWithRecords,
-                    averageDosesPerActiveDay = String.format("%.1f", trackingMetrics.averageDosesPerActiveDay),
-                    hourlyPattern = trackingMetrics.hourlyPattern,
+                    averageDailyDoses = formatStatisticsNumber(trackingMetrics.averageDailyDoses, presentationLocale),
+                    daysSinceLastRecord = trackingMetrics.daysSinceLastRecord,
+                    trend = trendOf(trackingMetrics.totalDosesLogged, previousPeriodDoses, periodDays),
                     // Desglose por variantes de dosis
                     doseBreakdown = doseBreakdown,
                     showingFamilyStats = showingFamily,
@@ -433,12 +359,10 @@ class StatisticsViewModel(
         // Calcular total por cada medicamento
         val totals = familyMeds.map { med ->
             val medHistory = history.filter { it.medicationId == med.id }
-            val totalValue = when (unit) {
-                "mg" -> {
-                    val doseValue = extractDoseValue(med.dose)
-                    medHistory.sumOf { it.quantity } * doseValue
-                }
-                else -> medHistory.sumOf { it.quantity }.toFloat()
+            val totalValue = if (unit == "tomas") {
+                countTakeEvents(medHistory).toFloat()
+            } else {
+                amountForMedication(med, medHistory).value
             }
             med to totalValue
         }
@@ -460,169 +384,25 @@ class StatisticsViewModel(
             }
     }
 
-    private fun generateNarrativeSummary(
-        history: List<com.d4vram.pillmate2.model.HistoryEntry>,
-        range: FilterRange,
-        daysWithRecords: Int,
-        totalDays: Long,
-        trend: Int
-    ): String {
-        if (history.isEmpty()) {
-            return "No se han registrado dosis en este periodo."
-        }
-
-        val frequency = daysWithRecords.toFloat() / totalDays.coerceAtLeast(1)
-        val frequencyText = when {
-            frequency >= 0.8f -> "La actividad ha sido muy constante."
-            frequency >= 0.5f -> "Se observa un patrón de actividad regular."
-            frequency >= 0.2f -> "La actividad ha sido puntual y espaciada."
-            else -> "Se han realizado registros de forma ocasional."
-        }
-
-        val trendText = when {
-            trend > 20 -> "Este periodo muestra un incremento notable de actividad respecto al anterior."
-            trend > 5 -> "La actividad ha aumentado ligeramente en comparación con el periodo previo."
-            trend < -20 -> "Se observa una disminución significativa de la actividad en este periodo."
-            trend < -5 -> "Este periodo muestra menos actividad que el anterior."
-            else -> "El ritmo de actividad se mantiene estable frente al periodo anterior."
-        }
-
-        return "$frequencyText $trendText"
-    }
-
     private fun calculateTrackingMetrics(
         startDate: LocalDate,
         endDate: LocalDate,
-        history: List<com.d4vram.pillmate2.model.HistoryEntry>,
-        previousPeriodDoses: Int,
-        medications: List<com.d4vram.pillmate2.model.Medication>,
-        selectedMedicationId: String?,
-        weeklyPatternHistory: List<com.d4vram.pillmate2.model.HistoryEntry>
+        history: List<com.d4vram.pillmate2.model.HistoryEntry>
     ): TrackingMetrics {
         val totalDays = ChronoUnit.DAYS.between(startDate, endDate) + 1
+        val totalDosesLogged = countTakeEvents(history)
+        val averageDailyDoses = averageTakeEvents(history, totalDays)
 
-        // Cálculos básicos de seguimiento
-        val totalDosesLogged = history.sumOf { it.quantity }
-        val distinctDates = history.map { it.timestamp.toLocalDate() }.distinct()
-        val totalDaysWithRecords = distinctDates.size
-        val averageDailyDoses = if (totalDays > 0) totalDosesLogged.toFloat() / totalDays else 0f
-        val averageDosesPerActiveDay = if (totalDaysWithRecords > 0) totalDosesLogged.toFloat() / totalDaysWithRecords else 0f
+        val daysSinceLastRecord = history.maxOfOrNull { it.timestamp.toLocalDate() }
+            ?.let { ChronoUnit.DAYS.between(it, LocalDate.now()) }
 
-        // Patrón semanal
-        val weeklyActivityPattern = calculateWeeklyActivityPattern(weeklyPatternHistory)
-
-        // Día más y menos activo
-        val mostActiveDay = weeklyActivityPattern.maxByOrNull { it.value }?.key ?: ""
-        val leastActiveDay = weeklyActivityPattern.minByOrNull { it.value }?.key ?: ""
-
-        // Tendencia
-        val loggingTrend = trendPercent(totalDosesLogged, previousPeriodDoses)
-
-        // Tiempo desde el último registro
-        val timeSinceLastRecord = if (history.isNotEmpty()) {
-            val lastDate = history.maxOf { it.timestamp.toLocalDate() }
-            val days = ChronoUnit.DAYS.between(lastDate, LocalDate.now())
-            when {
-                days == 0L -> "Hoy"
-                days == 1L -> "Hace 1 día"
-                else -> "Hace $days días"
-            }
-        } else "Sin registros"
-
-        val monthlyActivityData = calculateMonthlyActivityData(history, selectedMedicationId)
-
-        val loggingConsistency = LoggingConsistency.fromDayRatio(
-            totalDaysWithRecords.toFloat() / totalDays.coerceAtLeast(1)
-        ).label
-
-        val hourlyPattern = calculateHourlyPattern(history)
-
-        return TrackingMetrics(
-            totalDosesLogged = totalDosesLogged,
-            averageDailyDoses = averageDailyDoses,
-            mostActiveDay = mostActiveDay,
-            leastActiveDay = leastActiveDay,
-            loggingTrend = loggingTrend,
-            weeklyActivityPattern = weeklyActivityPattern,
-            monthlyActivityData = monthlyActivityData,
-            loggingConsistency = loggingConsistency,
-            totalDaysWithRecords = totalDaysWithRecords,
-            averageDosesPerActiveDay = averageDosesPerActiveDay,
-            timeSinceLastRecord = timeSinceLastRecord,
-            hourlyPattern = hourlyPattern
-        )
+        return TrackingMetrics(totalDosesLogged, averageDailyDoses, daysSinceLastRecord)
     }
-
-
-    private fun calculateWeeklyActivityPattern(
-        history: List<com.d4vram.pillmate2.model.HistoryEntry>
-    ): Map<String, Int> {
-        val dayNames = listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom")
-
-        return dayNames.associateWith { dayName ->
-            val dayIndex = dayNames.indexOf(dayName) + 1 // DayOfWeek.MONDAY = 1
-            val dayEntries = history.filter { it.timestamp.dayOfWeek.value == dayIndex }
-
-            if (dayEntries.isNotEmpty()) {
-                // Calcular promedio diario para este día de la semana
-                val totalQuantity = dayEntries.sumOf { it.quantity }
-                val uniqueDays = dayEntries.map { it.timestamp.toLocalDate() }.distinct().size
-                (totalQuantity.toFloat() / uniqueDays).roundToInt()
-            } else {
-                0
-            }
-        }
-    }
-
-    private fun calculateMonthlyActivityData(
-        history: List<com.d4vram.pillmate2.model.HistoryEntry>,
-        selectedMedicationId: String?
-    ): List<MonthlyActivityPoint> {
-        val now = LocalDate.now()
-        val spanishLocale = java.util.Locale.forLanguageTag("es")
-        val monthFormatter = java.time.format.DateTimeFormatter.ofPattern("MMM yyyy", spanishLocale)
-
-        return (0..5).map { monthsBack ->
-            val monthStart = now.minusMonths(monthsBack.toLong()).withDayOfMonth(1)
-            val monthEnd = monthStart.plusMonths(1).minusDays(1)
-
-            val monthHistory = history.filter { it.timestamp.toLocalDate() in monthStart..monthEnd }
-
-            val totalDoses = monthHistory.sumOf { it.quantity }
-            val activeDays = monthHistory.map { it.timestamp.toLocalDate() }.distinct().size
-            val daysInMonth = ChronoUnit.DAYS.between(monthStart, monthEnd) + 1
-            val averagePerDay = if (daysInMonth > 0) totalDoses.toFloat() / daysInMonth else 0f
-
-            MonthlyActivityPoint(
-                month = monthStart.format(monthFormatter),
-                totalDoses = totalDoses,
-                activeDays = activeDays,
-                averagePerDay = averagePerDay
-            )
-        }.reversed() // Más reciente primero
-    }
-
 
     private data class TrackingMetrics(
         val totalDosesLogged: Int,
         val averageDailyDoses: Float,
-        val mostActiveDay: String,
-        val leastActiveDay: String,
-        val loggingTrend: Int?,
-        val weeklyActivityPattern: Map<String, Int>,
-        val monthlyActivityData: List<MonthlyActivityPoint>,
-        val loggingConsistency: String,
-        val totalDaysWithRecords: Int,
-        val averageDosesPerActiveDay: Float,
-        val timeSinceLastRecord: String,
-        val hourlyPattern: Map<String, Int>
-    )
-
-    data class MonthlyActivityPoint(
-        val month: String,
-        val totalDoses: Int,
-        val activeDays: Int,
-        val averagePerDay: Float
+        val daysSinceLastRecord: Long?
     )
 
     private fun generateActivityData(
@@ -630,7 +410,6 @@ class StatisticsViewModel(
         end: LocalDate,
         history: List<com.d4vram.pillmate2.model.HistoryEntry>,
         allMedications: List<Medication> = emptyList(),
-        selectedMedication: Medication? = null,
         displayUnit: String = "tomas"
     ): List<ActivityDataPoint> {
         val days = ChronoUnit.DAYS.between(start, end).toInt() + 1
@@ -641,78 +420,45 @@ class StatisticsViewModel(
               start to days
          }
 
-        val spanishLocale = java.util.Locale.forLanguageTag("es")
+        // Etiquetas cortas de fecha en el idioma del móvil (sin palabras propias de la app).
+        val locale = presentationLocale
+        val shortDate = com.d4vram.pillmate2.utils.localizedDateFormatter("ddMM", locale)
+        val medicationsById = allMedications.associateBy { it.id }
 
         return (0 until chartDays).map { offset ->
             val date = chartStart.plusDays(offset.toLong())
             val dayName = if (chartDays <= 7) {
-                date.format(java.time.format.DateTimeFormatter.ofPattern("EE", spanishLocale))
+                date.format(java.time.format.DateTimeFormatter.ofPattern("EE", locale))
             } else {
-                date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM"))
+                date.format(shortDate)
             }
-
-            val fullDate = date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM d 'de' MMMM", spanishLocale))
 
             // Tomas reales ese día
             val entriesOnDate = history.filter { it.timestamp.toLocalDate() == date }
-            val takenCount = entriesOnDate.sumOf { it.quantity }
-
-            // Calcular valor en la unidad correcta
-            val valueInUnit = when (displayUnit) {
-                "mg" -> {
-                    // Sumar mg de cada entrada según la dosis del medicamento
-                    entriesOnDate.sumOf { entry ->
-                        val entryMed = allMedications.find { it.id == entry.medicationId }
-                        val doseValue = entryMed?.dose?.let { extractDoseValue(it) } ?: 1f
-                        entry.quantity * doseValue.toDouble()
-                    }.toFloat()
-                }
-                "gotas", "ml" -> takenCount.toFloat()
-                else -> takenCount.toFloat() // tomas
-            }
+            val metrics = dailyDoseMetrics(
+                entries = entriesOnDate,
+                medicationsById = medicationsById,
+                unit = displayUnit
+            )
 
             ActivityDataPoint(
                 dayName = dayName,
-                totalValue = takenCount.toFloat(),
+                totalValue = metrics.takeCount.toFloat(),
                 unit = displayUnit,
-                fullDate = fullDate,
-                hasRecords = takenCount > 0,
+                hasRecords = metrics.takeCount > 0,
                 date = date,
-                valueInUnit = valueInUnit
+                valueInUnit = metrics.amount
             )
         }
     }
-    private fun calculateHourlyPattern(history: List<com.d4vram.pillmate2.model.HistoryEntry>): Map<String, Int> {
-        // 6 franjas horarias con nombres descriptivos
-        val slots = listOf("Madrugada", "Mañana", "Mediodía", "Tarde", "Noche", "Nocturno")
-        val hourlyMap = slots.associateWith { 0 }.toMutableMap()
-
-        history.forEach { entry ->
-            val hour = entry.timestamp.hour
-            val slot = when (hour) {
-                in 0..5 -> "Madrugada"    // 00:00 - 05:59
-                in 6..11 -> "Mañana"       // 06:00 - 11:59
-                in 12..14 -> "Mediodía"    // 12:00 - 14:59
-                in 15..18 -> "Tarde"       // 15:00 - 18:59
-                in 19..22 -> "Noche"       // 19:00 - 22:59
-                else -> "Nocturno"         // 23:00 - 23:59
-            }
-            hourlyMap[slot] = (hourlyMap[slot] ?: 0) + entry.quantity
-        }
-        return hourlyMap
-    }
-
     // Determina la unidad de display según el tipo de medicamento
     private fun getDisplayUnitForMedication(medication: com.d4vram.pillmate2.model.Medication?): String {
         if (medication == null) return "tomas"
-        return when {
-            medication.type.equals("Gota", ignoreCase = true) ||
-            medication.type.equals("Gotas", ignoreCase = true) -> "gotas"
-            medication.type.equals("Jarabe", ignoreCase = true) -> "ml"
-            medication.type.equals("Pastilla", ignoreCase = true) ||
-            medication.type.equals("Cápsula", ignoreCase = true) ||
-            medication.type.equals("Comprimido", ignoreCase = true) -> "mg"
-            else -> "tomas"
+        return when (MedicationType.fromStored(medication.type)) {
+            MedicationType.DROPS -> "gotas"
+            MedicationType.SYRUP -> "ml"
+            MedicationType.TABLET, MedicationType.PILL, MedicationType.CAPSULE -> "mg"
+            null -> "units"
         }
     }
 
@@ -726,41 +472,25 @@ class StatisticsViewModel(
     // Calcula el total en la unidad correcta
     private fun calculateTotalInUnit(
         history: List<com.d4vram.pillmate2.model.HistoryEntry>,
-        medication: com.d4vram.pillmate2.model.Medication?,
-        unit: String
+        unit: String,
+        allMedications: List<Medication>
     ): Float {
-        return when (unit) {
-            "mg" -> {
-                // Para mg, multiplicamos cantidad por el valor de dosis del medicamento
-                val doseValue = medication?.dose?.let { extractDoseValue(it) } ?: 1f
-                history.sumOf { it.quantity }.toFloat() * doseValue
-            }
-            "gotas", "ml" -> {
-                // Para gotas/ml, sumamos directamente las cantidades
-                history.sumOf { it.quantity }.toFloat()
-            }
-            else -> {
-                // Para tomas, sumamos las cantidades
-                history.sumOf { it.quantity }.toFloat()
-            }
+        if (unit == "tomas") return countTakeEvents(history).toFloat()
+        val medicationsWithHistory = allMedications.filter { med ->
+            history.any { it.medicationId == med.id }
         }
+        return amountsByMedication(history, medicationsWithHistory)
+            .values
+            .filter { it.unit == unit }
+            .sumOf { it.value.toDouble() }
+            .toFloat()
     }
 
     // Formatea el valor para mostrar
     private fun formatValueWithUnit(value: Float, unit: String): String {
         return when {
             value == value.toInt().toFloat() -> "${value.toInt()}"
-            else -> String.format("%.1f", value)
-        }
-    }
-
-    private fun formatDate(date: LocalDate): String {
-        val today = LocalDate.now()
-        val yesterday = today.minusDays(1)
-        return when (date) {
-            today -> "Hoy"
-            yesterday -> "Ayer"
-            else -> date.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+            else -> formatStatisticsNumber(value, presentationLocale)
         }
     }
 
@@ -776,21 +506,12 @@ class StatisticsViewModel(
     }
 }
 
-/** Variación en % frente al periodo anterior; null si no hubo tomas con las que comparar. */
-internal fun trendPercent(current: Int, previous: Int): Int? =
-    if (previous > 0) ((current - previous).toFloat() / previous * 100).roundToInt() else null
-
 /**
- * Diferencia en tomas frente al periodo anterior, lista para mostrar; null si no hubo tomas con las
- * que comparar. En tomas y no en %: con pocas tomas el porcentaje se dispara (de 1 a 18 es +1700 %).
+ * Diferencia en tomas frente a los [days] días anteriores. En tomas y no en %: con pocas tomas el
+ * porcentaje se dispara (de 1 a 18 es +1700 %). La frase la compone la pantalla, en su idioma.
  */
-internal fun trendText(current: Int, previous: Int, days: Long): String? {
-    if (previous <= 0) return null
-    val diff = current - previous
-    val amount = kotlin.math.abs(diff).let { if (it == 1) "1 toma" else "$it tomas" }
-    return when {
-        diff > 0 -> "$amount más que los $days días anteriores"
-        diff < 0 -> "$amount menos que los $days días anteriores"
-        else -> "Igual que los $days días anteriores"
-    }
-}
+data class Trend(val diff: Int, val days: Long)
+
+/** null si en el periodo anterior no hubo tomas con las que comparar. */
+internal fun trendOf(current: Int, previous: Int, days: Long): Trend? =
+    if (previous <= 0) null else Trend(current - previous, days)

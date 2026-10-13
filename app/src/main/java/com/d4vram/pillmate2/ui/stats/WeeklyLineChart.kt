@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.stats
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -70,7 +72,7 @@ fun WeeklyLineChart(
         ) {
             // Qué mide: sin esto se confunde con las barras de "Tomas por día"
             Text(
-                text = if (unit == "tomas") "Tomas por día" else "Cantidad por día ($unit)",
+                text = if (unit == "tomas") stringResource(R.string.stats_doses_per_day) else stringResource(R.string.stats_amount_per_day, unitLabel(unit)),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -88,7 +90,7 @@ fun WeeklyLineChart(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Anterior",
+                            contentDescription = stringResource(R.string.action_previous),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -106,7 +108,7 @@ fun WeeklyLineChart(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Siguiente",
+                            contentDescription = stringResource(R.string.action_next),
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -122,7 +124,7 @@ fun WeeklyLineChart(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Sin datos en este periodo",
+                        text = stringResource(R.string.stats_no_data),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -130,7 +132,7 @@ fun WeeklyLineChart(
             } else {
                 LineChartCanvas(
                     data = data,
-                    unit = unit,
+                    unit = unitLabel(unit),
                     accentColor = accentColor,
                     animationProgress = animationProgress.value,
                     selectedPointIndex = selectedPointIndex,
@@ -163,6 +165,11 @@ private fun LineChartCanvas(
 
     val maxValue = (data.maxOfOrNull { it.valueInUnit } ?: 1f).coerceAtLeast(1f)
     val yAxisMax = maxValue * 1.2f
+
+    // Dentro del Canvas no se pueden pedir textos: idioma y formato se preparan aquí.
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val shortDate = remember(locale) { com.d4vram.pillmate2.utils.localizedDateFormatter("ddMM", locale) }
+    val showDayInitial = data.size <= 7
 
     // Calcular puntos para detección de taps
     val pointPositions = remember(data) { mutableListOf<Offset>() }
@@ -222,11 +229,7 @@ private fun LineChartCanvas(
             )
 
             // Etiqueta del eje Y
-            val valueText = if (value == value.toInt().toFloat()) {
-                value.toInt().toString()
-            } else {
-                String.format("%.1f", value)
-            }
+            val valueText = formatStatisticsNumber(value, locale)
             drawContext.canvas.nativeCanvas.drawText(
                 valueText,
                 leftPadding - 8.dp.toPx(),
@@ -362,8 +365,8 @@ private fun LineChartCanvas(
                 val x = leftPadding + (index * pointSpacing)
 
                 // Extraer inicial del día y fecha
-                val dayInitial = getDayInitial(dataPoint.dayName)
-                val dateStr = extractDateFromDayName(dataPoint.dayName, dataPoint.fullDate)
+                val dayInitial = if (showDayInitial) dataPoint.date?.dayOfWeek?.getDisplayName(java.time.format.TextStyle.NARROW, locale).orEmpty() else ""
+                val dateStr = dataPoint.date?.format(shortDate).orEmpty()
 
                 drawContext.canvas.nativeCanvas.drawText(
                     dayInitial,
@@ -387,8 +390,8 @@ private fun LineChartCanvas(
                 val point = points[index]
                 val dataPoint = data[index]
 
-                val valueText = formatValue(dataPoint.valueInUnit) + " " + unit
-                val dateText = extractDateFromDayName(dataPoint.dayName, dataPoint.fullDate)
+                val valueText = formatStatisticsNumber(dataPoint.valueInUnit, locale) + " " + unit
+                val dateText = dataPoint.date?.format(shortDate).orEmpty()
 
                 val tooltipPaint = android.graphics.Paint().apply {
                     color = tooltipTextColor
@@ -434,50 +437,5 @@ private fun LineChartCanvas(
                 )
             }
         }
-    }
-}
-
-/**
- * Obtiene la inicial del día en español
- */
-private fun getDayInitial(dayName: String): String {
-    val lower = dayName.lowercase()
-    return when {
-        lower.startsWith("lun") -> "L"
-        lower.startsWith("mar") -> "M"
-        lower.startsWith("mi") || lower.startsWith("mié") -> "X"
-        lower.startsWith("jue") -> "J"
-        lower.startsWith("vie") -> "V"
-        lower.startsWith("sáb") || lower.startsWith("sab") -> "S"
-        lower.startsWith("dom") -> "D"
-        // Si es formato DD/MM, extraer la fecha para determinar el día
-        lower.contains("/") -> {
-            // Ya es formato fecha, devolver vacío para el día
-            ""
-        }
-        else -> dayName.firstOrNull()?.uppercase() ?: ""
-    }
-}
-
-/**
- * Extrae la fecha DD/MM del dayName o fullDate
- */
-private fun extractDateFromDayName(dayName: String, fullDate: String): String {
-    // Si dayName ya es DD/MM, usarlo directamente
-    if (dayName.matches(Regex("\\d{2}/\\d{2}"))) {
-        return dayName
-    }
-
-    // Intentar extraer de fullDate (formato "dd/MM d de MMMM")
-    val regex = Regex("(\\d{2}/\\d{2})")
-    val match = regex.find(fullDate)
-    return match?.value ?: ""
-}
-
-private fun formatValue(value: Float): String {
-    return if (value == value.toInt().toFloat()) {
-        value.toInt().toString()
-    } else {
-        String.format("%.1f", value)
     }
 }

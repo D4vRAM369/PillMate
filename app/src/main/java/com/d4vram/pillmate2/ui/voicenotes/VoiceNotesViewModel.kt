@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.voicenotes
 
+import androidx.annotation.StringRes
+import com.d4vram.pillmate2.R
 import android.app.Application
 import android.content.Intent
 import android.media.MediaPlayer
@@ -41,6 +43,9 @@ class VoiceNotesViewModel(
     private var mediaPlayer: MediaPlayer? = null
     private var playbackTempFile: File? = null
 
+    // Aquí no hay pantalla: los textos se piden con el contexto de la app (idioma del móvil en ese momento).
+    private fun t(@StringRes id: Int, vararg args: Any): String = getApplication<Application>().getString(id, *args)
+
     private val _uiState = MutableStateFlow(VoiceNotesUiState())
     val uiState: StateFlow<VoiceNotesUiState> = _uiState.asStateFlow()
 
@@ -69,11 +74,11 @@ class VoiceNotesViewModel(
 
     fun setPassword(password: String, confirm: String, hint: String?) {
         if (password.isBlank() || confirm.isBlank()) {
-            _uiState.update { it.copy(errorMessage = "La contraseña no puede estar vacía") }
+            _uiState.update { it.copy(errorMessage = t(R.string.vn_err_password_empty)) }
             return
         }
         if (password != confirm) {
-            _uiState.update { it.copy(errorMessage = "Las contraseñas no coinciden") }
+            _uiState.update { it.copy(errorMessage = t(R.string.vn_err_password_mismatch)) }
             return
         }
         viewModelScope.launch {
@@ -83,12 +88,12 @@ class VoiceNotesViewModel(
                 _uiState.update {
                     it.copy(
                         unlocked = true,
-                        infoMessage = "Contraseña configurada",
+                        infoMessage = t(R.string.vn_info_password_set),
                         errorMessage = null
                     )
                 }
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "Error al guardar la contraseña") }
+                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: t(R.string.vn_err_password_save)) }
             }
         }
     }
@@ -98,14 +103,14 @@ class VoiceNotesViewModel(
             val valid = try {
                 securityManager.verifyPassword(password)
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "Error al verificar la contraseña") }
+                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: t(R.string.vn_err_password_verify)) }
                 return@launch
             }
             if (valid) {
                 replaceSessionPassword(password.toCharArray())
-                _uiState.update { it.copy(unlocked = true, errorMessage = null, infoMessage = "Notas desbloqueadas") }
+                _uiState.update { it.copy(unlocked = true, errorMessage = null, infoMessage = t(R.string.vn_info_unlocked)) }
             } else {
-                _uiState.update { it.copy(errorMessage = "Contraseña incorrecta") }
+                _uiState.update { it.copy(errorMessage = t(R.string.vn_err_wrong_password)) }
             }
         }
     }
@@ -123,7 +128,7 @@ class VoiceNotesViewModel(
 
     fun startRecording() {
         if (!_uiState.value.unlocked) {
-            _uiState.update { it.copy(errorMessage = "Desbloquea las notas primero") }
+            _uiState.update { it.copy(errorMessage = t(R.string.vn_err_unlock_first)) }
             return
         }
         if (_uiState.value.isRecording) return
@@ -141,7 +146,7 @@ class VoiceNotesViewModel(
                 }
             }
         } catch (e: Exception) {
-            _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "No se pudo iniciar la grabación") }
+            _uiState.update { it.copy(errorMessage = e.localizedMessage ?: t(R.string.vn_err_start_recording)) }
             recorder.cancelRecording()
             currentTempRecording = null
             recordingTimerJob?.cancel()
@@ -152,14 +157,14 @@ class VoiceNotesViewModel(
         if (!_uiState.value.isRecording) return
         val password = sessionPassword
         if (password == null) {
-            _uiState.update { it.copy(errorMessage = "Desbloquea las notas primero") }
+            _uiState.update { it.copy(errorMessage = t(R.string.vn_err_unlock_first)) }
             cancelRecording()
             return
         }
         val result = try {
             recorder.stopRecording()
         } catch (e: Exception) {
-            _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "No se pudo detener la grabación") }
+            _uiState.update { it.copy(errorMessage = e.localizedMessage ?: t(R.string.vn_err_stop_recording)) }
             recorder.cancelRecording()
             currentTempRecording?.delete()
             currentTempRecording = null
@@ -179,9 +184,9 @@ class VoiceNotesViewModel(
                     durationMillis = result.durationMillis,
                     title = title.orEmpty()
                 )
-                _uiState.update { it.copy(infoMessage = "Nota de voz guardada", errorMessage = null) }
+                _uiState.update { it.copy(infoMessage = t(R.string.vn_info_saved), errorMessage = null) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "No se pudo guardar la nota") }
+                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: t(R.string.vn_err_save)) }
                 result.file.delete()
             } finally {
                 currentTempRecording = null
@@ -199,7 +204,7 @@ class VoiceNotesViewModel(
 
     fun playOrToggle(note: VoiceNote) {
         if (!_uiState.value.unlocked) {
-            _uiState.update { it.copy(errorMessage = "Desbloquea las notas primero") }
+            _uiState.update { it.copy(errorMessage = t(R.string.vn_err_unlock_first)) }
             return
         }
         if (_uiState.value.playingNoteId == note.id) {
@@ -209,7 +214,7 @@ class VoiceNotesViewModel(
         stopPlayback()
         val password = sessionPassword
         if (password == null) {
-            _uiState.update { it.copy(errorMessage = "Desbloquea las notas primero") }
+            _uiState.update { it.copy(errorMessage = t(R.string.vn_err_unlock_first)) }
             return
         }
 
@@ -222,7 +227,7 @@ class VoiceNotesViewModel(
                     stopPlayback()
                 }
                 player.setOnErrorListener { _, _, _ ->
-                    stopPlayback(withError = "Error al reproducir la nota")
+                    stopPlayback(withError = t(R.string.vn_err_playback))
                     true
                 }
                 player.prepare()
@@ -233,7 +238,7 @@ class VoiceNotesViewModel(
                 mediaPlayer = player
                 _uiState.update { it.copy(playingNoteId = note.id, errorMessage = null) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "No se pudo reproducir la nota") }
+                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: t(R.string.vn_err_play)) }
             }
         }
     }
@@ -263,9 +268,9 @@ class VoiceNotesViewModel(
                     stopPlayback()
                 }
                 repository.deleteVoiceNote(note.id)
-                _uiState.update { it.copy(infoMessage = "Nota eliminada") }
+                _uiState.update { it.copy(infoMessage = t(R.string.vn_info_deleted)) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "No se pudo eliminar la nota") }
+                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: t(R.string.vn_err_delete)) }
             }
         }
     }
@@ -274,9 +279,9 @@ class VoiceNotesViewModel(
         viewModelScope.launch {
             try {
                 repository.renameVoiceNote(note.id, newTitle)
-                _uiState.update { it.copy(infoMessage = "Nota actualizada") }
+                _uiState.update { it.copy(infoMessage = t(R.string.vn_info_updated)) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "No se pudo renombrar la nota") }
+                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: t(R.string.vn_err_rename)) }
             }
         }
     }
@@ -285,9 +290,9 @@ class VoiceNotesViewModel(
         viewModelScope.launch {
             try {
                 repository.updateVoiceNoteCategory(note.id, category)
-                _uiState.update { it.copy(infoMessage = "Categoría actualizada") }
+                _uiState.update { it.copy(infoMessage = t(R.string.vn_info_category_updated)) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "No se pudo actualizar la categoría") }
+                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: t(R.string.vn_err_category)) }
             }
         }
     }
@@ -296,9 +301,9 @@ class VoiceNotesViewModel(
         viewModelScope.launch {
             try {
                 repository.updateVoiceNoteTags(note.id, tags)
-                _uiState.update { it.copy(infoMessage = "Etiquetas actualizadas") }
+                _uiState.update { it.copy(infoMessage = t(R.string.vn_info_tags_updated)) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "No se pudieron actualizar las etiquetas") }
+                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: t(R.string.vn_err_tags)) }
             }
         }
     }
@@ -313,12 +318,12 @@ class VoiceNotesViewModel(
     
     fun shareNote(note: VoiceNote) {
         if (!_uiState.value.unlocked) {
-            _uiState.update { it.copy(errorMessage = "Desbloquea las notas primero") }
+            _uiState.update { it.copy(errorMessage = t(R.string.vn_err_unlock_first)) }
             return
         }
         val password = sessionPassword
         if (password == null) {
-            _uiState.update { it.copy(errorMessage = "Desbloquea las notas primero") }
+            _uiState.update { it.copy(errorMessage = t(R.string.vn_err_unlock_first)) }
             return
         }
         
@@ -339,35 +344,35 @@ class VoiceNotesViewModel(
                     action = Intent.ACTION_SEND
                     putExtra(Intent.EXTRA_STREAM, uri)
                     putExtra(Intent.EXTRA_SUBJECT, note.title)
-                    putExtra(Intent.EXTRA_TEXT, "Nota de voz: ${note.title}")
+                    putExtra(Intent.EXTRA_TEXT, t(R.string.vn_share_text, note.title))
                     type = "audio/*"
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
                 
-                val chooserIntent = Intent.createChooser(shareIntent, "Compartir nota de voz")
+                val chooserIntent = Intent.createChooser(shareIntent, t(R.string.voice_note_share))
                 chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 getApplication<Application>().startActivity(chooserIntent)
                 
-                _uiState.update { it.copy(infoMessage = "Preparando para compartir...") }
+                _uiState.update { it.copy(infoMessage = t(R.string.vn_info_sharing)) }
             } catch (e: Exception) {
-                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: "No se pudo compartir la nota") }
+                _uiState.update { it.copy(errorMessage = e.localizedMessage ?: t(R.string.vn_err_share)) }
             }
         }
     }
     
     fun exportAllNotes() {
         if (!_uiState.value.unlocked) {
-            _uiState.update { it.copy(errorMessage = "Desbloquea las notas primero") }
+            _uiState.update { it.copy(errorMessage = t(R.string.vn_err_unlock_first)) }
             return
         }
         val password = sessionPassword
         if (password == null) {
-            _uiState.update { it.copy(errorMessage = "Desbloquea las notas primero") }
+            _uiState.update { it.copy(errorMessage = t(R.string.vn_err_unlock_first)) }
             return
         }
         
         viewModelScope.launch {
-            _uiState.update { it.copy(isExporting = true, infoMessage = "Exportando notas...") }
+            _uiState.update { it.copy(isExporting = true, infoMessage = t(R.string.vn_info_exporting)) }
             
             try {
                 val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
@@ -385,20 +390,20 @@ class VoiceNotesViewModel(
                         val shareIntent = Intent().apply {
                             action = Intent.ACTION_SEND
                             putExtra(Intent.EXTRA_STREAM, uri)
-                            putExtra(Intent.EXTRA_SUBJECT, "Backup de Notas de Voz")
-                            putExtra(Intent.EXTRA_TEXT, "Archivo de respaldo con ${result.noteCount} notas de voz cifradas")
+                            putExtra(Intent.EXTRA_SUBJECT, t(R.string.vn_export_subject))
+                            putExtra(Intent.EXTRA_TEXT, getApplication<Application>().resources.getQuantityString(R.plurals.vn_export_text, result.noteCount, result.noteCount))
                             type = "application/zip"
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         }
                         
-                        val chooserIntent = Intent.createChooser(shareIntent, "Exportar backup de notas")
+                        val chooserIntent = Intent.createChooser(shareIntent, t(R.string.vn_export_chooser))
                         chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         getApplication<Application>().startActivity(chooserIntent)
                         
                         _uiState.update { 
                             it.copy(
                                 isExporting = false, 
-                                infoMessage = "Backup exportado: ${result.noteCount} notas"
+                                infoMessage = getApplication<Application>().resources.getQuantityString(R.plurals.vn_info_exported, result.noteCount, result.noteCount)
                             ) 
                         }
                     }
@@ -415,7 +420,7 @@ class VoiceNotesViewModel(
                 _uiState.update { 
                     it.copy(
                         isExporting = false, 
-                        errorMessage = e.localizedMessage ?: "Error al exportar"
+                        errorMessage = e.localizedMessage ?: t(R.string.vn_err_export)
                     ) 
                 }
             }

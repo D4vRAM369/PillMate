@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.screens
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -48,12 +50,14 @@ fun MedicationsScreen(
 
     var searchQuery by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     val filteredMedications = remember(medications, searchQuery) {
         if (searchQuery.isBlank()) medications
         else medications.filter {
             it.name.contains(searchQuery, ignoreCase = true) ||
             it.dose.contains(searchQuery, ignoreCase = true) ||
-            it.type.contains(searchQuery, ignoreCase = true)
+            it.type.contains(searchQuery, ignoreCase = true) ||
+            com.d4vram.pillmate2.model.MedicationType.label(it.type, context::getString).contains(searchQuery, ignoreCase = true)
         }
     }
 
@@ -63,7 +67,7 @@ fun MedicationsScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            text = "Mis Medicamentos",
+                            text = stringResource(R.string.home_my_medications),
                             style = MaterialTheme.typography.headlineMedium.copy(
                                 fontWeight = FontWeight.Bold
                             )
@@ -79,7 +83,7 @@ fun MedicationsScreen(
                                     Icons.Default.GridView
                                 else
                                     Icons.AutoMirrored.Filled.ViewList,
-                                contentDescription = if (isListView) "Ver como grid" else "Ver como lista",
+                                contentDescription = stringResource(if (isListView) R.string.home_view_as_grid else R.string.home_view_as_list),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -90,7 +94,7 @@ fun MedicationsScreen(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Buscar medicamento...") },
+                    placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Search,
@@ -103,7 +107,7 @@ fun MedicationsScreen(
                             IconButton(onClick = { searchQuery = "" }) {
                                 Icon(
                                     imageVector = Icons.Default.Clear,
-                                    contentDescription = "Borrar búsqueda"
+                                    contentDescription = stringResource(R.string.history_search_clear)
                                 )
                             }
                         }
@@ -127,7 +131,7 @@ fun MedicationsScreen(
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Agregar medicamento",
+                    contentDescription = stringResource(R.string.action_add_medication),
                     tint = MaterialTheme.colorScheme.onPrimary
                 )
             }

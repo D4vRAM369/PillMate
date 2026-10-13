@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.export
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -64,12 +66,12 @@ fun PdfExportSheet(
                     type = "application/pdf"
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    putExtra(Intent.EXTRA_SUBJECT, "Reporte PillMate")
+                    putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.pdf_share_subject))
                 }
-                context.startActivity(Intent.createChooser(intent, "Compartir reporte"))
+                context.startActivity(Intent.createChooser(intent, context.getString(R.string.stats_share_chooser)))
                 viewModel.clearGeneratedFile()
             } catch (e: Exception) {
-                viewModel.reportShareError(e.message ?: "No se pudo compartir el PDF")
+                viewModel.reportShareError(e.message ?: context.getString(R.string.pdf_share_failed))
             }
         }
     }
@@ -89,7 +91,7 @@ fun PdfExportSheet(
         ) {
             // Título
             Text(
-                text = "Generar Reporte PDF",
+                text = stringResource(R.string.pdf_sheet_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -106,7 +108,7 @@ fun PdfExportSheet(
 
             // Secciones a incluir
             Text(
-                text = "Secciones a incluir:",
+                text = stringResource(R.string.pdf_sections_label),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -125,7 +127,7 @@ fun PdfExportSheet(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = section.displayName,
+                        text = stringResource(section.labelRes),
                         style = MaterialTheme.typography.bodyLarge
                     )
                 }
@@ -135,27 +137,27 @@ fun PdfExportSheet(
 
             // Selector de estilo
             Text(
-                text = "Estilo:",
+                text = stringResource(R.string.pdf_style_label),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
 
             Column(Modifier.selectableGroup()) {
                 StyleOption(
-                    name = "Clínico",
-                    description = "Formal, aspecto médico profesional",
+                    name = stringResource(R.string.pdf_style_clinical),
+                    description = stringResource(R.string.pdf_style_clinical_short),
                     selected = uiState.selectedStyle == PdfStyleType.CLINICAL,
                     onClick = { viewModel.setStyle(PdfStyleType.CLINICAL) }
                 )
                 StyleOption(
                     name = "PillMate",
-                    description = "Colores y estilo de la app",
+                    description = stringResource(R.string.pdf_style_pillmate_short),
                     selected = uiState.selectedStyle == PdfStyleType.PILLMATE,
                     onClick = { viewModel.setStyle(PdfStyleType.PILLMATE) }
                 )
                 StyleOption(
-                    name = "Minimalista",
-                    description = "Limpio, solo datos esenciales",
+                    name = stringResource(R.string.pdf_style_minimal),
+                    description = stringResource(R.string.pdf_style_minimal_short),
                     selected = uiState.selectedStyle == PdfStyleType.MINIMAL,
                     onClick = { viewModel.setStyle(PdfStyleType.MINIMAL) }
                 )
@@ -181,10 +183,10 @@ fun PdfExportSheet(
                         strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text("Generando...")
+                    Text(stringResource(R.string.pdf_generating))
                 } else {
                     Text(
-                        text = "Generar PDF",
+                        text = stringResource(R.string.pdf_generate),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -217,11 +219,11 @@ private fun PeriodSelector(
     var showStartPicker by remember { mutableStateOf(false) }
     var showEndPicker by remember { mutableStateOf(false) }
 
-    val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+    val dateFormatter = com.d4vram.pillmate2.utils.localizedDateFormatter("ddMMyyyy", androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            text = "Periodo:",
+            text = stringResource(R.string.pdf_period_label),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold
         )
@@ -249,7 +251,7 @@ private fun PeriodSelector(
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(
-                            text = "Desde",
+                            text = stringResource(R.string.pdf_from),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -280,7 +282,7 @@ private fun PeriodSelector(
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(
-                            text = "Hasta",
+                            text = stringResource(R.string.pdf_to),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -312,12 +314,12 @@ private fun PeriodSelector(
                         showStartPicker = false
                     }
                 ) {
-                    Text("Aceptar")
+                    Text(stringResource(R.string.action_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showStartPicker = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         ) {
@@ -342,12 +344,12 @@ private fun PeriodSelector(
                         showEndPicker = false
                     }
                 ) {
-                    Text("Aceptar")
+                    Text(stringResource(R.string.action_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEndPicker = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         ) {

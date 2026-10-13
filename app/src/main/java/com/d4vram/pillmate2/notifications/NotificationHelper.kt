@@ -28,15 +28,10 @@ import com.d4vram.pillmate2.R
 object NotificationHelper {
 
     private const val CHANNEL_ID = "pillmate_reminders"
-    private const val CHANNEL_NAME = "Recordatorios de Medicamentos"
-    private const val CHANNEL_DESCRIPTION = "Notificaciones para recordarte tomar tus medicamentos"
 
     // Canal aparte para la notificación persistente de toma rápida: baja
     // prioridad, silenciosa, sin vibrar. No debe competir con los recordatorios.
     private const val QUICK_TAKE_CHANNEL_ID = "pillmate_quick_take"
-    private const val QUICK_TAKE_CHANNEL_NAME = "Toma rápida"
-    private const val QUICK_TAKE_CHANNEL_DESCRIPTION =
-        "Notificación siempre presente para registrar una toma con un toque"
     // ID fijo: solo existe una notificación persistente a la vez.
     const val QUICK_TAKE_NOTIFICATION_ID = 0x4D454431 // "MED1"
 
@@ -52,8 +47,8 @@ object NotificationHelper {
         // Solo necesario en Android 8 (Oreo) y superior
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val importance = NotificationManager.IMPORTANCE_HIGH
-            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
-                description = CHANNEL_DESCRIPTION
+            val channel = NotificationChannel(CHANNEL_ID, context.getString(R.string.notif_channel_reminders), importance).apply {
+                description = context.getString(R.string.notif_channel_reminders_desc)
                 enableVibration(true)
                 enableLights(true)
             }
@@ -72,10 +67,10 @@ object NotificationHelper {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 QUICK_TAKE_CHANNEL_ID,
-                QUICK_TAKE_CHANNEL_NAME,
+                context.getString(R.string.quick_take_title),
                 NotificationManager.IMPORTANCE_LOW
             ).apply {
-                description = QUICK_TAKE_CHANNEL_DESCRIPTION
+                description = context.getString(R.string.settings_quick_notification_on)
                 enableVibration(false)
                 setShowBadge(false)
             }
@@ -105,7 +100,7 @@ object NotificationHelper {
         val notification = NotificationCompat.Builder(context, QUICK_TAKE_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_check)
             .setContentTitle("PillMate")
-            .setContentText("Toca para registrar una toma")
+            .setContentText(context.getString(R.string.notif_quick_take_text))
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setOngoing(true)       // No se puede deslizar para descartar
@@ -184,13 +179,13 @@ object NotificationHelper {
         // Construir la notificación
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground) // TODO: Usar icono personalizado
-            .setContentTitle("$emoji Es hora de tomar $medicationName")
-            .setContentText("Dosis: $dose")
+            .setContentTitle(context.getString(R.string.notif_reminder_title, emoji, medicationName))
+            .setContentText(context.getString(R.string.stats_entry_dose, dose))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true) // Se cierra al tocarla
             .setContentIntent(pendingIntent)
-            .addAction(R.drawable.ic_check, "Tomar ahora", markTakenPendingIntent)
+            .addAction(R.drawable.ic_check, context.getString(R.string.notif_take_now), markTakenPendingIntent)
             .build()
 
         // Mostrar la notificación

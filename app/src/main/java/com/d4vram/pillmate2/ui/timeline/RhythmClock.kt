@@ -1,5 +1,8 @@
 package com.d4vram.pillmate2.ui.timeline
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -150,11 +153,21 @@ fun RhythmClock(
     val track = MaterialTheme.colorScheme.outlineVariant
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     val labelStyle = MaterialTheme.typography.labelSmall
-    val summary = remember(entries) {
+    // remember { } y semantics { } no son @Composable: lo que necesitan se pide aquí, antes.
+    val resources = androidx.compose.ui.platform.LocalContext.current.resources
+    val summary = remember(entries, resources) {
         entries.sortedBy { it.timestamp }.take(12).joinToString("; ") {
-            "${it.timestamp.format(timeFormat)} ${it.medicationName}, ${it.quantity} unidades"
+            "${it.timestamp.format(timeFormat)} ${it.medicationName}, " +
+                resources.getQuantityString(R.plurals.clock_units, it.quantity, it.quantity)
         }
     }
+    val nowSuffix = if (showNow && !byHour) " " + stringResource(R.string.clock_now_suffix, now.format(timeFormat)) else ""
+    val clockDescription = pluralStringResource(
+        R.plurals.clock_description,
+        entries.size,
+        entries.size,
+        summary
+    ) + nowSuffix
 
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(Modifier.size(diameter)) {
@@ -176,8 +189,7 @@ fun RhythmClock(
             Canvas(
                 Modifier.fillMaxSize().padding(diameter * 0.12f)
                     .semantics {
-                        contentDescription = "Reloj de 24 horas. ${entries.size} registros. $summary" +
-                            if (showNow && !byHour) " Ahora: ${now.format(timeFormat)}." else ""
+                        contentDescription = clockDescription
                     }
                     .then(tapModifier)
             ) {
@@ -223,17 +235,17 @@ fun RhythmClock(
             Text("18", Modifier.align(Alignment.CenterStart), style = labelStyle, color = muted)
             Column(Modifier.align(Alignment.Center), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text("${entries.size}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                if (diameter >= 180.dp) Text("tomas", style = labelStyle, color = muted)
+                if (diameter >= 180.dp) Text(stringResource(R.string.clock_doses_label), style = labelStyle, color = muted)
             }
         }
 
         if (interactive) {
             val index = selected
             when {
-                entries.isEmpty() -> Text("Sin registros en este periodo.", style = MaterialTheme.typography.bodySmall, color = muted)
+                entries.isEmpty() -> Text(stringResource(R.string.clock_empty), style = MaterialTheme.typography.bodySmall, color = muted)
                 index == null -> {
                     Text(
-                        if (byHour) "Toca una barra para ver qué se tomó a esa hora." else "Toca un punto para ver la toma.",
+                        stringResource(if (byHour) R.string.clock_hint_bar else R.string.clock_hint_dot),
                         style = MaterialTheme.typography.bodySmall, color = muted
                     )
                     if (byHour) {
@@ -248,14 +260,14 @@ fun RhythmClock(
                                     Text(part.label, style = labelStyle, color = muted)
                                 }
                             }
-                            if (legend.size > LEGEND_MAX) Text("+${legend.size - LEGEND_MAX} más", style = labelStyle, color = muted)
+                            if (legend.size > LEGEND_MAX) Text(stringResource(R.string.clock_legend_more, legend.size - LEGEND_MAX), style = labelStyle, color = muted)
                         }
                     }
                 }
                 byHour -> {
                     val slice = slices[index]
                     Text(
-                        "%02d:00–%02d:00 · %d tomas".format(slice.hour, (slice.hour + 1) % 24, slice.total),
+                        stringResource(R.string.clock_hour_range, slice.hour, (slice.hour + 1) % 24, slice.total),
                         style = MaterialTheme.typography.labelLarge
                     )
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -263,7 +275,7 @@ fun RhythmClock(
                     }
                 }
                 else -> dots[index].entry.let {
-                    ClockChip("${it.timestamp.format(timeFormat)} · ${it.clockLabel()} · ${it.quantity} ud", it.color)
+                    ClockChip(stringResource(R.string.clock_chip, it.timestamp.format(timeFormat), it.clockLabel(), pluralStringResource(R.plurals.clock_units, it.quantity, it.quantity)), it.color)
                 }
             }
         }

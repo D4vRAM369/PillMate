@@ -1,5 +1,8 @@
 package com.d4vram.pillmate2.ui.screens
 
+import androidx.compose.ui.res.pluralStringResource
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -35,7 +38,11 @@ import com.d4vram.pillmate2.data.BackupManager
 import com.d4vram.pillmate2.data.BackupSafManager
 import com.d4vram.pillmate2.data.BackupScheduler
 import com.d4vram.pillmate2.data.BackupZipManager
+import com.d4vram.pillmate2.data.BackupImportError
+import com.d4vram.pillmate2.data.BackupImportException
 import com.d4vram.pillmate2.data.CsvUtils
+import com.d4vram.pillmate2.data.CsvImportError
+import com.d4vram.pillmate2.data.CsvImportException
 import com.d4vram.pillmate2.ui.security.SecurityManager
 import com.d4vram.pillmate2.ui.security.SecuritySettings
 import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
@@ -153,9 +160,9 @@ fun SettingsScreen(
         hasNotificationPermission = isGranted
         hasExactAlarmPermission = NotificationHelper.hasExactAlarmPermission(context)
         if (isGranted) {
-            snackbarMessage = "✅ Notificaciones activadas"
+            snackbarMessage = context.getString(R.string.settings_notifications_on)
         } else {
-            snackbarMessage = "❌ Permiso denegado. Actívalo en Ajustes del sistema."
+            snackbarMessage = context.getString(R.string.settings_notifications_denied)
         }
     }
 
@@ -178,13 +185,16 @@ fun SettingsScreen(
     val autoBackupIntervalHours by backupManager.autoBackupIntervalHoursFlow.collectAsState(initial = 24)
     val autoBackupFolderName by backupSafManager.autoBackupFolderUri.collectAsState(initial = null)
     val voiceNoteSecurityManager = rememberVoiceNoteSecurityManager()
-    val lastBackupText = remember(lastBackupMillis) {
+    val noBackupsText = stringResource(R.string.settings_no_backups)
+    val configuredText = stringResource(R.string.settings_configured)
+    val notConfiguredText = stringResource(R.string.settings_not_configured)
+    val lastBackupText = remember(lastBackupMillis, noBackupsText) {
         lastBackupMillis?.let { millis ->
             DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(millis))
-        } ?: "Sin copias"
+        } ?: noBackupsText
     }
-    val autoBackupFolderText = remember(autoBackupFolderName) {
-        if (autoBackupFolderName != null) "Configurada" else "No configurada"
+    val autoBackupFolderText = remember(autoBackupFolderName, configuredText, notConfiguredText) {
+        if (autoBackupFolderName != null) configuredText else notConfiguredText
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -214,12 +224,12 @@ fun SettingsScreen(
                 try {
                     val success = backupSafManager.createManualBackupToUri(it)
                     if (success) {
-                        snackbarMessage = "✅ Backup creado correctamente"
+                        snackbarMessage = context.getString(R.string.settings_backup_created)
                     } else {
-                        snackbarMessage = "❌ Error al crear backup"
+                        snackbarMessage = context.getString(R.string.settings_backup_create_failed)
                     }
                 } catch (e: Exception) {
-                    snackbarMessage = "❌ Error: ${e.message}"
+                    snackbarMessage = context.getString(R.string.settings_error_with_message, e.message.orEmpty())
                 }
             }
         }
@@ -234,9 +244,9 @@ fun SettingsScreen(
                 try {
                     backupSafManager.saveAutoBackupFolderUri(it)
                     BackupScheduler.refresh(context.applicationContext)
-                    snackbarMessage = "✅ Carpeta de auto-backup configurada"
+                    snackbarMessage = context.getString(R.string.settings_autobackup_folder_set)
                 } catch (e: Exception) {
-                    snackbarMessage = "❌ Error al configurar carpeta: ${e.message}"
+                    snackbarMessage = context.getString(R.string.settings_autobackup_folder_failed, e.message.orEmpty())
                 }
             }
         }
@@ -252,7 +262,7 @@ fun SettingsScreen(
                     // Validar que sea un archivo .zip
                     val fileName = getFileNameFromUri(context, it) ?: ""
                     if (!fileName.endsWith(".zip", ignoreCase = true)) {
-                        snackbarMessage = "⚠️ Por favor selecciona un archivo .zip"
+                        snackbarMessage = context.getString(R.string.settings_pick_zip)
                         return@launch
                     }
 
@@ -283,14 +293,14 @@ fun SettingsScreen(
                         showBackupPasswordDialog = true
                     } else {
                         pendingRestore = PendingRestore(
-                            title = "Restaurar backup",
-                            description = "Se reemplazarán tus datos actuales por el contenido del backup seleccionado. Antes se creará una copia local de seguridad.",
+                            title = context.getString(R.string.settings_restore_backup_title),
+                            description = context.getString(R.string.settings_restore_backup_desc),
                             zipFile = tempFile
                         )
                         snackbarMessage = null
                     }
                 } catch (e: Exception) {
-                    snackbarMessage = "❌ Error al restaurar backup: ${e.message}"
+                    snackbarMessage = context.getString(R.string.settings_restore_failed, e.message.orEmpty())
                 }
             }
         }
@@ -306,20 +316,23 @@ fun SettingsScreen(
                     // Validar que sea un archivo .csv
                     val fileName = getFileNameFromUri(context, it) ?: ""
                     if (!fileName.endsWith(".csv", ignoreCase = true)) {
-                        snackbarMessage = "⚠️ Por favor selecciona un archivo .csv"
+                        snackbarMessage = context.getString(R.string.settings_pick_csv)
                         return@launch
                     }
 
                     val csvContent = readTextFromUri(context, it)
                     val parsed = CsvUtils.parseCsv(csvContent)
                     pendingRestore = PendingRestore(
-                        title = "Importar CSV",
-                        description = "Se reemplazarán tus datos actuales por ${parsed.medications.size} medicamentos y ${parsed.history.size} entradas de historial. Antes se creará una copia local de seguridad.",
+                        title = context.getString(R.string.settings_import_csv_title),
+                        description = context.getString(R.string.settings_import_csv_desc, parsed.medications.size, parsed.history.size),
                         medications = parsed.medications,
                         history = parsed.history
                     )
                 } catch (e: Exception) {
-                    snackbarMessage = "❌ Error al importar CSV: ${e.message}"
+                    snackbarMessage = context.getString(
+                        R.string.settings_import_csv_failed,
+                        importFailureMessage(context, e)
+                    )
                 }
             }
         }
@@ -330,7 +343,7 @@ fun SettingsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "⚙️ Configuración",
+                        text = stringResource(R.string.settings_title),
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Bold
                         )
@@ -353,7 +366,7 @@ fun SettingsScreen(
             
             // Sección de Apariencia
             item {
-                SettingsSection(title = "🎨 Apariencia") {
+                SettingsSection(title = stringResource(R.string.settings_appearance)) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -365,14 +378,14 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
-                                text = "Modo oscuro",
+                                text = stringResource(R.string.settings_dark_mode),
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     fontWeight = FontWeight.Medium
                                 ),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = if (isDarkMode) "Activado" else "Desactivado",
+                                text = stringResource(if (isDarkMode) R.string.settings_on else R.string.settings_off),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -390,7 +403,7 @@ fun SettingsScreen(
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                    Text("Diseño de pantallas", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.settings_screen_design), style = MaterialTheme.typography.titleMedium)
                     AppDesign.entries.forEach { design ->
                         Row(
                             modifier = Modifier.fillMaxWidth().selectable(
@@ -405,10 +418,9 @@ fun SettingsScreen(
                                 onClick = null
                             )
                             Column(Modifier.weight(1f)) {
-                                Text(design.title)
+                                Text(stringResource(design.titleRes))
                                 Text(
-                                    if (design == AppDesign.Astra) "Accesos rápidos y reloj de 24 horas"
-                                    else "Las pantallas de siempre",
+                                    stringResource(if (design == AppDesign.Astra) R.string.settings_design_rhythm_desc else R.string.settings_design_classic_desc),
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
@@ -417,8 +429,8 @@ fun SettingsScreen(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                     SettingsItem(
-                        title = "Estilo de interfaz",
-                        description = "Actual: ${uiStyle.title}",
+                        title = stringResource(R.string.settings_ui_style),
+                        description = stringResource(R.string.settings_current, stringResource(uiStyle.titleRes)),
                         icon = Icons.Default.Palette,
                         onClick = { showUiDialog = true }
                     )
@@ -426,8 +438,8 @@ fun SettingsScreen(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                     SettingsItem(
-                        title = "Chips de recuento",
-                        description = "Período: ${chipCountPeriod.title}",
+                        title = stringResource(R.string.settings_chip_count),
+                        description = stringResource(R.string.settings_chip_period, stringResource(chipCountPeriod.titleRes)),
                         icon = Icons.Default.Tag,
                         onClick = { showChipPeriodDialog = true }
                     )
@@ -463,10 +475,10 @@ fun SettingsScreen(
 
             // Sección de Ordenamiento
             item {
-                SettingsSection(title = "🔢 Ordenamiento") {
+                SettingsSection(title = stringResource(R.string.settings_sorting)) {
                     SettingsItem(
-                        title = "Ordenar medicamentos por",
-                        description = "Actual: ${sortMode.title}",
+                        title = stringResource(R.string.settings_sort_by),
+                        description = stringResource(R.string.settings_current, stringResource(sortMode.titleRes)),
                         icon = Icons.AutoMirrored.Filled.Sort,
                         onClick = { showSortModeDialog = true }
                     )
@@ -474,7 +486,7 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection(title = "🔒 Seguridad") {
+                SettingsSection(title = stringResource(R.string.settings_security)) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -484,12 +496,12 @@ fun SettingsScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Bloqueo de la app",
+                                text = stringResource(R.string.settings_app_lock),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = if (securitySettings.lockEnabled) "Activado" else "Desactivado",
+                                text = stringResource(if (securitySettings.lockEnabled) R.string.settings_on else R.string.settings_off),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -502,16 +514,16 @@ fun SettingsScreen(
                                         if (!securitySettings.isPinConfigured) {
                                             pendingEnableLock = true
                                             showPinSetupDialog = true
-                                            snackbarMessage = "Configura un PIN para activar el bloqueo"
+                                            snackbarMessage = context.getString(R.string.settings_set_pin_first)
                                         } else {
                                             securityManager.setLockEnabled(true)
                                             securityManager.recordUnlock()
-                                            snackbarMessage = "Bloqueo activado"
+                                            snackbarMessage = context.getString(R.string.settings_lock_enabled)
                                         }
                                     } else {
                                         securityManager.setLockEnabled(false)
                                         securityManager.setBiometricEnabled(false)
-                                        snackbarMessage = "Bloqueo desactivado"
+                                        snackbarMessage = context.getString(R.string.settings_lock_disabled)
                                     }
                                 }
                             }
@@ -522,8 +534,8 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         SettingsItem(
-                            title = "Cambiar PIN",
-                            description = "Actualizar código de acceso",
+                            title = stringResource(R.string.settings_change_pin),
+                            description = stringResource(R.string.settings_change_pin_desc),
                             icon = Icons.Default.Lock,
                             onClick = { showPinChangeDialog = true }
                         )
@@ -539,12 +551,12 @@ fun SettingsScreen(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Desbloquear con huella",
+                                        text = stringResource(R.string.settings_fingerprint),
                                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = if (securitySettings.biometricEnabled) "Activado" else "Desactivado",
+                                        text = stringResource(if (securitySettings.biometricEnabled) R.string.settings_on else R.string.settings_off),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -561,7 +573,7 @@ fun SettingsScreen(
                         } else {
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "Tu dispositivo no soporta autenticación biométrica fuerte.",
+                                text = stringResource(R.string.settings_no_biometrics),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -570,7 +582,7 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         val timeoutLabel = lockTimeoutLabel(securitySettings.autoLockDurationMs)
                         SettingsItem(
-                            title = "Tiempo antes de bloquear",
+                            title = stringResource(R.string.settings_lock_timeout),
                             description = timeoutLabel,
                             icon = Icons.Default.Schedule,
                             onClick = { showTimeoutPicker = true }
@@ -578,8 +590,8 @@ fun SettingsScreen(
                     } else if (!securitySettings.isPinConfigured) {
                         Spacer(modifier = Modifier.height(8.dp))
                         SettingsItem(
-                            title = "Configurar PIN",
-                            description = "Define un código para proteger tu información",
+                            title = stringResource(R.string.settings_setup_pin),
+                            description = stringResource(R.string.settings_setup_pin_desc),
                             icon = Icons.Default.Security,
                             onClick = { showPinSetupDialog = true }
                         )
@@ -588,7 +600,7 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection(title = "🔔 Notificaciones") {
+                SettingsSection(title = stringResource(R.string.settings_notifications)) {
                     // Estado del permiso de notificaciones
                     if (!hasNotificationPermission) {
                         Card(
@@ -606,12 +618,12 @@ fun SettingsScreen(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Permiso requerido",
+                                        text = stringResource(R.string.settings_permission_required),
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = "Permite notificaciones para recibir recordatorios",
+                                        text = stringResource(R.string.settings_permission_required_desc),
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 }
@@ -622,7 +634,7 @@ fun SettingsScreen(
                                         }
                                     }
                                 ) {
-                                    Text("Activar")
+                                    Text(stringResource(R.string.action_enable))
                                 }
                             }
                         }
@@ -645,12 +657,12 @@ fun SettingsScreen(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Alarmas exactas desactivadas",
+                                        text = stringResource(R.string.settings_exact_alarms_off),
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = "Sin este permiso los recordatorios pueden retrasarse",
+                                        text = stringResource(R.string.settings_exact_alarms_off_desc),
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 }
@@ -659,7 +671,7 @@ fun SettingsScreen(
                                         NotificationHelper.openExactAlarmSettings(context)
                                     }
                                 ) {
-                                    Text("Permitir")
+                                    Text(stringResource(R.string.action_allow))
                                 }
                             }
                         }
@@ -667,11 +679,11 @@ fun SettingsScreen(
                     }
 
                     SettingsItem(
-                        title = "Recordatorios",
+                        title = stringResource(R.string.settings_reminders),
                         description = when {
-                            !hasNotificationPermission -> "Activa el permiso de notificaciones primero"
-                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasExactAlarmPermission -> "Permite alarmas exactas para máxima precisión"
-                            else -> "Los recordatorios se configuran en cada medicamento"
+                            !hasNotificationPermission -> stringResource(R.string.settings_reminders_need_permission)
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasExactAlarmPermission -> stringResource(R.string.settings_reminders_need_exact)
+                            else -> stringResource(R.string.settings_reminders_per_medication)
                         },
                         icon = Icons.Default.Notifications,
                         onClick = {
@@ -680,17 +692,17 @@ fun SettingsScreen(
                             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasExactAlarmPermission) {
                                 NotificationHelper.openExactAlarmSettings(context)
                             } else {
-                                snackbarMessage = "Configura recordatorios en cada medicamento individual"
+                                snackbarMessage = context.getString(R.string.settings_reminders_hint)
                             }
                         }
                     )
 
                     SettingsItem(
-                        title = "Notificación de toma rápida",
+                        title = stringResource(R.string.settings_quick_notification),
                         description = if (quickTakeNotificationEnabled)
-                            "Notificación siempre presente para registrar una toma con un toque"
+                            stringResource(R.string.settings_quick_notification_on)
                         else
-                            "Añade una notificación fija para registrar tomas sin abrir la app",
+                            stringResource(R.string.settings_quick_notification_off),
                         hasSwitch = true,
                         checked = quickTakeNotificationEnabled,
                         icon = Icons.Default.Bolt,
@@ -710,8 +722,8 @@ fun SettingsScreen(
                     )
 
                     SettingsItem(
-                        title = "Sonido",
-                        description = "Configurar tono de notificación",
+                        title = stringResource(R.string.settings_sound),
+                        description = stringResource(R.string.settings_sound_desc),
                         icon = Icons.AutoMirrored.Filled.VolumeUp,
                         onClick = {
                             // Abrir ajustes de notificación de la app
@@ -726,20 +738,20 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection(title = "📊 Datos") {
+                SettingsSection(title = stringResource(R.string.settings_data)) {
                     // 📄 Exportar CSV (sin fotos)
                     SettingsItem(
-                        title = "Exportar CSV",
-                        description = "Crear archivo CSV con medicamentos e historial",
+                        title = stringResource(R.string.export_csv),
+                        description = stringResource(R.string.settings_export_csv_desc),
                         icon = Icons.Default.FileDownload,
                         onClick = {
                             scope.launch {
                                 try {
                                     val file = createExportFile(context, repository)
                                     shareFile(context, file)
-                                    snackbarMessage = "✅ CSV exportado: ${file.name}"
+                                    snackbarMessage = context.getString(R.string.settings_csv_exported, file.name)
                                 } catch (e: Exception) {
-                                    snackbarMessage = "❌ Error al exportar: ${e.message}"
+                                    snackbarMessage = context.getString(R.string.settings_export_failed, e.message.orEmpty())
                                 }
                             }
                         }
@@ -747,16 +759,16 @@ fun SettingsScreen(
 
                     // 📑 Exportar PDF (reporte visual)
                     SettingsItem(
-                        title = "Exportar PDF",
-                        description = "Generar reporte visual para médico o archivo",
+                        title = stringResource(R.string.export_pdf),
+                        description = stringResource(R.string.settings_export_pdf_desc),
                         icon = Icons.Default.PictureAsPdf,
                         onClick = onNavigateToPdfExport
                     )
 
                     // 🎙️ Exportar historial con audios
                     SettingsItem(
-                        title = "Exportar historial con audios",
-                        description = "Exportar historial completo con notas de voz encriptadas",
+                        title = stringResource(R.string.settings_export_audio),
+                        description = stringResource(R.string.settings_export_audio_desc),
                         icon = Icons.Default.Mic,
                         onClick = {
                             showHistoryExportDialog = true
@@ -765,8 +777,8 @@ fun SettingsScreen(
 
                     // 🔄 Restaurar Backup (importar ZIP con fotos)
                     SettingsItem(
-                        title = "Restaurar Backup",
-                        description = "Importar desde archivo .zip (incluye fotos)",
+                        title = stringResource(R.string.settings_restore_backup),
+                        description = stringResource(R.string.settings_restore_backup_hint),
                         icon = Icons.Default.Restore,
                         onClick = {
                             zipBackupLauncher.launch("*/*")
@@ -775,8 +787,8 @@ fun SettingsScreen(
 
                     // 📥 Importar CSV (sin fotos)
                     SettingsItem(
-                        title = "Importar CSV",
-                        description = "Cargar datos desde archivo .csv (sin fotos)",
+                        title = context.getString(R.string.settings_import_csv_title),
+                        description = stringResource(R.string.settings_import_csv_hint),
                         icon = Icons.Default.FileUpload,
                         onClick = {
                             csvImportLauncher.launch("*/*")
@@ -785,8 +797,8 @@ fun SettingsScreen(
 
                     // 🗑️ Limpiar todos los datos
                     SettingsItem(
-                        title = "Limpiar todos los datos",
-                        description = "Eliminar todos los medicamentos y entradas",
+                        title = stringResource(R.string.settings_clear_all),
+                        description = stringResource(R.string.settings_clear_all_desc),
                         icon = Icons.Default.Delete,
                         onClick = {
                             showClearAllDialog = true
@@ -795,8 +807,8 @@ fun SettingsScreen(
 
                     // 💾 Crear Backup Manual con SAF
                     SettingsItem(
-                        title = "Crear Backup",
-                        description = "Elegir dónde guardar backup completo",
+                        title = stringResource(R.string.settings_create_backup),
+                        description = stringResource(R.string.settings_create_backup_desc),
                         icon = Icons.Default.Save,
                         onClick = {
                             val timestamp = System.currentTimeMillis()
@@ -806,7 +818,7 @@ fun SettingsScreen(
 
                     // 📁 Configurar carpeta de auto-backup
                     SettingsItem(
-                        title = "Carpeta de auto-backup",
+                        title = stringResource(R.string.settings_autobackup_folder),
                         description = autoBackupFolderText,
                         icon = Icons.Default.FolderOpen,
                         onClick = {
@@ -817,15 +829,15 @@ fun SettingsScreen(
                     // 🧹 Limpiar configuración (solo si hay carpeta configurada)
                     if (autoBackupFolderName != null) {
                         SettingsItem(
-                            title = "Limpiar configuración de carpeta",
-                            description = "Resetear carpeta de auto-backup",
+                            title = stringResource(R.string.settings_clear_folder),
+                            description = stringResource(R.string.settings_clear_folder_desc),
                             icon = Icons.Default.Clear,
                             onClick = {
                                 scope.launch {
                                     backupSafManager.clearAutoBackupFolder()
                                     backupManager.setAutoBackupEnabled(false)
                                     BackupScheduler.refresh(context.applicationContext)
-                                    snackbarMessage = "✅ Configuración limpiada. Configura nuevamente."
+                                    snackbarMessage = context.getString(R.string.settings_folder_cleared)
                                 }
                             }
                         )
@@ -833,7 +845,7 @@ fun SettingsScreen(
 
                     // 💾 Info de último backup automático
                     SettingsItem(
-                        title = "Último auto-backup",
+                        title = stringResource(R.string.settings_last_autobackup),
                         description = lastBackupText,
                         icon = Icons.Default.Info,
                         onClick = {}
@@ -841,31 +853,31 @@ fun SettingsScreen(
 
                     // 🚀 Crear auto-backup ahora
                     SettingsItem(
-                        title = "Auto-backup",
-                        description = if (autoBackupEnabled) "Activado cada ${formatInterval(autoBackupIntervalHours)}" else "Desactivado",
+                        title = stringResource(R.string.settings_autobackup),
+                        description = if (autoBackupEnabled) stringResource(R.string.settings_autobackup_on_every, formatInterval(autoBackupIntervalHours)) else stringResource(R.string.settings_off),
                         icon = Icons.Default.Autorenew,
                         hasSwitch = true,
                         checked = autoBackupEnabled,
                         onCheckedChange = { enabled ->
                             scope.launch {
                                 if (enabled && autoBackupFolderName == null) {
-                                    snackbarMessage = "⚠️ Configura primero una carpeta de auto-backup"
+                                    snackbarMessage = context.getString(R.string.settings_choose_folder_first)
                                     return@launch
                                 }
                                 backupManager.setAutoBackupEnabled(enabled)
                                 BackupScheduler.refresh(context.applicationContext)
                                 snackbarMessage = if (enabled) {
-                                    "✅ Auto-backup activado"
+                                    context.getString(R.string.settings_autobackup_enabled)
                                 } else {
-                                    "Auto-backup desactivado"
+                                    context.getString(R.string.settings_autobackup_disabled)
                                 }
                             }
                         }
                     )
 
                     SettingsItem(
-                        title = "Frecuencia de auto-backup",
-                        description = "Cada ${formatInterval(autoBackupIntervalHours)}",
+                        title = stringResource(R.string.settings_autobackup_frequency),
+                        description = stringResource(R.string.settings_every, formatInterval(autoBackupIntervalHours)),
                         icon = Icons.Default.Schedule,
                         onClick = {
                             showAutoBackupIntervalDialog = true
@@ -873,8 +885,8 @@ fun SettingsScreen(
                     )
 
                     SettingsItem(
-                        title = "Crear backup de seguridad ahora",
-                        description = "Guardar backup en carpeta configurada",
+                        title = stringResource(R.string.settings_backup_now),
+                        description = stringResource(R.string.settings_backup_now_desc),
                         icon = Icons.Default.Backup,
                         onClick = {
                             scope.launch {
@@ -882,12 +894,12 @@ fun SettingsScreen(
                                     val success = backupSafManager.createAutoBackupToFolder(force = true)
                                     if (success) {
                                         BackupScheduler.refresh(context.applicationContext)
-                                        snackbarMessage = "✅ Backup creado en carpeta configurada"
+                                        snackbarMessage = context.getString(R.string.settings_backup_in_folder)
                                     } else {
-                                        snackbarMessage = "⚠️ Configura primero una carpeta de auto-backup"
+                                        snackbarMessage = context.getString(R.string.settings_choose_folder_first)
                                     }
                                 } catch (e: Exception) {
-                                    snackbarMessage = "❌ Error al crear backup: ${e.message}"
+                                    snackbarMessage = context.getString(R.string.settings_backup_failed, e.message.orEmpty())
                                 }
                             }
                         }
@@ -895,8 +907,8 @@ fun SettingsScreen(
 
                     // 📦 Exportar Backup (con opción de cifrado AES-256)
                     SettingsItem(
-                        title = "Exportar Backup",
-                        description = "Compartir backup completo con fotos (con/sin cifrado)",
+                        title = stringResource(R.string.settings_export_backup),
+                        description = stringResource(R.string.settings_export_backup_desc),
                         icon = Icons.Default.Lock,
                         onClick = {
                             showBackupExportDialog = true
@@ -905,8 +917,8 @@ fun SettingsScreen(
 
                     // 📁 Ver carpeta de backups
                     SettingsItem(
-                        title = "Ver carpeta de backups",
-                        description = "Abrir ubicación de copias de seguridad",
+                        title = stringResource(R.string.settings_view_backups),
+                        description = stringResource(R.string.settings_view_backups_desc),
                         icon = Icons.Default.Folder,
                         onClick = {
                             openBackupsFolder(context, scope, backupSafManager)
@@ -917,10 +929,10 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection(title = "🎙️ Notas de Voz") {
+                SettingsSection(title = stringResource(R.string.settings_voice_notes)) {
                     SettingsItem(
-                        title = "Cambiar contraseña de notas",
-                        description = "Modificar contraseña y pista de las notas de voz",
+                        title = stringResource(R.string.settings_voice_password),
+                        description = stringResource(R.string.settings_voice_password_desc),
                         icon = Icons.Default.Lock,
                         onClick = { showVoiceNotePasswordDialog = true }
                     )
@@ -928,8 +940,8 @@ fun SettingsScreen(
                     // 🔄 Restablecer contraseña (requiere PIN de la app)
                     if (securitySettings.isPinConfigured) {
                         SettingsItem(
-                            title = "Restablecer contraseña de notas",
-                            description = "Crear nueva contraseña (requiere PIN de la app)",
+                            title = stringResource(R.string.settings_voice_reset),
+                            description = stringResource(R.string.settings_voice_reset_desc),
                             icon = Icons.Default.RestartAlt,
                             onClick = {
                                 showPinVerificationForReset = true
@@ -940,21 +952,21 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection(title = "ℹ️ Información") {
+                SettingsSection(title = stringResource(R.string.settings_info)) {
                     SettingsItem(
-                        title = "Versión",
+                        title = stringResource(R.string.settings_version),
                         description = "PillMate v" + context.packageManager.getPackageInfo(context.packageName, 0).versionName,
                         icon = Icons.Default.Info
                     )
                     SettingsItem(
-                        title = "Ver la introducción",
-                        description = "Repasa cómo funciona PillMate",
+                        title = stringResource(R.string.settings_show_intro),
+                        description = stringResource(R.string.settings_show_intro_desc),
                         icon = Icons.Default.School,
                         onClick = onShowOnboarding
                     )
                     SettingsItem(
-                        title = "Acerca de",
-                        description = "Autor, código fuente y cómo apoyar el proyecto",
+                        title = stringResource(R.string.settings_about),
+                        description = stringResource(R.string.settings_about_desc),
                         icon = Icons.Default.QuestionMark,
                         onClick = { showAboutDialog = true }
                     )
@@ -974,7 +986,7 @@ fun SettingsScreen(
     if (showUiDialog) {
         AlertDialog(
             onDismissRequest = { showUiDialog = false },
-            title = { Text("Estilo de interfaz") },
+            title = { Text(stringResource(R.string.settings_ui_style)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     AppUiStyle.entries.forEach { style ->
@@ -999,11 +1011,11 @@ fun SettingsScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = style.title,
+                                    text = stringResource(style.titleRes),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
                                 )
                                 Text(
-                                    text = style.description,
+                                    text = stringResource(style.descriptionRes),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1014,7 +1026,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showUiDialog = false }) {
-                    Text("Cerrar")
+                    Text(stringResource(R.string.action_close))
                 }
             }
         )
@@ -1023,7 +1035,7 @@ fun SettingsScreen(
     if (showChipPeriodDialog) {
         AlertDialog(
             onDismissRequest = { showChipPeriodDialog = false },
-            title = { Text("Chips de recuento") },
+            title = { Text(stringResource(R.string.settings_chip_count)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     com.d4vram.pillmate2.ui.theme.ChipCountPeriod.entries.forEach { period ->
@@ -1048,11 +1060,11 @@ fun SettingsScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = period.title,
+                                    text = stringResource(period.titleRes),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
                                 )
                                 Text(
-                                    text = period.description,
+                                    text = stringResource(period.descriptionRes),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1063,7 +1075,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showChipPeriodDialog = false }) {
-                    Text("Cerrar")
+                    Text(stringResource(R.string.action_close))
                 }
             }
         )
@@ -1072,7 +1084,7 @@ fun SettingsScreen(
     if (showSortModeDialog) {
         AlertDialog(
             onDismissRequest = { showSortModeDialog = false },
-            title = { Text("Ordenar medicamentos por") },
+            title = { Text(stringResource(R.string.settings_sort_by)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SortMode.entries.forEach { mode ->
@@ -1083,7 +1095,7 @@ fun SettingsScreen(
                                 .clickable {
                                     showSortModeDialog = false
                                     scope.launch { themeManager.setSortMode(mode) }
-                                    snackbarMessage = "Ordenamiento cambiado a: ${mode.title}"
+                                    snackbarMessage = context.getString(R.string.settings_sort_changed, context.getString(mode.titleRes))
                                 }
                                 .padding(vertical = 12.dp, horizontal = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -1093,17 +1105,17 @@ fun SettingsScreen(
                                 onClick = {
                                     showSortModeDialog = false
                                     scope.launch { themeManager.setSortMode(mode) }
-                                    snackbarMessage = "Ordenamiento cambiado a: ${mode.title}"
+                                    snackbarMessage = context.getString(R.string.settings_sort_changed, context.getString(mode.titleRes))
                                 }
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = mode.title,
+                                    text = stringResource(mode.titleRes),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
                                 )
                                 Text(
-                                    text = mode.description,
+                                    text = stringResource(mode.descriptionRes),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1114,7 +1126,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showSortModeDialog = false }) {
-                    Text("Cerrar")
+                    Text(stringResource(R.string.action_close))
                 }
             }
         )
@@ -1133,13 +1145,13 @@ fun SettingsScreen(
                     if (pendingEnableLock) {
                         securityManager.setLockEnabled(true)
                         pendingEnableLock = false
-                        snackbarMessage = "Bloqueo activado"
+                        snackbarMessage = context.getString(R.string.settings_lock_enabled)
                     } else {
-                        snackbarMessage = "PIN guardado"
+                        snackbarMessage = context.getString(R.string.settings_pin_saved)
                     }
                     null
                 } catch (e: Exception) {
-                    e.message ?: "No se pudo guardar el PIN"
+                    e.message ?: context.getString(R.string.settings_pin_save_failed)
                 }
             }
         )
@@ -1152,14 +1164,14 @@ fun SettingsScreen(
                 try {
                     val valid = securityManager.verifyPin(currentPin)
                     if (!valid) {
-                        "PIN actual incorrecto"
+                        context.getString(R.string.settings_pin_wrong)
                     } else {
                         securityManager.setPin(newPin)
-                        snackbarMessage = "PIN actualizado"
+                        snackbarMessage = context.getString(R.string.settings_pin_updated)
                         null
                     }
                 } catch (e: Exception) {
-                    e.message ?: "Error al actualizar el PIN"
+                    e.message ?: context.getString(R.string.settings_pin_update_failed)
                 }
             }
         )
@@ -1171,7 +1183,7 @@ fun SettingsScreen(
             onDismiss = { showTimeoutPicker = false },
             onTimeoutSelected = { duration ->
                 securityManager.updateAutoLockDuration(duration)
-                snackbarMessage = "Tiempo de bloqueo actualizado"
+                snackbarMessage = context.getString(R.string.settings_timeout_updated)
                 showTimeoutPicker = false
             }
         )
@@ -1185,13 +1197,13 @@ fun SettingsScreen(
                     try {
                         val success = voiceNoteSecurityManager.changePassword(currentPassword, newPassword, newHint)
                         if (success) {
-                            snackbarMessage = "Contraseña de notas actualizada"
+                            snackbarMessage = context.getString(R.string.settings_voice_password_updated)
                             showVoiceNotePasswordDialog = false
                         } else {
-                            snackbarMessage = "Contraseña actual incorrecta"
+                            snackbarMessage = context.getString(R.string.settings_voice_password_wrong)
                         }
                     } catch (e: Exception) {
-                        snackbarMessage = e.localizedMessage ?: "Error al cambiar contraseña"
+                        snackbarMessage = e.localizedMessage ?: context.getString(R.string.settings_voice_password_change_failed)
                     }
                 }
             }
@@ -1218,10 +1230,10 @@ fun SettingsScreen(
                 scope.launch {
                     try {
                         voiceNoteSecurityManager.setPassword(newPassword, newHint)
-                        snackbarMessage = "✅ Contraseña de notas restablecida"
+                        snackbarMessage = context.getString(R.string.settings_voice_password_reset_done)
                         showVoiceNoteResetDialog = false
                     } catch (e: Exception) {
-                        snackbarMessage = e.localizedMessage ?: "Error al restablecer contraseña"
+                        snackbarMessage = e.localizedMessage ?: context.getString(R.string.settings_voice_password_reset_failed)
                     }
                 }
             }
@@ -1237,13 +1249,13 @@ fun SettingsScreen(
                         val file = exportHistoryWithAudio(context, repository, includeAudioNotes)
                         shareFile(context, file)
                         snackbarMessage = if (includeAudioNotes) {
-                            "Historial exportado con ${file.length() / 1024}KB de audios"
+                            context.getString(R.string.settings_history_exported, file.length() / 1024)
                         } else {
-                            "Historial exportado sin audios"
+                            context.getString(R.string.settings_history_exported_no_audio)
                         }
                         showHistoryExportDialog = false
                     } catch (e: Exception) {
-                        snackbarMessage = "Error al exportar: ${e.message}"
+                        snackbarMessage = context.getString(R.string.settings_error_export, e.message.orEmpty())
                     }
                 }
             }
@@ -1266,17 +1278,17 @@ fun SettingsScreen(
                         if (password != null) {
                             // Exportar con cifrado AES-256
                             BackupZipManager.createEncryptedBackupZip(context, medications, history, file, password)
-                            snackbarMessage = "✅ Backup cifrado exportado: ${file.name}"
+                            snackbarMessage = context.getString(R.string.settings_backup_encrypted_exported, file.name)
                         } else {
                             // Exportar sin cifrar
                             BackupZipManager.createBackupZip(context, medications, history, file)
-                            snackbarMessage = "✅ Backup exportado: ${file.name}"
+                            snackbarMessage = context.getString(R.string.settings_backup_exported, file.name)
                         }
 
                         shareFile(context, file)
                         showBackupExportDialog = false
                     } catch (e: Exception) {
-                        snackbarMessage = "❌ Error al exportar backup: ${e.message}"
+                        snackbarMessage = context.getString(R.string.settings_backup_export_failed, e.message.orEmpty())
                     }
                 }
             }
@@ -1295,8 +1307,8 @@ fun SettingsScreen(
                     try {
                         pendingEncryptedBackupFile?.let { tempFile ->
                             pendingRestore = PendingRestore(
-                                title = "Restaurar backup cifrado",
-                                description = "Se reemplazarán tus datos actuales por el contenido del backup cifrado seleccionado. Antes se creará una copia local de seguridad.",
+                                title = context.getString(R.string.settings_restore_encrypted_title),
+                                description = context.getString(R.string.settings_restore_encrypted_desc),
                                 zipFile = tempFile,
                                 password = password
                             )
@@ -1304,7 +1316,7 @@ fun SettingsScreen(
                         }
                         showBackupPasswordDialog = false
                     } catch (e: Exception) {
-                        snackbarMessage = "❌ Error: ${e.message ?: "Contraseña incorrecta"}"
+                        snackbarMessage = context.getString(R.string.settings_error_with_message, e.message ?: context.getString(R.string.vn_err_wrong_password))
                         pendingEncryptedBackupFile?.delete()
                         pendingEncryptedBackupFile = null
                         showBackupPasswordDialog = false
@@ -1331,9 +1343,12 @@ fun SettingsScreen(
                         val medications = parsed?.medications ?: restore.medications
                         val history = parsed?.history ?: restore.history
                         repository.replaceAllData(medications, history)
-                        snackbarMessage = "✅ Datos restaurados correctamente"
+                        snackbarMessage = context.getString(R.string.settings_data_restored)
                     } catch (e: Exception) {
-                        snackbarMessage = "❌ Restauración cancelada: ${e.message}"
+                        snackbarMessage = context.getString(
+                            R.string.settings_restore_cancelled,
+                            importFailureMessage(context, e)
+                        )
                     } finally {
                         restore.zipFile?.delete()
                         pendingRestore = null
@@ -1346,8 +1361,8 @@ fun SettingsScreen(
     if (showClearAllDialog) {
         AlertDialog(
             onDismissRequest = { showClearAllDialog = false },
-            title = { Text("Eliminar todos los datos") },
-            text = { Text("Antes de borrar se creará una copia local de seguridad. Esta acción eliminará medicamentos e historial de la app.") },
+            title = { Text(stringResource(R.string.settings_clear_all_title)) },
+            text = { Text(stringResource(R.string.settings_clear_all_body)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -1355,9 +1370,9 @@ fun SettingsScreen(
                             try {
                                 backupManager.createManualBackup()
                                 repository.clearAllData()
-                                snackbarMessage = "✅ Datos eliminados"
+                                snackbarMessage = context.getString(R.string.settings_data_deleted)
                             } catch (e: Exception) {
-                                snackbarMessage = "❌ No se eliminaron datos: ${e.message}"
+                                snackbarMessage = context.getString(R.string.settings_clear_failed, e.message.orEmpty())
                             } finally {
                                 showClearAllDialog = false
                             }
@@ -1365,12 +1380,12 @@ fun SettingsScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Eliminar")
+                    Text(stringResource(R.string.action_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearAllDialog = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -1385,7 +1400,7 @@ fun SettingsScreen(
                     backupManager.setAutoBackupIntervalHours(hours)
                     BackupScheduler.refresh(context.applicationContext)
                     showAutoBackupIntervalDialog = false
-                    snackbarMessage = "✅ Frecuencia actualizada"
+                    snackbarMessage = context.getString(R.string.settings_frequency_updated)
                 }
             }
         )
@@ -1393,11 +1408,11 @@ fun SettingsScreen(
 	}
 
 private val lockTimeoutOptions = listOf(
-    0L to "Inmediato",
-    30_000L to "30 segundos",
-    60_000L to "1 minuto",
-    300_000L to "5 minutos",
-    600_000L to "10 minutos"
+    0L to R.string.lock_timeout_immediate,
+    30_000L to R.string.lock_timeout_30s,
+    60_000L to R.string.lock_timeout_1m,
+    300_000L to R.string.lock_timeout_5m,
+    600_000L to R.string.lock_timeout_10m
 )
 
 private data class PendingRestore(
@@ -1409,18 +1424,15 @@ private data class PendingRestore(
     val password: String? = null
 )
 
-private fun formatInterval(hours: Int): String = when {
-    hours < 24 -> "$hours h"
-    hours % 24 == 0 -> {
-        val days = hours / 24
-        if (days == 1) "1 día" else "$days días"
-    }
-    else -> "$hours h"
-}
+@Composable
+private fun formatInterval(hours: Int): String =
+    if (hours >= 24 && hours % 24 == 0) pluralStringResource(R.plurals.interval_days, hours / 24, hours / 24)
+    else stringResource(R.string.interval_hours, hours)
 
+@Composable
 private fun lockTimeoutLabel(durationMs: Long): String {
-    return lockTimeoutOptions.firstOrNull { it.first == durationMs }?.second
-        ?: "Personalizado (${durationMs / 1000}s)"
+    val option = lockTimeoutOptions.firstOrNull { it.first == durationMs }
+    return if (option != null) stringResource(option.second) else stringResource(R.string.lock_timeout_custom, durationMs / 1000)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1433,17 +1445,18 @@ private fun PinSetupDialog(
     var pin by remember { mutableStateOf("") }
     var confirmPin by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
     var isSubmitting by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = { if (!isSubmitting) onDismiss() },
-        title = { Text("Configurar PIN") },
+        title = { Text(stringResource(R.string.settings_setup_pin)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = pin,
                     onValueChange = { if (it.length <= 8) pin = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("PIN (4-8 dígitos)") },
+                    label = { Text(stringResource(R.string.settings_pin_setup_label)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     visualTransformation = PasswordVisualTransformation()
@@ -1451,7 +1464,7 @@ private fun PinSetupDialog(
                 OutlinedTextField(
                     value = confirmPin,
                     onValueChange = { if (it.length <= 8) confirmPin = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Confirmar PIN") },
+                    label = { Text(stringResource(R.string.settings_pin_confirm)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     visualTransformation = PasswordVisualTransformation()
@@ -1470,8 +1483,8 @@ private fun PinSetupDialog(
                 enabled = !isSubmitting,
                 onClick = {
                     when {
-                        pin.length < 4 -> errorMessage = "El PIN debe tener al menos 4 dígitos"
-                        pin != confirmPin -> errorMessage = "Los PIN no coinciden"
+                        pin.length < 4 -> errorMessage = context.getString(R.string.settings_pin_err_short)
+                        pin != confirmPin -> errorMessage = context.getString(R.string.settings_pin_err_mismatch)
                         else -> {
                             errorMessage = null
                             isSubmitting = true
@@ -1490,12 +1503,12 @@ private fun PinSetupDialog(
                     }
                 }
             ) {
-                Text("Guardar")
+                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
             TextButton(enabled = !isSubmitting, onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -1512,17 +1525,18 @@ private fun PinChangeDialog(
     var newPin by remember { mutableStateOf("") }
     var confirmNewPin by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
     var isSubmitting by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = { if (!isSubmitting) onDismiss() },
-        title = { Text("Cambiar PIN") },
+        title = { Text(stringResource(R.string.settings_change_pin)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = currentPin,
                     onValueChange = { if (it.length <= 8) currentPin = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("PIN actual") },
+                    label = { Text(stringResource(R.string.settings_pin_current)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     visualTransformation = PasswordVisualTransformation()
@@ -1530,7 +1544,7 @@ private fun PinChangeDialog(
                 OutlinedTextField(
                     value = newPin,
                     onValueChange = { if (it.length <= 8) newPin = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Nuevo PIN") },
+                    label = { Text(stringResource(R.string.settings_pin_new)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     visualTransformation = PasswordVisualTransformation()
@@ -1538,7 +1552,7 @@ private fun PinChangeDialog(
                 OutlinedTextField(
                     value = confirmNewPin,
                     onValueChange = { if (it.length <= 8) confirmNewPin = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Confirmar nuevo PIN") },
+                    label = { Text(stringResource(R.string.settings_pin_new_confirm)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     visualTransformation = PasswordVisualTransformation()
@@ -1557,9 +1571,9 @@ private fun PinChangeDialog(
                 enabled = !isSubmitting,
                 onClick = {
                     when {
-                        newPin.length < 4 -> errorMessage = "El nuevo PIN debe tener al menos 4 dígitos"
-                        newPin != confirmNewPin -> errorMessage = "Los nuevos PIN no coinciden"
-                        newPin == currentPin -> errorMessage = "El nuevo PIN debe ser diferente"
+                        newPin.length < 4 -> errorMessage = context.getString(R.string.settings_pin_err_new_short)
+                        newPin != confirmNewPin -> errorMessage = context.getString(R.string.settings_pin_err_new_mismatch)
+                        newPin == currentPin -> errorMessage = context.getString(R.string.settings_pin_err_new_same)
                         else -> {
                             errorMessage = null
                             isSubmitting = true
@@ -1579,12 +1593,12 @@ private fun PinChangeDialog(
                     }
                 }
             ) {
-                Text("Actualizar")
+                Text(stringResource(R.string.action_update))
             }
         },
         dismissButton = {
             TextButton(enabled = !isSubmitting, onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -1600,7 +1614,7 @@ private fun LockTimeoutDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Tiempo antes de bloquear") },
+        title = { Text(stringResource(R.string.settings_lock_timeout)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 lockTimeoutOptions.forEach { (duration, label) ->
@@ -1625,14 +1639,14 @@ private fun LockTimeoutDialog(
                             }
                         )
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(label)
+                        Text(stringResource(label))
                     }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cerrar")
+                Text(stringResource(R.string.action_close))
             }
         }
     )
@@ -1663,7 +1677,7 @@ private fun WidgetPreview(
         ) {
             if (size.showHeader) {
                 Text(
-                    text = "Toma rápida",
+                    text = stringResource(R.string.quick_take_title),
                     fontSize = size.textSp.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(color.accentArgb),
@@ -1782,7 +1796,7 @@ private fun WidgetCustomizationCard(
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                text = "Widget de toma rápida",
+                text = stringResource(R.string.settings_widget_title),
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -1792,7 +1806,7 @@ private fun WidgetCustomizationCard(
 
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = "Color",
+                text = stringResource(R.string.settings_widget_color),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1815,7 +1829,7 @@ private fun WidgetCustomizationCard(
 
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = "Tamaño",
+                text = stringResource(R.string.settings_widget_size),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1824,7 +1838,7 @@ private fun WidgetCustomizationCard(
                     FilterChip(
                         selected = preset == size,
                         onClick = { onSizeChange(preset) },
-                        label = { Text(preset.title) }
+                        label = { Text(stringResource(preset.titleRes)) }
                     )
                 }
             }
@@ -1832,7 +1846,7 @@ private fun WidgetCustomizationCard(
 
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = "Forma",
+                text = stringResource(R.string.settings_widget_shape),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1847,7 +1861,7 @@ private fun WidgetCustomizationCard(
                         selected = s == shape,
                         onClick = { onShapeChange(s) },
                         label = {
-                            Text(s.title, style = MaterialTheme.typography.labelMedium, maxLines = 1, softWrap = false)
+                            Text(stringResource(s.titleRes), style = MaterialTheme.typography.labelMedium, maxLines = 1, softWrap = false)
                         }
                     )
                 }
@@ -1865,16 +1879,16 @@ private fun AboutDialog(onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Acerca de PillMate") },
+        title = { Text(stringResource(R.string.settings_about_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Creada por D4vRAM",
+                    text = stringResource(R.string.settings_about_author),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "Software libre (licencia GPL v3 o posterior). Sin anuncios, sin cuentas y sin internet.",
+                    text = stringResource(R.string.settings_about_license),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1893,7 +1907,7 @@ private fun AboutDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Cerrar") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
         }
     )
 }
@@ -2007,7 +2021,7 @@ private suspend fun createExportFile(
 private suspend fun readTextFromUri(context: Context, uri: Uri): String = withContext(Dispatchers.IO) {
     context.contentResolver.openInputStream(uri)?.use { input ->
         input.bufferedReader().use { it.readText() }
-    } ?: throw IllegalArgumentException("Archivo no disponible")
+    } ?: throw IllegalArgumentException(context.getString(R.string.settings_file_unavailable))
 }
 
 private fun getFileNameFromUri(context: Context, uri: Uri): String? {
@@ -2030,10 +2044,10 @@ private fun shareFile(context: Context, file: File) {
         else -> "application/octet-stream"
     }
     val label = when (file.extension.lowercase()) {
-        "csv" -> "Compartir CSV"
-        "pdf" -> "Compartir PDF"
-        "zip" -> "Compartir backup"
-        else -> "Compartir archivo"
+        "csv" -> context.getString(R.string.settings_share_csv)
+        "pdf" -> context.getString(R.string.settings_share_pdf)
+        "zip" -> context.getString(R.string.settings_share_backup)
+        else -> context.getString(R.string.settings_share_file)
     }
     val shareIntent = Intent(Intent.ACTION_SEND).apply {
         type = mimeType
@@ -2062,7 +2076,7 @@ private fun openBackupsFolder(
                 withContext(Dispatchers.Main) {
                     android.widget.Toast.makeText(
                         context,
-                        "⚠️ Configura primero una carpeta de auto-backup",
+                        context.getString(R.string.settings_choose_folder_first),
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }
@@ -2076,7 +2090,7 @@ private fun openBackupsFolder(
                 withContext(Dispatchers.Main) {
                     android.widget.Toast.makeText(
                         context,
-                        "❌ URI guardado inválido. Reconfigura la carpeta de auto-backup.",
+                        context.getString(R.string.settings_folder_uri_invalid),
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }
@@ -2088,7 +2102,7 @@ private fun openBackupsFolder(
                 withContext(Dispatchers.Main) {
                     android.widget.Toast.makeText(
                         context,
-                        "❌ URI vacío. Reconfigura la carpeta de auto-backup.",
+                        context.getString(R.string.settings_folder_uri_empty),
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }
@@ -2109,7 +2123,7 @@ private fun openBackupsFolder(
                 } catch (e: Exception) {
                     android.widget.Toast.makeText(
                         context,
-                        "❌ No se pudo abrir la carpeta. Intenta reconfigurarla.",
+                        context.getString(R.string.settings_folder_open_failed),
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }
@@ -2118,7 +2132,7 @@ private fun openBackupsFolder(
             withContext(Dispatchers.Main) {
                 android.widget.Toast.makeText(
                     context,
-                    "❌ Error: ${e.message}",
+                    context.getString(R.string.settings_error_with_message, e.message.orEmpty()),
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
             }
@@ -2146,13 +2160,13 @@ private fun VoiceNotePasswordChangeDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Cambiar contraseña de notas") },
+        title = { Text(stringResource(R.string.settings_voice_password)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = currentPassword,
                     onValueChange = { currentPassword = it },
-                    label = { Text("Contraseña actual") },
+                    label = { Text(stringResource(R.string.settings_vp_current)) },
                     singleLine = true,
                     visualTransformation = if (currentPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -2169,7 +2183,7 @@ private fun VoiceNotePasswordChangeDialog(
                 OutlinedTextField(
                     value = newPassword,
                     onValueChange = { newPassword = it },
-                    label = { Text("Nueva contraseña") },
+                    label = { Text(stringResource(R.string.settings_vp_new)) },
                     singleLine = true,
                     visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -2186,7 +2200,7 @@ private fun VoiceNotePasswordChangeDialog(
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
-                    label = { Text("Confirmar nueva contraseña") },
+                    label = { Text(stringResource(R.string.settings_vp_new_confirm)) },
                     singleLine = true,
                     visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -2204,14 +2218,14 @@ private fun VoiceNotePasswordChangeDialog(
                 OutlinedTextField(
                     value = hint,
                     onValueChange = { hint = it },
-                    label = { Text("Nueva pista (opcional)") },
+                    label = { Text(stringResource(R.string.settings_vp_new_hint)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 
                 if (confirmPassword.isNotBlank() && newPassword != confirmPassword) {
                     Text(
-                        text = "Las contraseñas no coinciden",
+                        text = stringResource(R.string.vn_err_password_mismatch),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -2223,12 +2237,12 @@ private fun VoiceNotePasswordChangeDialog(
                 onClick = { onConfirm(currentPassword, newPassword, hint.ifBlank { null }) },
                 enabled = isValid
             ) {
-                Text("Cambiar")
+                Text(stringResource(R.string.action_change))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -2242,13 +2256,14 @@ private fun PinVerificationDialog(
 ) {
     var pin by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Verificar PIN") },
+        title = { Text(stringResource(R.string.settings_pin_verify_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Ingresa el PIN de la app para continuar")
+                Text(stringResource(R.string.settings_pin_verify_body))
                 
                 OutlinedTextField(
                     value = pin,
@@ -2280,17 +2295,17 @@ private fun PinVerificationDialog(
                         if (securityManager.verifyPin(pin)) {
                             onPinVerified()
                         } else {
-                            errorMessage = "PIN incorrecto"
+                            errorMessage = context.getString(R.string.settings_pin_err_wrong)
                         }
                     }
                 }
             ) {
-                Text("Verificar")
+                Text(stringResource(R.string.action_verify))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -2306,14 +2321,15 @@ private fun VoiceNoteResetDialog(
     var newHint by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Restablecer Contraseña de Notas") },
+        title = { Text(stringResource(R.string.settings_vp_reset_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "⚠️ Esto creará una nueva contraseña. Las notas antiguas NO se podrán recuperar.",
+                    text = stringResource(R.string.settings_vp_reset_warning),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
@@ -2324,13 +2340,13 @@ private fun VoiceNoteResetDialog(
                         newPassword = it
                         errorMessage = null
                     },
-                    label = { Text("Nueva contraseña") },
+                    label = { Text(stringResource(R.string.settings_vp_new)) },
                     visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { showPassword = !showPassword }) {
                             Icon(
                                 imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (showPassword) "Ocultar" else "Mostrar"
+                                contentDescription = stringResource(if (showPassword) R.string.action_hide else R.string.action_show)
                             )
                         }
                     },
@@ -2345,7 +2361,7 @@ private fun VoiceNoteResetDialog(
                         confirmPassword = it
                         errorMessage = null
                     },
-                    label = { Text("Confirmar contraseña") },
+                    label = { Text(stringResource(R.string.vn_password_confirm)) },
                     visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     singleLine = true,
                     isError = errorMessage != null,
@@ -2355,7 +2371,7 @@ private fun VoiceNoteResetDialog(
                 OutlinedTextField(
                     value = newHint,
                     onValueChange = { newHint = it },
-                    label = { Text("Pista (opcional)") },
+                    label = { Text(stringResource(R.string.vn_hint_optional)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -2373,18 +2389,18 @@ private fun VoiceNoteResetDialog(
             TextButton(
                 onClick = {
                     when {
-                        newPassword.isBlank() -> errorMessage = "La contraseña no puede estar vacía"
-                        newPassword != confirmPassword -> errorMessage = "Las contraseñas no coinciden"
+                        newPassword.isBlank() -> errorMessage = context.getString(R.string.vn_err_password_empty)
+                        newPassword != confirmPassword -> errorMessage = context.getString(R.string.vn_err_password_mismatch)
                         else -> onConfirm(newPassword, newHint)
                     }
                 }
             ) {
-                Text("Restablecer")
+                Text(stringResource(R.string.action_reset))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -2397,11 +2413,11 @@ private fun HistoryExportDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("📦 Exportar historial") },
+        title = { Text(stringResource(R.string.settings_he_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Elige cómo exportar tu historial de medicamentos:",
+                    text = stringResource(R.string.settings_he_choose),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
@@ -2413,13 +2429,13 @@ private fun HistoryExportDialog(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = "🔒 Seguridad",
+                            text = stringResource(R.string.settings_security),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Las notas de voz siempre se exportan encriptadas con AES-256",
+                            text = stringResource(R.string.settings_he_audio_note),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -2435,7 +2451,7 @@ private fun HistoryExportDialog(
                 ) {
                     Icon(imageVector = Icons.Default.Mic, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Con notas de voz")
+                    Text(stringResource(R.string.settings_he_with_audio))
                 }
                 OutlinedButton(
                     onClick = { onExport(false) },
@@ -2443,13 +2459,13 @@ private fun HistoryExportDialog(
                 ) {
                     Icon(imageVector = Icons.Default.FileDownload, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Solo texto (CSV)")
+                    Text(stringResource(R.string.settings_he_text_only))
                 }
                 TextButton(
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         }
@@ -2468,12 +2484,12 @@ private fun ConfirmRestoreDialog(
         text = { Text(restore.description) },
         confirmButton = {
             Button(onClick = onConfirm) {
-                Text("Reemplazar datos")
+                Text(stringResource(R.string.settings_replace_data))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -2486,16 +2502,16 @@ private fun AutoBackupIntervalDialog(
     onSelect: (Int) -> Unit
 ) {
     val options = listOf(
-        6 to "Cada 6 horas",
-        12 to "Cada 12 horas",
-        24 to "Cada día",
-        72 to "Cada 3 días",
-        168 to "Cada semana"
+        6 to R.string.autobackup_every_6h,
+        12 to R.string.autobackup_every_12h,
+        24 to R.string.autobackup_every_day,
+        72 to R.string.autobackup_every_3d,
+        168 to R.string.autobackup_every_week
     )
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Frecuencia de auto-backup") },
+        title = { Text(stringResource(R.string.settings_autobackup_frequency)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 options.forEach { (hours, label) ->
@@ -2511,7 +2527,7 @@ private fun AutoBackupIntervalDialog(
                             onClick = { onSelect(hours) }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(label)
+                        Text(stringResource(label))
                     }
                 }
             }
@@ -2519,7 +2535,7 @@ private fun AutoBackupIntervalDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -2543,11 +2559,11 @@ private fun BackupExportDialog(
         // Primer paso: elegir si cifrar o no
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("📦 Exportar Backup Completo") },
+            title = { Text(stringResource(R.string.settings_be_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "Elige cómo exportar tu backup completo (medicamentos, historial, fotos y audios):",
+                        text = stringResource(R.string.settings_be_choose),
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -2559,13 +2575,13 @@ private fun BackupExportDialog(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "🔒 Cifrado AES-256",
+                                text = stringResource(R.string.settings_be_encryption),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "El cifrado protege tus datos con AES-256. Recomendado si vas a guardar o compartir el backup fuera de tu teléfono.",
+                                text = stringResource(R.string.settings_be_encryption_body),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -2581,7 +2597,7 @@ private fun BackupExportDialog(
                     ) {
                         Icon(imageVector = Icons.Default.Lock, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Con cifrado AES-256")
+                        Text(stringResource(R.string.settings_be_with_encryption))
                     }
                     OutlinedButton(
                         onClick = {
@@ -2592,13 +2608,13 @@ private fun BackupExportDialog(
                     ) {
                         Icon(imageVector = Icons.Default.FileDownload, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Sin cifrar")
+                        Text(stringResource(R.string.settings_be_without_encryption))
                     }
                     TextButton(
                         onClick = onDismiss,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Cancelar")
+                        Text(stringResource(R.string.action_cancel))
                     }
                 }
             }
@@ -2607,18 +2623,18 @@ private fun BackupExportDialog(
         // Segundo paso: ingresar contraseña
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("🔐 Contraseña para el backup") },
+            title = { Text(stringResource(R.string.settings_bp_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "Introduce una contraseña segura para cifrar el backup:",
+                        text = stringResource(R.string.settings_bp_body),
                         style = MaterialTheme.typography.bodyMedium
                     )
 
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Contraseña (mín. 12 caracteres)") },
+                        label = { Text(stringResource(R.string.settings_bp_label)) },
                         singleLine = true,
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
@@ -2635,7 +2651,7 @@ private fun BackupExportDialog(
                     OutlinedTextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it },
-                        label = { Text("Confirmar contraseña") },
+                        label = { Text(stringResource(R.string.vn_password_confirm)) },
                         singleLine = true,
                         visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
@@ -2652,7 +2668,7 @@ private fun BackupExportDialog(
 
                     if (confirmPassword.isNotBlank() && password != confirmPassword) {
                         Text(
-                            text = "Las contraseñas no coinciden",
+                            text = stringResource(R.string.vn_err_password_mismatch),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -2660,7 +2676,7 @@ private fun BackupExportDialog(
 
                     if (password.isNotBlank() && password.length < 12) {
                         Text(
-                            text = "La contraseña debe tener al menos 12 caracteres",
+                            text = stringResource(R.string.settings_bp_too_short),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -2675,12 +2691,12 @@ private fun BackupExportDialog(
                     },
                     enabled = isValid
                 ) {
-                    Text("Exportar cifrado")
+                    Text(stringResource(R.string.settings_bp_export))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showPasswordInput = false }) {
-                    Text("Atrás")
+                    Text(stringResource(R.string.action_back))
                 }
             }
         )
@@ -2697,18 +2713,18 @@ private fun BackupPasswordInputDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("🔐 Backup cifrado") },
+        title = { Text(stringResource(R.string.settings_bi_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Este backup está protegido con cifrado AES-256. Introduce la contraseña para descifrarlo:",
+                    text = stringResource(R.string.settings_bi_body),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Contraseña") },
+                    label = { Text(stringResource(R.string.vn_password)) },
                     singleLine = true,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -2728,12 +2744,12 @@ private fun BackupPasswordInputDialog(
                 onClick = { onConfirm(password) },
                 enabled = password.isNotBlank()
             ) {
-                Text("Descifrar")
+                Text(stringResource(R.string.action_decrypt))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -2801,21 +2817,10 @@ private suspend fun exportHistoryWithAudio(
         }
 
         // 3. Añadir archivo README con instrucciones
-        val readme = """
-            PillMate Export Package
-            =======================
-
-            Contenido:
-            - backup.csv: Datos completos en formato PillMate CSV
-            - audio_notes/: Notas de voz encriptadas (AES-256-GCM)
-
-            Formato de audios:
-            - *.enc: Archivo de audio encriptado
-            - *.salt: Salt para derivación de clave
-            - *.iv: Vector de inicialización
-
-            Exportado el: ${Date(timestamp)}
-        """.trimIndent()
+        val locale = context.resources.configuration.locales[0]
+        val exportedAt = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, locale)
+            .format(Date(timestamp))
+        val readme = context.getString(R.string.audio_export_readme, exportedAt)
 
         zipOut.putNextEntry(java.util.zip.ZipEntry("README.txt"))
         zipOut.write(readme.toByteArray())
@@ -2823,4 +2828,19 @@ private suspend fun exportHistoryWithAudio(
     }
 
     return@withContext zipFile
+}
+
+private fun importFailureMessage(context: Context, error: Exception): String = when (error) {
+    is CsvImportException -> context.getString(
+        when (error.reason) {
+            CsvImportError.INVALID_FORMAT -> R.string.csv_import_invalid_format
+            CsvImportError.MEDICATIONS_SECTION_MISSING -> R.string.csv_import_medications_missing
+            CsvImportError.MEDICATION_ROW_INCOMPLETE -> R.string.csv_import_medication_row_incomplete
+            CsvImportError.HISTORY_SECTION_MISSING -> R.string.csv_import_history_missing
+        }
+    )
+    is BackupImportException -> when (error.reason) {
+        BackupImportError.CSV_MISSING -> context.getString(R.string.backup_import_csv_missing)
+    }
+    else -> context.getString(R.string.settings_import_unknown_error)
 }

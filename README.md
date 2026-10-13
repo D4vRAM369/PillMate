@@ -1,13 +1,14 @@
-<p align="center">
-  <img src="design/icono-original.png" width="128" alt="Icono de PillMate">
-</p>
-
 <h1 align="center">PillMate</h1>
 
+<p align="center"><a href="README.en.md">English</a> · Español</p>
+
 <p align="center">
-  Registra la medicación que tomas <b>cuando la tomas</b> y descubre tu propio ritmo.<br>
-  Sin alarmas que te persigan. Sin cuentas. Sin internet.
+  <img src="design/social-preview-es.png" width="100%" alt="PillMate: registra lo que tomas, cuando lo tomas. Descubre tu ritmo diario. Sin internet ni cuentas. Código abierto.">
 </p>
+
+> Registra cada toma **cuando la necesites** y descubre tu propio ritmo, sin horarios fijos.
+>
+> **Sin alarmas obligatorias · Sin cuentas · Sin conexión a internet.**
 
 <p align="center">
   <img src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white" alt="Android 8.0 o superior">

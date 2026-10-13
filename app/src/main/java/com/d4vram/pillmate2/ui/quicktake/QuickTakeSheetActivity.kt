@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.quicktake
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -116,12 +118,12 @@ private fun QuickTakeSheet(
                 .padding(bottom = 32.dp)
         ) {
             Text(
-                text = "Tomar medicamento",
+                text = stringResource(R.string.quick_sheet_title),
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "Tus más tomados",
+                text = stringResource(R.string.quick_sheet_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -129,7 +131,7 @@ private fun QuickTakeSheet(
 
             if (top.isEmpty()) {
                 Text(
-                    text = "Aún no tienes medicamentos.",
+                    text = stringResource(R.string.quick_sheet_empty),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -194,7 +196,7 @@ private fun QuickTakeRow(
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = "Tomar",
+                text = stringResource(R.string.quick_take_take),
                 style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                 color = medication.color
             )

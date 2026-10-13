@@ -1,5 +1,8 @@
 package com.d4vram.pillmate2.ui.screens
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,7 +18,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import com.d4vram.pillmate2.utils.localizedDateFormatter
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.updateAll
 import androidx.navigation.NavController
@@ -83,20 +88,20 @@ internal fun AstraHomeScreen(
                 throw cancelled
             } catch (failure: Exception) {
                 busy = false
-                error = "No se pudo guardar la toma. Inténtalo de nuevo."
+                error = context.getString(R.string.dose_error_save)
                 return@launch
             }
             adjusting = null
             busy = false
             launch { refreshWidget() }
-            if (snackbar.showSnackbar("Toma registrada", "Deshacer", duration = SnackbarDuration.Long) == SnackbarResult.ActionPerformed) {
+            if (snackbar.showSnackbar(context.getString(R.string.dose_logged), context.getString(R.string.action_undo), duration = SnackbarDuration.Long) == SnackbarResult.ActionPerformed) {
                 try {
                     if (repository.undoMedicationTaken(entryId)) {
                         launch { refreshWidget() }
-                        snackbar.showSnackbar("Toma deshecha")
-                    } else snackbar.showSnackbar("La toma ya no existe")
+                        snackbar.showSnackbar(context.getString(R.string.dose_undone))
+                    } else snackbar.showSnackbar(context.getString(R.string.dose_gone))
                 } catch (cancelled: CancellationException) { throw cancelled }
-                catch (failure: Exception) { error = "No se pudo deshacer la toma. Inténtalo desde Historial." }
+                catch (failure: Exception) { error = context.getString(R.string.dose_error_undo) }
             }
         }
     }
@@ -107,22 +112,22 @@ internal fun AstraHomeScreen(
                     Row(Modifier.fillMaxWidth()) {
                         Column(Modifier.weight(1f)) {
                             Text("PillMate", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                            Text("Tu día, a tu ritmo", style = MaterialTheme.typography.headlineMedium)
-                            Text(LocalDateTime.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM", java.util.Locale.getDefault())), style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(R.string.home_tagline), style = MaterialTheme.typography.headlineMedium)
+                            Text(LocalDateTime.now().format(localizedDateFormatter("EEEEdMMMM", LocalConfiguration.current.locales[0])), style = MaterialTheme.typography.bodyMedium)
                         }
-                        IconButton(onClick = { navController.navigate("global_stats") }) { Icon(Icons.Default.BarChart, "Estadísticas") }
-                        IconButton(onClick = { search = !search; if (!search) query = "" }) { Icon(Icons.Default.Search, "Buscar") }
-                        FilledIconButton(onClick = onAddMedication) { Icon(Icons.Default.Add, "Agregar medicamento") }
+                        IconButton(onClick = { navController.navigate("global_stats") }) { Icon(Icons.Default.BarChart, stringResource(R.string.stats_title)) }
+                        IconButton(onClick = { search = !search; if (!search) query = "" }) { Icon(Icons.Default.Search, stringResource(R.string.action_search)) }
+                        FilledIconButton(onClick = onAddMedication) { Icon(Icons.Default.Add, stringResource(R.string.action_add_medication)) }
                     }
                     if (search) OutlinedTextField(value = query, onValueChange = { query = it }, singleLine = true,
-                        placeholder = { Text("Buscar medicamento…") }, modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = { IconButton(onClick = { search = false; query = "" }) { Icon(Icons.Default.Close, "Cerrar búsqueda") } })
+                        placeholder = { Text(stringResource(R.string.home_search_placeholder)) }, modifier = Modifier.fillMaxWidth(),
+                        trailingIcon = { IconButton(onClick = { search = false; query = "" }) { Icon(Icons.Default.Close, stringResource(R.string.history_search_close)) } })
                 }
             }
             item {
                 Column(Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
-                    Text("Accesos rápidos", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.home_quick_access), style = MaterialTheme.typography.titleMedium)
                     QuickTapPulseBar(slots, busy, { record(it.id, 1, null) }, { error = null; adjusting = it }, { configuring = it },
                         lastTakes = history.groupBy { it.medicationId }.mapValues { (_, entries) -> entries.maxOf { it.timestamp } })
                 }
@@ -135,22 +140,22 @@ internal fun AstraHomeScreen(
                     Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         RhythmClock(today, diameter = 132.dp, interactive = false, showNow = true)
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Hoy · ${today.size} ${if (today.size == 1) "toma" else "tomas"}", style = MaterialTheme.typography.titleMedium)
-                            if (latest == null) Text("Todavía no hay tomas registradas", style = MaterialTheme.typography.bodyMedium)
+                            Text(pluralStringResource(R.plurals.home_today_doses, today.size, today.size), style = MaterialTheme.typography.titleMedium)
+                            if (latest == null) Text(stringResource(R.string.home_no_doses_yet), style = MaterialTheme.typography.bodyMedium)
                             else {
-                                Text("Última: ${latest.medicationName}", style = MaterialTheme.typography.bodyMedium)
+                                Text(stringResource(R.string.home_last_dose, latest.medicationName), style = MaterialTheme.typography.bodyMedium)
                                 Text(latest.timestamp.format(DateTimeFormatter.ofPattern(if (latest.timestamp.toLocalDate() == LocalDate.now()) "HH:mm" else "dd/MM · HH:mm")),
                                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            Text("Ver historial", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                            Text(stringResource(R.string.home_view_history), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
                         }
                     }
                 }
             }
             item {
                 Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Mis medicamentos", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { scope.launch { themeManager.setListView(!listView) } }) { Text(if (listView) "Cuadrícula" else "Lista") }
+                    Text(stringResource(R.string.home_my_medications), style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    TextButton(onClick = { scope.launch { themeManager.setListView(!listView) } }) { Text(stringResource(if (listView) R.string.home_view_grid else R.string.home_view_list)) }
                 }
             }
             if (filtered.isEmpty()) {

@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.ui.security
 
+import com.d4vram.pillmate2.R
 import android.content.Context
 import android.util.Base64
 import android.util.Log
@@ -193,7 +194,7 @@ class SecurityManager(context: Context) {
     fun submitPin(pin: String) {
         scope.launch {
             if (pin.length < 4) {
-                _lockError.value = "PIN demasiado corto"
+                _lockError.value = appContext.getString(R.string.lock_err_short)
                 return@launch
             }
 
@@ -203,7 +204,7 @@ class SecurityManager(context: Context) {
                 _lockError.value = null
                 _needsUnlock.value = false
             } else {
-                _lockError.value = "PIN incorrecto"
+                _lockError.value = appContext.getString(R.string.settings_pin_err_wrong)
             }
         }
     }
@@ -217,13 +218,13 @@ class SecurityManager(context: Context) {
     fun onUseBiometric(activity: FragmentActivity) {
         scope.launch {
             if (!canUseBiometric()) {
-                _lockError.value = "Biometría no disponible"
+                _lockError.value = appContext.getString(R.string.lock_err_no_biometrics)
                 return@launch
             }
 
             val currentSettings = settings.first()
             if (!currentSettings.biometricEnabled) {
-                _lockError.value = "Activa la biometría en ajustes"
+                _lockError.value = appContext.getString(R.string.lock_err_enable_biometrics)
                 return@launch
             }
 
@@ -246,14 +247,14 @@ class SecurityManager(context: Context) {
                 }
 
                 override fun onAuthenticationFailed() {
-                    _lockError.value = "Autenticación fallida"
+                    _lockError.value = appContext.getString(R.string.lock_err_auth_failed)
                 }
             })
 
             val promptInfo = BiometricPrompt.PromptInfo.Builder()
-                .setTitle("Desbloquear PillMate")
-                .setSubtitle("Usa tu huella o rostro para continuar")
-                .setNegativeButtonText("Cancelar")
+                .setTitle(appContext.getString(R.string.lock_prompt_title))
+                .setSubtitle(appContext.getString(R.string.lock_prompt_subtitle))
+                .setNegativeButtonText(appContext.getString(R.string.action_cancel))
                 .setAllowedAuthenticators(BiometricManager.Authenticators.BIOMETRIC_STRONG)
                 .build()
 

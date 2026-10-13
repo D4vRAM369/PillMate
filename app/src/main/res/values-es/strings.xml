@@ -1,0 +1,848 @@
+<resources>
+    <string name="quick_take_widget_description">Registra una toma de tus cuatro medicamentos habituales con un toque.</string>
+    <string name="quick_take_cell_log">Registrar una toma de %1$s</string>
+    <string name="quick_take_cell_configure">Configurar acceso rápido</string>
+    <string name="export_csv">Exportar CSV</string>
+    <string name="export_pdf">Exportar PDF</string>
+    <string name="all_medications">Todos los medicamentos</string>
+
+    <!-- Periodos de tiempo (filtros de Historial y Estadísticas) -->
+    <string name="period_today">Hoy</string>
+    <string name="period_yesterday">Ayer</string>
+    <string name="period_7_days">7 días</string>
+    <string name="period_30_days">30 días</string>
+    <string name="period_all">Todo</string>
+
+    <!-- Historial -->
+    <string name="history_title">Historial</string>
+    <string name="history_search_open">Buscar en notas</string>
+    <string name="history_search_close">Cerrar búsqueda</string>
+    <string name="history_search_clear">Limpiar búsqueda</string>
+    <string name="history_search_placeholder">Buscar en notas del historial…</string>
+    <string name="history_search_hint">Escribe para filtrar por contenido de notas</string>
+    <plurals name="history_search_results">
+        <item quantity="one">%1$d resultado en notas</item>
+        <item quantity="other">%1$d resultados en notas</item>
+    </plurals>
+    <string name="history_no_matching_notes">No hay notas que coincidan con \"%1$s\"</string>
+    <string name="history_empty_filter">No hay registros para este filtro</string>
+    <string name="history_remove_day_filter">Quitar filtro de día</string>
+    <string name="history_rhythm_title">Tu ritmo · %1$s</string>
+    <string name="history_rhythm_caption">Cada marca es una toma registrada, no un objetivo.</string>
+    <string name="history_view_stats">Ver estadísticas</string>
+    <string name="history_stats_summary">Hoy: %1$d • 7 días: %2$d</string>
+
+    <!-- Acciones comunes -->
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_ok">Aceptar</string>
+    <string name="action_edit">Editar</string>
+    <string name="action_close">Cerrar</string>
+    <string name="action_save_changes">Guardar cambios</string>
+
+    <!-- Fila del historial y su diálogo de notas -->
+    <string name="entry_taken">Tomada</string>
+    <plurals name="history_drops_accessibility">
+        <item quantity="one">%1$d gota</item>
+        <item quantity="other">%1$d gotas</item>
+    </plurals>
+    <string name="entry_quantity_logged">Cantidad registrada: x%1$d</string>
+    <string name="entry_time_section">⏰ Momento de la toma</string>
+    <string name="entry_date">Fecha</string>
+    <string name="entry_time">Hora</string>
+    <string name="entry_change_date">Cambiar fecha</string>
+    <string name="entry_change_time">Cambiar hora</string>
+    <string name="entry_pick_time">Selecciona la hora</string>
+    <string name="notes_section">📝 Notas adicionales</string>
+    <string name="notes_edit">Editar notas</string>
+    <string name="notes_delete">Eliminar notas</string>
+    <string name="notes_field_label">Notas (opcional)</string>
+    <string name="notes_empty">Sin notas adicionales</string>
+    <string name="notes_add">Añadir notas</string>
+    <string name="voice_note_record">Grabar nota de voz</string>
+    <string name="voice_note_recording">Grabando…</string>
+    <string name="voice_note_stop">Detener grabación</string>
+    <string name="voice_note_title">🎤 Nota de voz</string>
+    <string name="voice_note_share">Compartir nota de voz</string>
+    <string name="voice_note_share_audio">Compartir audio</string>
+    <string name="voice_note_delete_audio">Eliminar audio</string>
+    <string name="voice_note_play">Reproducir</string>
+    <string name="voice_note_pause">Pausar</string>
+
+    <!-- Introducción (las cuatro páginas) -->
+    <string name="action_undo">Deshacer</string>
+    <string name="onboarding_skip">Saltar</string>
+    <string name="onboarding_next">Siguiente</string>
+    <string name="onboarding_start">Empezar</string>
+    <string name="onboarding_log_eyebrow">REGISTRAR</string>
+    <string name="onboarding_log_title">Apunta la toma cuando la tomas</string>
+    <string name="onboarding_log_body">PillMate es para la medicación a demanda: la que tomas cuando la necesitas. No hay horarios que cumplir ni alarmas que te persigan.</string>
+    <string name="onboarding_log_note">Un toque basta. También desde el widget y desde la notificación, sin abrir la app.</string>
+    <string name="onboarding_clock_eyebrow">EL RELOJ</string>
+    <string name="onboarding_clock_title">Tu día en un reloj de 24 horas</string>
+    <string name="onboarding_clock_body">Cada punto es una toma, colocada en su hora y con el color de su medicamento. Las 00 están arriba y gira como un reloj normal.</string>
+    <string name="onboarding_clock_note">Pruébalo: toca un punto para ver qué fue.</string>
+    <string name="onboarding_rhythm_eyebrow">TU RITMO</string>
+    <string name="onboarding_rhythm_title">Con más días aparece tu patrón</string>
+    <string name="onboarding_rhythm_body">Al juntar varios días, los puntos se convierten en barras: cuanto más larga, más tomas a esa hora. PillMate calcula tu hora más activa y cada cuánto sueles tomar.</string>
+    <string name="onboarding_rhythm_note">Describe, no juzga: sin puntuaciones, sin objetivos y sin consejo médico.</string>
+    <string name="onboarding_privacy_eyebrow">PRIVACIDAD</string>
+    <string name="onboarding_privacy_title">Lo que apuntas no sale de tu móvil</string>
+    <string name="onboarding_privacy_body">Sin cuentas, sin anuncios y sin analítica. Tus datos son tuyos y se quedan contigo.</string>
+    <string name="onboarding_tap_hint">Toca la casilla</string>
+    <plurals name="onboarding_today_doses">
+        <item quantity="one">Hoy: %1$d toma</item>
+        <item quantity="other">Hoy: %1$d tomas</item>
+    </plurals>
+    <string name="onboarding_dose_logged">Toma registrada</string>
+    <plurals name="onboarding_days">
+        <item quantity="one">%1$d día</item>
+        <item quantity="other">%1$d días</item>
+    </plurals>
+    <string name="onboarding_fact_offline_title">Sin internet</string>
+    <string name="onboarding_fact_offline_text">La app no tiene permiso de red: no puede enviar nada.</string>
+    <string name="onboarding_fact_backup_title">Copias cuando tú quieras</string>
+    <string name="onboarding_fact_backup_text">Copia completa en ZIP y exportación a CSV o PDF.</string>
+    <string name="onboarding_fact_lock_title">Bloqueo opcional</string>
+    <string name="onboarding_fact_lock_text">Protege la app con tu huella.</string>
+    <string name="onboarding_sample_painkiller">Analgésico</string>
+    <string name="onboarding_sample_antihistamine">Antihistamínico</string>
+    <string name="onboarding_sample_vitamin">Vitamina</string>
+
+    <!-- Acciones comunes (2) -->
+    <string name="action_back">Volver</string>
+    <string name="action_add">Añadir</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_update">Actualizar</string>
+
+    <!-- Días de la semana abreviados -->
+    <string name="day_short_mon">Lun</string>
+    <string name="day_short_tue">Mar</string>
+    <string name="day_short_wed">Mié</string>
+    <string name="day_short_thu">Jue</string>
+    <string name="day_short_fri">Vie</string>
+    <string name="day_short_sat">Sáb</string>
+    <string name="day_short_sun">Dom</string>
+
+    <!-- Añadir / editar medicamento -->
+    <string name="med_form_title_add">Agregar Medicamento</string>
+    <string name="med_form_title_edit">Editar Medicamento</string>
+    <string name="med_form_preview">Vista previa</string>
+    <string name="med_form_preview_hint">Así se verá en tu lista de medicamentos</string>
+    <string name="med_form_name">Nombre del medicamento</string>
+    <string name="med_form_dose">Dosis</string>
+    <string name="med_form_type">Tipo (ej: Comprimido, Cápsula, Jarabe, Gotas)</string>
+    <string name="med_form_type_placeholder">Comprimido</string>
+    <string name="med_form_color">Color del medicamento</string>
+    <string name="med_form_color_hint">Elige uno de la paleta o agrega un tono personalizado</string>
+    <string name="med_form_color_custom">Color personalizado</string>
+    <string name="med_form_color_new">Nuevo color personalizado</string>
+    <string name="med_form_emoji">Emoji (opcional)</string>
+    <string name="med_form_emoji_hint">Te ayudará a identificar rápidamente el medicamento</string>
+    <string name="med_form_emoji_more">Buscar más emojis</string>
+    <string name="med_form_emoji_search">Buscar emoji</string>
+    <string name="med_form_emoji_search_hint">Busca: pastilla, corazón, sol…</string>
+    <string name="med_form_emoji_none">No encontramos emojis que coincidan con tu búsqueda.</string>
+    <string name="med_form_combine">Combinar medicamento</string>
+    <string name="med_form_combine_hint">Vincular a otro para agrupar en estadísticas (ej: distintas dosis de Ibuprofeno)</string>
+    <string name="med_form_linked_to">Vinculado a: %1$s</string>
+    <string name="med_form_not_linked">Sin vincular (Independiente)</string>
+    <string name="med_form_pick_parent">Selecciona medicamento principal</string>
+    <string name="med_form_no_link">No vincular (Mantener separado)</string>
+    <string name="med_form_schedule">Planificación</string>
+    <string name="med_form_schedule_hint">Configura la hora de toma y la frecuencia</string>
+    <string name="med_form_reminders">Activar recordatorios</string>
+    <string name="med_form_reminders_hint">Recibir notificación a la hora programada</string>
+    <string name="med_form_hour">Hora</string>
+    <string name="med_form_minute">Minuto</string>
+    <string name="med_form_days">Días de toma</string>
+    <string name="med_form_times_per_day">Veces por día</string>
+
+    <!-- Foto del medicamento -->
+    <string name="photo_title">Fotografía del medicamento</string>
+    <string name="photo_subtitle">Opcional - Ayuda a identificarlo visualmente</string>
+    <string name="photo_description">Foto del medicamento</string>
+    <string name="photo_delete">Eliminar foto</string>
+    <string name="photo_use_as_id">Usar foto como identificador</string>
+    <string name="photo_use_on">Se mostrará la foto en lugar del emoji</string>
+    <string name="photo_use_off">Se seguirá mostrando emoji y color</string>
+    <string name="photo_camera">Cámara</string>
+    <string name="photo_gallery">Galería</string>
+    <string name="photo_resize_note">La imagen se redimensionará automáticamente para optimizar espacio</string>
+
+    <!-- Acciones comunes (3) -->
+    <string name="action_search">Buscar</string>
+    <string name="action_add_medication">Agregar medicamento</string>
+    <string name="stats_title">Estadísticas</string>
+
+    <!-- Home (los dos diseños) -->
+    <string name="home_tagline">Tu día, a tu ritmo</string>
+    <string name="home_subtitle">Seguimiento personal</string>
+    <string name="home_search_placeholder">Buscar medicamento…</string>
+    <string name="home_quick_access">Accesos rápidos</string>
+    <plurals name="home_today_doses">
+        <item quantity="one">Hoy · %1$d toma</item>
+        <item quantity="other">Hoy · %1$d tomas</item>
+    </plurals>
+    <string name="home_no_doses_yet">Todavía no hay tomas registradas</string>
+    <string name="home_last_dose">Última: %1$s</string>
+    <string name="home_view_history">Ver historial</string>
+    <string name="home_my_medications">Mis medicamentos</string>
+    <string name="home_view_grid">Cuadrícula</string>
+    <string name="home_view_list">Lista</string>
+    <string name="home_view_as_grid">Ver como grid</string>
+    <string name="home_view_as_list">Ver como lista</string>
+    <string name="home_recent_history">Historial reciente</string>
+    <string name="home_global_stats">Estadísticas globales</string>
+    <string name="home_global_stats_hint">Ver resumen y progreso</string>
+    <string name="home_notes_title">Notas</string>
+    <string name="home_notes_none">Sin notas para esta entrada.</string>
+    <string name="home_empty_no_results">Sin resultados</string>
+    <string name="home_empty_first">Tu primer medicamento</string>
+    <string name="home_empty_no_results_hint">Prueba con otro nombre o dosis.</string>
+    <string name="home_empty_first_hint">Añade un medicamento para empezar a registrar tus tomas.</string>
+    <string name="home_clear_search">Limpiar búsqueda</string>
+    <string name="home_add_medication">Añadir medicamento</string>
+
+    <!-- Casillas de toma rápida -->
+    <string name="quick_take_title">Toma rápida</string>
+    <string name="quick_take_slots">4 casillas</string>
+    <string name="quick_take_choose">Elegir</string>
+    <string name="quick_take_slot">Casilla %1$d</string>
+    <string name="quick_take_slot_configure">Configurar casilla %1$d</string>
+    <string name="quick_take_unassigned">Sin asignar</string>
+    <string name="quick_take_one_dose">1 toma</string>
+    <string name="quick_take_setup">Configurar</string>
+    <string name="quick_take_take">Tomar</string>
+    <string name="quick_take_selected">Seleccionado</string>
+    <string name="quick_take_clear">Vaciar</string>
+
+    <!-- Registrar una toma (hoja y mensajes) -->
+    <string name="dose_logged">Toma registrada</string>
+    <string name="dose_undone">Toma deshecha</string>
+    <string name="dose_gone">La toma ya no existe</string>
+    <string name="dose_error_save">No se pudo guardar la toma. Inténtalo de nuevo.</string>
+    <string name="dose_error_undo">No se pudo deshacer la toma. Inténtalo desde Historial.</string>
+    <string name="dose_sheet_title">Registrar toma</string>
+    <string name="dose_sheet_doses">Dosis disponibles</string>
+    <string name="dose_sheet_units">Cantidad de unidades</string>
+    <string name="dose_sheet_decrease">Reducir cantidad</string>
+    <string name="dose_sheet_increase">Aumentar cantidad</string>
+    <string name="dose_now">Ahora</string>
+    <string name="dose_change_datetime">Cambiar fecha y hora</string>
+    <string name="dose_future_error">Selecciona una hora que ya haya pasado.</string>
+    <string name="dose_saving">Guardando…</string>
+    <plurals name="dose_log_units">
+        <item quantity="one">Registrar %1$d unidad</item>
+        <item quantity="other">Registrar %1$d unidades</item>
+    </plurals>
+
+    <!-- Acciones comunes (4) -->
+    <string name="action_delete">Eliminar</string>
+    <string name="action_confirm">Confirmar</string>
+    <string name="action_log">Registrar</string>
+
+    <!-- Tarjetas, filas y cuadrícula de medicamentos -->
+    <string name="card_reorder">Reordenar</string>
+    <string name="card_options">Opciones</string>
+    <string name="list_item_log_dose">Registrar toma de %1$s</string>
+    <string name="list_item_options">Opciones de %1$s</string>
+    <string name="grid_add_medication">Agregar\nMedicamento</string>
+
+    <!-- Diálogo de toma del diseño Clásico y selectores -->
+    <string name="dose_dialog_which_dose">¿Qué dosis de %1$s vas a registrar?</string>
+    <string name="dose_dialog_pick_dose">Selecciona la dosis:</string>
+    <string name="dose_dialog_time_label">Hora de la toma:</string>
+    <string name="dose_other_time">Otra hora</string>
+    <string name="time_picker_title">Seleccionar hora</string>
+    <string name="time_picker_to_keyboard">Cambiar a teclado</string>
+    <string name="time_picker_to_clock">Cambiar a reloj</string>
+
+    <!-- Acciones comunes (5) -->
+    <string name="action_share">Compartir</string>
+
+    <!-- Notas de voz: pantalla -->
+    <string name="voice_notes_title">Notas de voz</string>
+    <string name="vn_err_no_mic">Sin permiso de micrófono</string>
+    <string name="vn_export_all">Exportar todas las notas</string>
+    <string name="vn_setup_title">Protege tus notas</string>
+    <string name="vn_setup_body">Crea una contraseña para cifrar tus notas de voz con AES-256</string>
+    <string name="vn_password">Contraseña</string>
+    <string name="vn_password_confirm">Confirmar contraseña</string>
+    <string name="vn_hint_optional">Pista (opcional)</string>
+    <string name="vn_password_save">Guardar contraseña</string>
+    <string name="vn_unlock_title">Introduce tu contraseña</string>
+    <string name="vn_hint">Pista: %1$s</string>
+    <string name="vn_unlock">Desbloquear</string>
+    <string name="vn_duration">Duración %1$s • %2$s</string>
+    <string name="vn_stop">Detener</string>
+    <string name="vn_more_options">Más opciones</string>
+    <string name="vn_rename">Renombrar</string>
+    <string name="vn_change_category">Cambiar categoría</string>
+    <string name="vn_edit_tags">Editar etiquetas</string>
+    <string name="vn_recording_time">Grabando… %1$s</string>
+    <string name="vn_auto_title">Título automático</string>
+    <string name="vn_default_title">Nota %1$s</string>
+    <string name="vn_ready">Listo para grabar</string>
+    <string name="vn_empty_title">Sin notas de voz</string>
+    <string name="vn_empty_body">Graba tus recordatorios hablados y guárdalos cifrados.</string>
+    <string name="vn_empty_start">Empezar a grabar</string>
+    <string name="vn_rename_title">Renombrar nota</string>
+    <string name="vn_title_label">Título</string>
+    <string name="vn_delete_title">Eliminar nota</string>
+    <string name="vn_delete_confirm">¿Eliminar \"%1$s\"? Esta acción es permanente.</string>
+    <string name="vn_category_pick">Seleccionar categoría</string>
+    <string name="vn_tags_hint">Separa las etiquetas con comas</string>
+    <string name="vn_tags_label">Etiquetas</string>
+    <string name="vn_tags_placeholder">urgente, importante, trabajo</string>
+
+    <!-- Notas de voz: categorías -->
+    <string name="vn_category_general">General</string>
+    <string name="vn_category_work">Trabajo</string>
+    <string name="vn_category_personal">Personal</string>
+    <string name="vn_category_medical">Médico</string>
+    <string name="vn_category_ideas">Ideas</string>
+    <string name="vn_category_reminders">Recordatorios</string>
+
+    <!-- Notas de voz: mensajes del ViewModel y del exportador -->
+    <string name="vn_err_password_empty">La contraseña no puede estar vacía</string>
+    <string name="vn_err_password_mismatch">Las contraseñas no coinciden</string>
+    <string name="vn_info_password_set">Contraseña configurada</string>
+    <string name="vn_err_password_save">Error al guardar la contraseña</string>
+    <string name="vn_err_password_verify">Error al verificar la contraseña</string>
+    <string name="vn_info_unlocked">Notas desbloqueadas</string>
+    <string name="vn_err_wrong_password">Contraseña incorrecta</string>
+    <string name="vn_err_unlock_first">Desbloquea las notas primero</string>
+    <string name="vn_err_start_recording">No se pudo iniciar la grabación</string>
+    <string name="vn_err_stop_recording">No se pudo detener la grabación</string>
+    <string name="vn_info_saved">Nota de voz guardada</string>
+    <string name="vn_err_save">No se pudo guardar la nota</string>
+    <string name="vn_err_playback">Error al reproducir la nota</string>
+    <string name="vn_err_play">No se pudo reproducir la nota</string>
+    <string name="vn_info_deleted">Nota eliminada</string>
+    <string name="vn_err_delete">No se pudo eliminar la nota</string>
+    <string name="vn_info_updated">Nota actualizada</string>
+    <string name="vn_err_rename">No se pudo renombrar la nota</string>
+    <string name="vn_info_category_updated">Categoría actualizada</string>
+    <string name="vn_err_category">No se pudo actualizar la categoría</string>
+    <string name="vn_info_tags_updated">Etiquetas actualizadas</string>
+    <string name="vn_err_tags">No se pudieron actualizar las etiquetas</string>
+    <string name="vn_share_text">Nota de voz: %1$s</string>
+    <string name="vn_info_sharing">Preparando para compartir…</string>
+    <string name="vn_err_share">No se pudo compartir la nota</string>
+    <string name="vn_info_exporting">Exportando notas…</string>
+    <string name="vn_export_subject">Backup de Notas de Voz</string>
+    <string name="vn_export_chooser">Exportar backup de notas</string>
+    <string name="vn_err_export">Error al exportar</string>
+    <string name="vn_err_export_empty">No hay notas para exportar</string>
+    <string name="vn_err_export_failed">Error al exportar: %1$s</string>
+    <plurals name="vn_export_text">
+        <item quantity="one">Archivo de respaldo con %1$d nota de voz cifrada</item>
+        <item quantity="other">Archivo de respaldo con %1$d notas de voz cifradas</item>
+    </plurals>
+    <plurals name="vn_info_exported">
+        <item quantity="one">Backup exportado: %1$d nota</item>
+        <item quantity="other">Backup exportado: %1$d notas</item>
+    </plurals>
+
+    <!-- Ajustes: nombres de los enums (diseño, estilo, período, orden, widget) -->
+    <string name="design_rhythm">Ritmo</string>
+    <string name="design_classic">Clásico</string>
+    <string name="ui_style_classic">Clásico</string>
+    <string name="ui_style_classic_desc">Estilo actual de PillMate</string>
+    <string name="ui_style_material_you">Material You</string>
+    <string name="ui_style_material_you_desc">Componentes nativos de Material Design 3</string>
+    <string name="chip_period_daily">Diario</string>
+    <string name="chip_period_daily_desc">Mostrar tomas de hoy</string>
+    <string name="chip_period_weekly">Semanal</string>
+    <string name="chip_period_weekly_desc">Mostrar tomas de esta semana</string>
+    <string name="chip_period_monthly">Mensual</string>
+    <string name="chip_period_monthly_desc">Mostrar tomas de este mes</string>
+    <string name="chip_period_total">Total</string>
+    <string name="chip_period_total_desc">Mostrar todas las tomas registradas</string>
+    <string name="chip_period_hidden">No mostrar</string>
+    <string name="chip_period_hidden_desc">Ocultar el chip de recuento</string>
+    <string name="sort_manual">Orden Manual</string>
+    <string name="sort_manual_desc">Arrastra para reordenar. El orden se guardará automáticamente</string>
+    <string name="sort_last_taken">Por Última Toma</string>
+    <string name="sort_last_taken_desc">Los tomados recientemente aparecen primero</string>
+    <string name="sort_most_used">Más Usados (Semana)</string>
+    <string name="sort_most_used_desc">Los más utilizados en los últimos 7 días primero</string>
+    <string name="sort_alphabetical">Orden Alfabético</string>
+    <string name="sort_alphabetical_desc">Ordenados de A a Z por nombre</string>
+    <string name="sort_creation">Por Orden de Creación</string>
+    <string name="sort_creation_desc">Los medicamentos más antiguos aparecen primero</string>
+    <string name="widget_shape_rounded">Redondeada</string>
+    <string name="widget_shape_circle">Circular</string>
+    <string name="widget_shape_square">Cuadrada</string>
+    <string name="widget_size_compact">Compacto</string>
+    <string name="widget_size_normal">Normal</string>
+    <string name="widget_size_large">Grande</string>
+
+    <!-- Ajustes: parte superior -->
+    <string name="settings_title">⚙️ Configuración</string>
+    <string name="settings_notifications_on">✅ Notificaciones activadas</string>
+    <string name="settings_notifications_denied">❌ Permiso denegado. Actívalo en Ajustes del sistema.</string>
+    <string name="settings_no_backups">Sin copias</string>
+    <string name="settings_configured">Configurada</string>
+    <string name="settings_not_configured">No configurada</string>
+    <string name="settings_backup_created">✅ Backup creado correctamente</string>
+    <string name="settings_backup_create_failed">❌ Error al crear backup</string>
+    <string name="settings_error_with_message">❌ Error: %1$s</string>
+    <string name="settings_autobackup_folder_set">✅ Carpeta de auto-backup configurada</string>
+    <string name="settings_autobackup_folder_failed">❌ Error al configurar carpeta: %1$s</string>
+    <string name="settings_pick_zip">⚠️ Por favor selecciona un archivo .zip</string>
+    <string name="settings_restore_backup_title">Restaurar backup</string>
+    <string name="settings_restore_backup_desc">Se reemplazarán tus datos actuales por el contenido del backup seleccionado. Antes se creará una copia local de seguridad.</string>
+    <string name="settings_restore_failed">❌ Error al restaurar backup: %1$s</string>
+    <string name="settings_pick_csv">⚠️ Por favor selecciona un archivo .csv</string>
+    <string name="settings_import_csv_title">Importar CSV</string>
+    <string name="settings_import_csv_desc">Se reemplazarán tus datos actuales por %1$d medicamentos y %2$d entradas de historial. Antes se creará una copia local de seguridad.</string>
+    <string name="settings_import_csv_failed">❌ Error al importar CSV: %1$s</string>
+    <string name="settings_import_unknown_error">No se pudo importar el archivo. Comprueba que sea válido y vuelve a intentarlo.</string>
+    <string name="csv_import_invalid_format">El archivo no tiene un formato CSV de PillMate reconocido.</string>
+    <string name="csv_import_medications_missing">Falta la sección de medicamentos.</string>
+    <string name="csv_import_medication_row_incomplete">Hay una fila de medicamento incompleta.</string>
+    <string name="csv_import_history_missing">Falta la sección del historial.</string>
+    <string name="backup_import_csv_missing">La copia no contiene backup.csv.</string>
+
+    <!-- Ajustes: apariencia, orden, seguridad (cabecera) -->
+    <string name="settings_appearance">🎨 Apariencia</string>
+    <string name="settings_dark_mode">Modo oscuro</string>
+    <string name="settings_on">Activado</string>
+    <string name="settings_off">Desactivado</string>
+    <string name="settings_screen_design">Diseño de pantallas</string>
+    <string name="settings_design_rhythm_desc">Accesos rápidos y reloj de 24 horas</string>
+    <string name="settings_design_classic_desc">Las pantallas de siempre</string>
+    <string name="settings_ui_style">Estilo de interfaz</string>
+    <string name="settings_current">Actual: %1$s</string>
+    <string name="settings_chip_count">Chips de recuento</string>
+    <string name="settings_chip_period">Período: %1$s</string>
+    <string name="settings_sorting">🔢 Ordenamiento</string>
+    <string name="settings_sort_by">Ordenar medicamentos por</string>
+    <string name="settings_sort_changed">Ordenamiento cambiado a: %1$s</string>
+    <string name="settings_security">🔒 Seguridad</string>
+    <string name="settings_app_lock">Bloqueo de la app</string>
+    <string name="settings_set_pin_first">Configura un PIN para activar el bloqueo</string>
+
+    <!-- Ajustes: seguridad, notificaciones, datos -->
+    <string name="settings_change_pin">Cambiar PIN</string>
+    <string name="settings_change_pin_desc">Actualizar código de acceso</string>
+    <string name="settings_fingerprint">Desbloquear con huella</string>
+    <string name="settings_no_biometrics">Tu dispositivo no soporta autenticación biométrica fuerte.</string>
+    <string name="settings_lock_timeout">Tiempo antes de bloquear</string>
+    <string name="settings_setup_pin">Configurar PIN</string>
+    <string name="settings_setup_pin_desc">Define un código para proteger tu información</string>
+    <string name="settings_notifications">🔔 Notificaciones</string>
+    <string name="settings_permission_required">Permiso requerido</string>
+    <string name="settings_permission_required_desc">Permite notificaciones para recibir recordatorios</string>
+    <string name="action_enable">Activar</string>
+    <string name="action_allow">Permitir</string>
+    <string name="settings_exact_alarms_off">Alarmas exactas desactivadas</string>
+    <string name="settings_exact_alarms_off_desc">Sin este permiso los recordatorios pueden retrasarse</string>
+    <string name="settings_reminders">Recordatorios</string>
+    <string name="settings_reminders_need_permission">Activa el permiso de notificaciones primero</string>
+    <string name="settings_reminders_need_exact">Permite alarmas exactas para máxima precisión</string>
+    <string name="settings_reminders_per_medication">Los recordatorios se configuran en cada medicamento</string>
+    <string name="settings_reminders_hint">Configura recordatorios en cada medicamento individual</string>
+    <string name="settings_quick_notification">Notificación de toma rápida</string>
+    <string name="settings_quick_notification_on">Notificación siempre presente para registrar una toma con un toque</string>
+    <string name="settings_quick_notification_off">Añade una notificación fija para registrar tomas sin abrir la app</string>
+    <string name="settings_sound">Sonido</string>
+    <string name="settings_sound_desc">Configurar tono de notificación</string>
+    <string name="settings_data">📊 Datos</string>
+    <string name="settings_export_csv_desc">Crear archivo CSV con medicamentos e historial</string>
+    <string name="settings_csv_exported">✅ CSV exportado: %1$s</string>
+    <string name="settings_export_failed">❌ Error al exportar: %1$s</string>
+    <string name="settings_export_pdf_desc">Generar reporte visual para médico o archivo</string>
+    <string name="settings_export_audio">Exportar historial con audios</string>
+    <string name="settings_export_audio_desc">Exportar historial completo con notas de voz encriptadas</string>
+    <string name="settings_restore_backup">Restaurar Backup</string>
+    <string name="settings_restore_backup_hint">Importar desde archivo .zip (incluye fotos)</string>
+    <string name="settings_import_csv_hint">Cargar datos desde archivo .csv (sin fotos)</string>
+    <string name="settings_clear_all">Limpiar todos los datos</string>
+    <string name="settings_clear_all_desc">Eliminar todos los medicamentos y entradas</string>
+    <string name="settings_create_backup">Crear Backup</string>
+    <string name="settings_create_backup_desc">Elegir dónde guardar backup completo</string>
+    <string name="settings_autobackup_folder">Carpeta de auto-backup</string>
+    <string name="settings_clear_folder">Limpiar configuración de carpeta</string>
+    <string name="settings_clear_folder_desc">Resetear carpeta de auto-backup</string>
+    <string name="settings_folder_cleared">✅ Configuración limpiada. Configura nuevamente.</string>
+    <string name="settings_last_autobackup">Último auto-backup</string>
+    <string name="settings_autobackup">Auto-backup</string>
+    <string name="settings_autobackup_on_every">Activado cada %1$s</string>
+    <string name="settings_choose_folder_first">⚠️ Configura primero una carpeta de auto-backup</string>
+    <string name="settings_autobackup_enabled">✅ Auto-backup activado</string>
+    <string name="settings_autobackup_disabled">Auto-backup desactivado</string>
+    <string name="settings_autobackup_frequency">Frecuencia de auto-backup</string>
+    <string name="settings_every">Cada %1$s</string>
+    <string name="settings_backup_now">Crear backup de seguridad ahora</string>
+    <string name="settings_backup_now_desc">Guardar backup en carpeta configurada</string>
+    <string name="settings_backup_in_folder">✅ Backup creado en carpeta configurada</string>
+    <string name="settings_backup_failed">❌ Error al crear backup: %1$s</string>
+    <string name="settings_export_backup">Exportar Backup</string>
+    <string name="settings_export_backup_desc">Compartir backup completo con fotos (con/sin cifrado)</string>
+    <string name="settings_view_backups">Ver carpeta de backups</string>
+    <string name="settings_view_backups_desc">Abrir ubicación de copias de seguridad</string>
+
+    <!-- Ajustes: notas de voz, información -->
+    <string name="settings_voice_notes">🎙️ Notas de Voz</string>
+    <string name="settings_voice_password">Cambiar contraseña de notas</string>
+    <string name="settings_voice_password_desc">Modificar contraseña y pista de las notas de voz</string>
+    <string name="settings_voice_reset">Restablecer contraseña de notas</string>
+    <string name="settings_voice_reset_desc">Crear nueva contraseña (requiere PIN de la app)</string>
+    <string name="settings_info">ℹ️ Información</string>
+    <string name="settings_version">Versión</string>
+    <string name="settings_show_intro">Ver la introducción</string>
+    <string name="settings_show_intro_desc">Repasa cómo funciona PillMate</string>
+    <string name="settings_about">Acerca de</string>
+    <string name="settings_about_desc">Autor, código fuente y cómo apoyar el proyecto</string>
+
+    <!-- Ajustes: mensajes tras una acción -->
+    <string name="settings_lock_enabled">Bloqueo activado</string>
+    <string name="settings_lock_disabled">Bloqueo desactivado</string>
+    <string name="settings_pin_saved">PIN guardado</string>
+    <string name="settings_pin_save_failed">No se pudo guardar el PIN</string>
+    <string name="settings_pin_wrong">PIN actual incorrecto</string>
+    <string name="settings_pin_updated">PIN actualizado</string>
+    <string name="settings_pin_update_failed">Error al actualizar el PIN</string>
+    <string name="settings_timeout_updated">Tiempo de bloqueo actualizado</string>
+    <string name="settings_voice_password_updated">Contraseña de notas actualizada</string>
+    <string name="settings_voice_password_wrong">Contraseña actual incorrecta</string>
+    <string name="settings_voice_password_change_failed">Error al cambiar contraseña</string>
+    <string name="settings_voice_password_reset_done">✅ Contraseña de notas restablecida</string>
+    <string name="settings_voice_password_reset_failed">Error al restablecer contraseña</string>
+    <string name="settings_history_exported">Historial exportado con %1$dKB de audios</string>
+    <string name="settings_history_exported_no_audio">Historial exportado sin audios</string>
+    <string name="audio_export_readme">Paquete de exportación de PillMate\n==================================\n\nContenido:\n- backup.csv: Datos completos en formato CSV de PillMate\n- audio_notes/: Notas de voz cifradas (AES-256-GCM)\n\nTipos de archivo de audio:\n- *.enc: Archivo de audio cifrado\n- *.salt: Salt para derivar la clave\n- *.iv: Vector de inicialización\n\nExportado: %1$s</string>
+    <string name="settings_error_export">Error al exportar: %1$s</string>
+    <string name="settings_backup_encrypted_exported">✅ Backup cifrado exportado: %1$s</string>
+    <string name="settings_backup_exported">✅ Backup exportado: %1$s</string>
+    <string name="settings_backup_export_failed">❌ Error al exportar backup: %1$s</string>
+    <string name="settings_restore_encrypted_title">Restaurar backup cifrado</string>
+    <string name="settings_restore_encrypted_desc">Se reemplazarán tus datos actuales por el contenido del backup cifrado seleccionado. Antes se creará una copia local de seguridad.</string>
+    <string name="settings_data_restored">✅ Datos restaurados correctamente</string>
+    <string name="settings_restore_cancelled">❌ Restauración cancelada: %1$s</string>
+    <string name="settings_clear_all_title">Eliminar todos los datos</string>
+    <string name="settings_clear_all_body">Antes de borrar se creará una copia local de seguridad. Esta acción eliminará medicamentos e historial de la app.</string>
+    <string name="settings_data_deleted">✅ Datos eliminados</string>
+    <string name="settings_clear_failed">❌ No se eliminaron datos: %1$s</string>
+    <string name="settings_frequency_updated">✅ Frecuencia actualizada</string>
+
+    <!-- Ajustes: tiempos e intervalos -->
+    <string name="lock_timeout_immediate">Inmediato</string>
+    <string name="lock_timeout_30s">30 segundos</string>
+    <string name="lock_timeout_1m">1 minuto</string>
+    <string name="lock_timeout_5m">5 minutos</string>
+    <string name="lock_timeout_10m">10 minutos</string>
+    <string name="lock_timeout_custom">Personalizado (%1$ds)</string>
+    <string name="interval_hours">%1$d h</string>
+    <plurals name="interval_days">
+        <item quantity="one">%1$d día</item>
+        <item quantity="other">%1$d días</item>
+    </plurals>
+    <string name="autobackup_every_6h">Cada 6 horas</string>
+    <string name="autobackup_every_12h">Cada 12 horas</string>
+    <string name="autobackup_every_day">Cada día</string>
+    <string name="autobackup_every_3d">Cada 3 días</string>
+    <string name="autobackup_every_week">Cada semana</string>
+
+    <!-- Ajustes: diálogos de PIN -->
+    <string name="action_change">Cambiar</string>
+    <string name="action_verify">Verificar</string>
+    <string name="action_reset">Restablecer</string>
+    <string name="action_decrypt">Descifrar</string>
+    <string name="settings_pin_setup_label">PIN (4-8 dígitos)</string>
+    <string name="settings_pin_confirm">Confirmar PIN</string>
+    <string name="settings_pin_err_short">El PIN debe tener al menos 4 dígitos</string>
+    <string name="settings_pin_err_mismatch">Los PIN no coinciden</string>
+    <string name="settings_pin_current">PIN actual</string>
+    <string name="settings_pin_new">Nuevo PIN</string>
+    <string name="settings_pin_new_confirm">Confirmar nuevo PIN</string>
+    <string name="settings_pin_err_new_short">El nuevo PIN debe tener al menos 4 dígitos</string>
+    <string name="settings_pin_err_new_mismatch">Los nuevos PIN no coinciden</string>
+    <string name="settings_pin_err_new_same">El nuevo PIN debe ser diferente</string>
+    <string name="settings_pin_verify_title">Verificar PIN</string>
+    <string name="settings_pin_verify_body">Ingresa el PIN de la app para continuar</string>
+    <string name="settings_pin_err_wrong">PIN incorrecto</string>
+
+    <!-- Ajustes: tarjeta del widget y diálogo Acerca de -->
+    <string name="settings_widget_title">Widget de toma rápida</string>
+    <string name="settings_widget_color">Color</string>
+    <string name="settings_widget_size">Tamaño</string>
+    <string name="settings_widget_shape">Forma</string>
+    <string name="settings_about_title">Acerca de PillMate</string>
+    <string name="settings_about_author">Creada por D4vRAM</string>
+    <string name="settings_about_license">Software libre (licencia GPL v3 o posterior). Sin anuncios, sin cuentas y sin internet.</string>
+
+    <!-- Ajustes: compartir archivos y carpeta de backups -->
+    <string name="settings_file_unavailable">Archivo no disponible</string>
+    <string name="settings_share_csv">Compartir CSV</string>
+    <string name="settings_share_pdf">Compartir PDF</string>
+    <string name="settings_share_backup">Compartir backup</string>
+    <string name="settings_share_file">Compartir archivo</string>
+    <string name="settings_folder_uri_invalid">❌ URI guardado inválido. Reconfigura la carpeta de auto-backup.</string>
+    <string name="settings_folder_uri_empty">❌ URI vacío. Reconfigura la carpeta de auto-backup.</string>
+    <string name="settings_folder_open_failed">❌ No se pudo abrir la carpeta. Intenta reconfigurarla.</string>
+
+    <!-- Ajustes: diálogos de contraseña de notas de voz -->
+    <string name="settings_vp_current">Contraseña actual</string>
+    <string name="settings_vp_new">Nueva contraseña</string>
+    <string name="settings_vp_new_confirm">Confirmar nueva contraseña</string>
+    <string name="settings_vp_new_hint">Nueva pista (opcional)</string>
+    <string name="settings_vp_reset_title">Restablecer Contraseña de Notas</string>
+    <string name="settings_vp_reset_warning">⚠️ Esto creará una nueva contraseña. Las notas antiguas NO se podrán recuperar.</string>
+    <string name="action_hide">Ocultar</string>
+    <string name="action_show">Mostrar</string>
+
+    <!-- Ajustes: diálogos de exportar y restaurar -->
+    <string name="settings_he_title">📦 Exportar historial</string>
+    <string name="settings_he_choose">Elige cómo exportar tu historial de medicamentos:</string>
+    <string name="settings_he_audio_note">Las notas de voz siempre se exportan encriptadas con AES-256</string>
+    <string name="settings_he_with_audio">Con notas de voz</string>
+    <string name="settings_he_text_only">Solo texto (CSV)</string>
+    <string name="settings_replace_data">Reemplazar datos</string>
+    <string name="settings_be_title">📦 Exportar Backup Completo</string>
+    <string name="settings_be_choose">Elige cómo exportar tu backup completo (medicamentos, historial, fotos y audios):</string>
+    <string name="settings_be_encryption">🔒 Cifrado AES-256</string>
+    <string name="settings_be_encryption_body">El cifrado protege tus datos con AES-256. Recomendado si vas a guardar o compartir el backup fuera de tu teléfono.</string>
+    <string name="settings_be_with_encryption">Con cifrado AES-256</string>
+    <string name="settings_be_without_encryption">Sin cifrar</string>
+    <string name="settings_bp_title">🔐 Contraseña para el backup</string>
+    <string name="settings_bp_body">Introduce una contraseña segura para cifrar el backup:</string>
+    <string name="settings_bp_label">Contraseña (mín. 12 caracteres)</string>
+    <string name="settings_bp_too_short">La contraseña debe tener al menos 12 caracteres</string>
+    <string name="settings_bp_export">Exportar cifrado</string>
+    <string name="settings_bi_title">🔐 Backup cifrado</string>
+    <string name="settings_bi_body">Este backup está protegido con cifrado AES-256. Introduce la contraseña para descifrarlo:</string>
+
+    <!-- Barra de navegación inferior -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_meds">Meds</string>
+    <string name="nav_history">Historial</string>
+    <string name="nav_notes">Notas</string>
+    <string name="nav_settings">Ajustes</string>
+
+    <!-- Reloj de 24 horas -->
+    <plurals name="clock_description">
+        <item quantity="one">Reloj de 24 horas. %1$d registro. %2$s</item>
+        <item quantity="other">Reloj de 24 horas. %1$d registros. %2$s</item>
+    </plurals>
+    <string name="clock_now_suffix">Ahora: %1$s.</string>
+    <plurals name="clock_units">
+        <item quantity="one">%1$d unidad</item>
+        <item quantity="other">%1$d unidades</item>
+    </plurals>
+    <string name="clock_doses_label">tomas</string>
+    <string name="clock_empty">Sin registros en este periodo.</string>
+    <string name="clock_hint_bar">Toca una barra para ver qué se tomó a esa hora.</string>
+    <string name="clock_hint_dot">Toca un punto para ver la toma.</string>
+    <string name="clock_legend_more">+%1$d más</string>
+    <string name="clock_hour_range">%1$02d:00–%2$02d:00 · %3$d tomas</string>
+    <string name="clock_chip">%1$s · %2$s · %3$s</string>
+
+    <!-- Barra de accesos rápidos y hoja de toma rápida -->
+    <string name="quick_take_for">Toma rápida para %1$s</string>
+    <string name="quick_take_configure_quick">Configurar acceso rápido %1$d</string>
+    <string name="quick_take_log_label">Registrar toma</string>
+    <string name="quick_take_configure_label">Configurar casilla</string>
+    <string name="quick_take_adjust_label">Ajustar cantidad o fecha</string>
+    <string name="quick_sheet_title">Tomar medicamento</string>
+    <string name="quick_sheet_subtitle">Tus más tomados</string>
+    <string name="quick_sheet_empty">Aún no tienes medicamentos.</string>
+
+    <!-- Tipos de medicamento (se muestran traducidos, se guardan como siempre) -->
+    <string name="med_type_tablet">Comprimido</string>
+    <string name="med_type_pill">Pastilla</string>
+    <string name="med_type_capsule">Cápsula</string>
+    <string name="med_type_syrup">Jarabe</string>
+    <string name="med_type_drops">Gotas</string>
+
+    <!-- Estadísticas -->
+    <string name="stats_all_time">Todo el tiempo</string>
+    <string name="stats_export_data">Exportar datos</string>
+    <string name="stats_share_subject">Estadísticas PillMate</string>
+    <string name="stats_share_chooser">Compartir reporte</string>
+    <string name="stats_share_failed">Error al compartir: %1$s</string>
+    <string name="stats_export_failed">Error al exportar datos</string>
+    <string name="stats_storage_unavailable">Almacenamiento no disponible</string>
+    <plurals name="stats_doses_count">
+        <item quantity="one">%1$d dosis</item>
+        <item quantity="other">%1$d dosis</item>
+    </plurals>
+    <string name="stats_view_full_history">Ver historial completo</string>
+    <string name="stats_breakdown">Desglose por dosis</string>
+    <string name="stats_family">Familia: %1$s</string>
+    <string name="stats_last_record">Último: %1$s</string>
+    <string name="stats_no_records">Sin registros</string>
+    <plurals name="stats_days_ago">
+        <item quantity="one">Hace %1$d día</item>
+        <item quantity="other">Hace %1$d días</item>
+    </plurals>
+    <string name="stats_average_per_day">%1$s %2$s/día en promedio</string>
+    <string name="stats_doses_per_day">Tomas por día</string>
+    <string name="stats_amount_per_day">Cantidad por día (%1$s)</string>
+    <string name="stats_no_data">Sin datos en este periodo</string>
+    <string name="stats_rhythm_24h">Ritmo de 24 horas</string>
+    <string name="action_previous">Anterior</string>
+    <string name="action_next">Siguiente</string>
+    <string name="period_15_days">15 días</string>
+    <string name="unit_drops">gotas</string>
+    <string name="unit_units">unidades</string>
+    <plurals name="stats_trend_more">
+        <item quantity="one">%1$d toma más que los %2$d días anteriores</item>
+        <item quantity="other">%1$d tomas más que los %2$d días anteriores</item>
+    </plurals>
+    <plurals name="stats_trend_less">
+        <item quantity="one">%1$d toma menos que los %2$d días anteriores</item>
+        <item quantity="other">%1$d tomas menos que los %2$d días anteriores</item>
+    </plurals>
+    <string name="stats_trend_same">Igual que los %1$d días anteriores</string>
+
+    <!-- Estadísticas de un medicamento -->
+    <string name="stats_period_week">Última semana</string>
+    <string name="stats_period_month">Último mes</string>
+    <string name="stats_doses_found">Número de tomas encontradas: %1$d</string>
+    <string name="stats_error_no_id">Error: ID del medicamento no encontrado.</string>
+    <string name="stats_prev_month">Mes anterior</string>
+    <string name="stats_next_month">Mes siguiente</string>
+    <string name="stats_medication_fallback">Medicamento</string>
+    <string name="stats_entry_time">Hora: %1$s</string>
+    <string name="stats_entry_dose">Dosis: %1$s</string>
+    <string name="stats_edit_notes">✏️ Editar notas</string>
+    <string name="stats_notes">📝 Notas: %1$s</string>
+    <string name="stats_voice_attached">🎤 Nota de voz adjunta</string>
+
+    <!-- Exportar PDF: pantallas -->
+    <string name="pdf_share_subject">Reporte PillMate</string>
+    <string name="pdf_share_failed">No se pudo compartir el PDF</string>
+    <string name="pdf_sheet_title">Generar Reporte PDF</string>
+    <string name="pdf_style_title">Estilo del reporte</string>
+    <string name="pdf_style_label">Estilo:</string>
+    <string name="pdf_style_clinical">Clínico</string>
+    <string name="pdf_style_clinical_desc">Formal y profesional. Ideal para compartir con médicos o incluir en historial médico. Colores neutros y estructura clara.</string>
+    <string name="pdf_style_clinical_short">Formal, aspecto médico profesional</string>
+    <string name="pdf_style_pillmate_desc">Colores y estilo de la app. Incluye indicadores de color por medicamento y diseño visual atractivo.</string>
+    <string name="pdf_style_pillmate_short">Colores y estilo de la app</string>
+    <string name="pdf_style_minimal">Minimalista</string>
+    <string name="pdf_style_minimal_desc">Limpio y compacto. Solo los datos esenciales sin elementos decorativos. Perfecto para impresión.</string>
+    <string name="pdf_style_minimal_short">Limpio, solo datos esenciales</string>
+    <string name="pdf_period">Periodo</string>
+    <string name="pdf_period_label">Periodo:</string>
+    <string name="pdf_sections">Secciones a incluir</string>
+    <string name="pdf_sections_label">Secciones a incluir:</string>
+    <string name="pdf_generating">Generando…</string>
+    <string name="pdf_generate">Generar PDF</string>
+    <string name="pdf_from">Desde</string>
+    <string name="pdf_to">Hasta</string>
+    <string name="pdf_err_dates">La fecha final no puede ser anterior a la inicial</string>
+    <string name="pdf_err_generate">Error al generar el PDF</string>
+    <string name="pdf_err_unknown">Error desconocido</string>
+
+    <!-- Exportar PDF: secciones -->
+    <string name="pdf_section_summary">Resumen general</string>
+    <string name="pdf_section_summary_desc">Resumen general con total de tomas y estadísticas</string>
+    <string name="pdf_section_medications">Lista de medicamentos</string>
+    <string name="pdf_section_medications_desc">Lista de medicamentos con cantidades totales</string>
+    <string name="pdf_section_weekly">Gráfica semanal</string>
+    <string name="pdf_section_weekly_desc">Gráfica visual de consumo semanal</string>
+    <string name="pdf_section_history">Historial de tomas</string>
+    <string name="pdf_section_history_desc">Historial detallado de todas las tomas</string>
+    <string name="pdf_section_hourly">Distribución horaria</string>
+    <string name="pdf_section_hourly_desc">Gráfica de distribución por franjas horarias</string>
+    <string name="pdf_section_breakdown">Desglose por dosis</string>
+    <string name="pdf_section_breakdown_desc">Desglose detallado por dosis de cada medicamento</string>
+    <string name="pdf_section_monthly">Tendencias mensuales</string>
+    <string name="pdf_section_monthly_desc">Tendencias y patrones de consumo mensual</string>
+    <string name="pdf_section_voice">Notas de voz</string>
+    <string name="pdf_section_voice_desc">Transcripciones de notas de voz asociadas</string>
+
+    <!-- Documento PDF -->
+    <plurals name="doses_count">
+        <item quantity="one">%1$d toma</item>
+        <item quantity="other">%1$d tomas</item>
+    </plurals>
+    <string name="pdf_doc_title">Reporte de Medicación</string>
+    <string name="pdf_doc_period">Periodo: %1$s - %2$s</string>
+    <string name="pdf_doc_generated">Generado: %1$s</string>
+    <string name="pdf_doc_summary">RESUMEN</string>
+    <string name="pdf_doc_total_label">Total de tomas:</string>
+    <string name="pdf_doc_avg_label">Promedio diario:</string>
+    <string name="pdf_doc_avg_value">%1$s tomas/día</string>
+    <string name="pdf_doc_days_label">Días con registro:</string>
+    <string name="pdf_doc_days_value">%1$d de %2$d</string>
+    <string name="pdf_doc_active_label">Medicamentos activos:</string>
+    <string name="pdf_doc_medications">MEDICAMENTOS</string>
+    <string name="pdf_doc_weekly">GRÁFICA SEMANAL</string>
+    <string name="pdf_doc_weekly_empty">No hay datos suficientes para la gráfica</string>
+    <string name="pdf_doc_history">HISTORIAL DE TOMAS</string>
+    <string name="pdf_doc_history_cont">HISTORIAL DE TOMAS (continuación)</string>
+    <string name="pdf_doc_hourly">DISTRIBUCIÓN HORARIA</string>
+    <string name="pdf_slot_early">Madrugada</string>
+    <string name="pdf_slot_morning">Mañana</string>
+    <string name="pdf_slot_midday">Mediodía</string>
+    <string name="pdf_slot_afternoon">Tarde</string>
+    <string name="pdf_slot_evening">Noche</string>
+    <string name="pdf_slot_night">Nocturno</string>
+    <string name="pdf_doc_breakdown">DESGLOSE POR DOSIS</string>
+    <string name="pdf_doc_breakdown_empty">No hay datos de dosis disponibles</string>
+    <string name="pdf_doc_and_more">… y %1$d más</string>
+    <string name="pdf_doc_monthly">TENDENCIAS MENSUALES</string>
+    <string name="pdf_doc_monthly_empty">No hay datos mensuales disponibles</string>
+    <string name="pdf_doc_voice">NOTAS DE VOZ</string>
+    <string name="pdf_doc_voice_empty">No hay notas de voz en este periodo</string>
+    <string name="pdf_doc_audio_attached">[Audio adjunto]</string>
+    <string name="pdf_doc_more_notes">… y %1$d notas más</string>
+
+    <!-- CSV de resumen que se comparte desde Estadísticas -->
+    <string name="csv_metric">Métrica</string>
+    <string name="csv_value">Valor</string>
+    <string name="csv_total_doses">Total de Dosis Registradas</string>
+    <string name="csv_daily_average">Promedio Diario de Dosis</string>
+    <string name="csv_active_meds">Total de Medicamentos Activos</string>
+    <string name="csv_total_events">Total de Eventos Registrados</string>
+    <string name="csv_medication_amount">Cantidad de %1$s (%2$s)</string>
+    <string name="csv_col_total">Dosis Totales Registradas</string>
+    <string name="csv_col_type">Tipo</string>
+    <string name="csv_regular">Regular</string>
+
+    <!-- Datos calculados sobre las tomas registradas -->
+    <string name="insight_peak_title">Hora más activa</string>
+    <string name="insight_share">%1$d de %2$d tomas (%3$d %%)</string>
+    <string name="insight_gap_title">Intervalo habitual entre tomas</string>
+    <string name="insight_gap_detail">Mediana de %1$d intervalos · el más corto: %2$s</string>
+    <string name="insight_top_title">Más registrado</string>
+    <string name="insight_day_title">Día con más tomas</string>
+    <string name="insight_day_detail">%1$d tomas · media de %2$s en los %3$d días con registro</string>
+
+    <!-- Notificaciones y avisos -->
+    <string name="notif_channel_reminders">Recordatorios de Medicamentos</string>
+    <string name="notif_channel_reminders_desc">Notificaciones para recordarte tomar tus medicamentos</string>
+    <string name="notif_quick_take_text">Toca para registrar una toma</string>
+    <string name="notif_reminder_title">%1$s Es hora de tomar %2$s</string>
+    <string name="notif_take_now">Tomar ahora</string>
+    <string name="notif_dose_logged">Toma registrada ✓</string>
+    <string name="notif_dose_logged_named">Toma registrada ✓ · %1$s</string>
+
+    <!-- Bloqueo de la app -->
+    <string name="lock_title">Protección activada</string>
+    <string name="lock_pin_label">Introduce tu PIN</string>
+    <string name="lock_err_short">PIN demasiado corto</string>
+    <string name="lock_err_no_biometrics">Biometría no disponible</string>
+    <string name="lock_err_enable_biometrics">Activa la biometría en ajustes</string>
+    <string name="lock_err_auth_failed">Autenticación fallida</string>
+    <string name="lock_prompt_title">Desbloquear PillMate</string>
+    <string name="lock_prompt_subtitle">Usa tu huella o rostro para continuar</string>
+
+    <!-- Diálogo de permisos de fotos -->
+    <string name="perm_title">Fotos y galería con un permiso claro</string>
+    <string name="perm_body">PillMate usa estos permisos solo para personalizar medicamentos con imágenes que se quedan en tu dispositivo.</string>
+    <string name="perm_camera_desc">Haz fotos rápidas de tus medicamentos para reconocerlos mejor.</string>
+    <string name="perm_gallery">Galería de fotos</string>
+    <string name="perm_gallery_desc">Elige imágenes ya existentes sin repetir trabajo.</string>
+    <string name="perm_privacy">Privacidad garantizada</string>
+    <string name="perm_privacy_desc">Nada de estas fotos se envía a servicios externos.</string>
+    <string name="perm_denied_before">Antes rechazaste estos permisos. Si quieres usar fotos en tus medicamentos, concédelos en el siguiente paso.</string>
+    <string name="perm_granted">Permisos concedidos</string>
+    <string name="perm_continue">Continuar y conceder permisos</string>
+    <string name="perm_not_now">Ahora no</string>
+</resources>

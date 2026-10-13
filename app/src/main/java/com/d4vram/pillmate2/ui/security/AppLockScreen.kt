@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.security
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -96,7 +98,7 @@ fun AppLockScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = "Protección activada",
+                    text = stringResource(R.string.lock_title),
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
 
@@ -105,7 +107,7 @@ fun AppLockScreen(
                 OutlinedTextField(
                     value = pin,
                     onValueChange = { if (it.length <= 8) pin = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Introduce tu PIN") },
+                    label = { Text(stringResource(R.string.lock_pin_label)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     visualTransformation = PasswordVisualTransformation(),
@@ -128,7 +130,7 @@ fun AppLockScreen(
                     enabled = pin.length >= 4,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Desbloquear")
+                    Text(stringResource(R.string.vn_unlock))
                 }
 
                 // Ya no necesitamos el botón "Usar huella", porque la petición de

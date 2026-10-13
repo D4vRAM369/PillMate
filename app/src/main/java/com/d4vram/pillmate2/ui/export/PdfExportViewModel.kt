@@ -1,10 +1,14 @@
 package com.d4vram.pillmate2.ui.export
 
+import com.d4vram.pillmate2.R
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.d4vram.pillmate2.data.MedicationRepository
+import com.d4vram.pillmate2.utils.amountForMedication
+import com.d4vram.pillmate2.utils.countTakeEvents
+import com.d4vram.pillmate2.utils.dailyDoseMetrics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -96,7 +100,7 @@ class PdfExportViewModel(
     fun generatePdf(context: Context) {
         val state = _uiState.value
         if (state.endDate.isBefore(state.startDate)) {
-            _uiState.update { it.copy(error = "La fecha final no puede ser anterior a la inicial") }
+            _uiState.update { it.copy(error = context.getString(R.string.pdf_err_dates)) }
             return
         }
 
@@ -127,13 +131,13 @@ class PdfExportViewModel(
                     }
                 } else {
                     _uiState.update {
-                        it.copy(isGenerating = false, error = "Error al generar el PDF")
+                        it.copy(isGenerating = false, error = context.getString(R.string.pdf_err_generate))
                     }
                 }
 
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(isGenerating = false, error = e.message ?: "Error desconocido")
+                    it.copy(isGenerating = false, error = e.message ?: context.getString(R.string.pdf_err_unknown))
                 }
             }
         }
@@ -160,6 +164,9 @@ class PdfExportViewModel(
     /**
      * Recopila todos los datos necesarios para el reporte
      */
+    internal suspend fun reportDataForTesting(startDate: LocalDate, endDate: LocalDate): PdfReportData =
+        gatherReportData(startDate, endDate)
+
     private suspend fun gatherReportData(startDate: LocalDate, endDate: LocalDate): PdfReportData {
         val allMedications = repository.getMedicationsSnapshot()
         val history = repository.getHistoryBetween(startDate.toEpochDay(), endDate.toEpochDay())
@@ -173,22 +180,12 @@ class PdfExportViewModel(
             val medHistory = history.filter { it.medicationId == med.id }
             if (medHistory.isEmpty()) return@mapNotNull null
 
-            val totalQuantity = medHistory.sumOf { it.quantity }
-            val unit = getDisplayUnit(med)
-
-            // Solo multiplicar por dosis si el tipo de medicamento lo permite
-            // Para tipos no reconocidos, simplemente contar tomas
-            val totalValue = if (shouldMultiplyByDose(med)) {
-                val doseValue = extractDoseValue(med.dose)
-                totalQuantity * doseValue
-            } else {
-                totalQuantity.toFloat()
-            }
+            val amount = amountForMedication(med, medHistory)
 
             MedicationTotal(
                 medication = med,
-                totalValue = totalValue,
-                displayUnit = unit,
+                totalValue = amount.value,
+                displayUnit = amount.unit,
                 percentage = 0f // Se calcula después
             )
         }
@@ -209,25 +206,20 @@ class PdfExportViewModel(
         val averageDaily = if (totalDays > 0) totalValue / totalDays else 0f
 
         // Métricas de tomas (más útiles clínicamente)
-        val totalTomas = history.sumOf { it.quantity }
+        val totalTomas = countTakeEvents(history)
         val averageDailyTomas = if (totalDays > 0) totalTomas.toFloat() / totalDays else 0f
 
         // Datos diarios para gráfica
         val dailyData = (0 until totalDays).map { offset ->
             val date = startDate.plusDays(offset.toLong())
             val dayHistory = history.filter { it.timestamp.toLocalDate() == date }
-            val dayValue = dayHistory.sumOf { entry ->
-                val med = allMedications.find { it.id == entry.medicationId }
-                // Usar la misma lógica que medicationTotals
-                if (med != null && shouldMultiplyByDose(med)) {
-                    val doseValue = extractDoseValue(med.dose)
-                    entry.quantity * doseValue.toDouble()
-                } else {
-                    entry.quantity.toDouble()
-                }
-            }.toFloat()
+            val metrics = dailyDoseMetrics(
+                entries = dayHistory,
+                medicationsById = allMedications.associateBy { it.id },
+                unit = displayUnit
+            )
 
-            DailyDataPoint(date = date, value = dayValue)
+            DailyDataPoint(date = date, value = metrics.amount)
         }
 
         // Patrón horario
@@ -251,43 +243,6 @@ class PdfExportViewModel(
         )
     }
 
-    /**
-     * Extrae el valor numérico de una dosis.
-     * Maneja tanto punto como coma decimal (ej: "0,1mg" o "0.1mg" → 0.1)
-     */
-    private fun extractDoseValue(dose: String): Float {
-        // Normalizar: reemplazar coma por punto para decimales españoles
-        val normalizedDose = dose.replace(",", ".")
-        val regex = Regex("([0-9]+\\.?[0-9]*)")
-        val match = regex.find(normalizedDose)
-        return match?.groupValues?.get(1)?.toFloatOrNull() ?: 1f
-    }
-
-    /**
-     * Determina la unidad de display según el tipo de medicamento.
-     * Si el tipo no se reconoce, devuelve null para indicar que se deben usar tomas simples.
-     */
-    private fun getDisplayUnit(medication: com.d4vram.pillmate2.model.Medication): String {
-        return when {
-            medication.type.equals("Gota", ignoreCase = true) ||
-            medication.type.equals("Gotas", ignoreCase = true) -> "gotas"
-            medication.type.equals("Jarabe", ignoreCase = true) -> "ml"
-            medication.type.equals("Pastilla", ignoreCase = true) ||
-            medication.type.equals("Cápsula", ignoreCase = true) ||
-            medication.type.equals("Comprimido", ignoreCase = true) -> "mg"
-            else -> "tomas"
-        }
-    }
-
-    /**
-     * Determina si este tipo de medicamento debe multiplicarse por la dosis numérica.
-     * Solo mg, ml y gotas tienen sentido multiplicar; "tomas" no.
-     */
-    private fun shouldMultiplyByDose(medication: com.d4vram.pillmate2.model.Medication): Boolean {
-        val type = medication.type.lowercase()
-        return type in listOf("gota", "gotas", "jarabe", "pastilla", "cápsula", "comprimido", "capsula")
-    }
-
     private fun calculateHourlyPattern(history: List<com.d4vram.pillmate2.model.HistoryEntry>): Map<String, Int> {
         val slots = listOf("Madrugada", "Mañana", "Mediodía", "Tarde", "Noche", "Nocturno")
         val hourlyMap = slots.associateWith { 0 }.toMutableMap()
@@ -302,7 +257,7 @@ class PdfExportViewModel(
                 in 19..22 -> "Noche"
                 else -> "Nocturno"
             }
-            hourlyMap[slot] = (hourlyMap[slot] ?: 0) + entry.quantity
+            hourlyMap[slot] = (hourlyMap[slot] ?: 0) + 1
         }
 
         return hourlyMap

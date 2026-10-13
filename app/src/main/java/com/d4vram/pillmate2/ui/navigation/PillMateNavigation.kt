@@ -1,5 +1,8 @@
 package com.d4vram.pillmate2.ui.navigation
 
+import androidx.annotation.StringRes
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
@@ -133,9 +136,9 @@ fun PillMateNavigation(
                                 }
                             },
                             label = {
-                                screen.label?.let {
+                                screen.labelRes?.let {
                                     Text(
-                                        text = it,
+                                        text = stringResource(it),
                                         style = MaterialTheme.typography.labelMedium
                                     )
                                 }
@@ -284,12 +287,12 @@ fun PillMateNavigation(
 /**
  * 📱 Definición de las pantallas de navegación
  */
-sealed class Screen(val route: String, val label: String? = null, val icon: ImageVector? = null) {
-    object Home : Screen("home", "Home", Icons.Default.Home)
-    object Medications : Screen("medications", "Meds", Icons.Default.Add)
-    object History : Screen("history", "History", Icons.AutoMirrored.Filled.List)
-    object VoiceNotes : Screen("voice_notes", "Notes", Icons.Default.Mic)
-    object Settings : Screen("settings", "Ajustes", Icons.Default.Settings)
+sealed class Screen(val route: String, @StringRes val labelRes: Int? = null, val icon: ImageVector? = null) {
+    object Home : Screen("home", R.string.nav_home, Icons.Default.Home)
+    object Medications : Screen("medications", R.string.nav_meds, Icons.Default.Add)
+    object History : Screen("history", R.string.nav_history, Icons.AutoMirrored.Filled.List)
+    object VoiceNotes : Screen("voice_notes", R.string.nav_notes, Icons.Default.Mic)
+    object Settings : Screen("settings", R.string.nav_settings, Icons.Default.Settings)
     object MedicationStats : Screen("medication_stats/{medicationId}")
     object GlobalStats : Screen("global_stats")
     object PdfExport : Screen("pdf_export")

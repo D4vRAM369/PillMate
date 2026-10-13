@@ -8,6 +8,12 @@ import net.lingala.zip4j.ZipFile
 import net.lingala.zip4j.model.ZipParameters
 import java.io.File
 
+enum class BackupImportError {
+    CSV_MISSING
+}
+
+class BackupImportException(val reason: BackupImportError) : IllegalArgumentException()
+
 /**
  * 📦 Gestor de backups en formato ZIP
  *
@@ -221,7 +227,7 @@ object BackupZipManager {
             // 2. Leer CSV
             val csvFile = File(tempExtractDir, CSV_FILENAME)
             if (!csvFile.exists()) {
-                throw IllegalArgumentException("Backup inválido: no contiene backup.csv")
+                throw BackupImportException(BackupImportError.CSV_MISSING)
             }
 
             val csvContent = csvFile.readText()

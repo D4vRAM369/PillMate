@@ -1,5 +1,8 @@
 package com.d4vram.pillmate2.ui.components
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -13,9 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.d4vram.pillmate2.model.HistoryEntry
+import com.d4vram.pillmate2.utils.relativeDayLabel
 
 /**
  * 📜 Item del historial de medicamentos tomados
@@ -23,11 +29,22 @@ import com.d4vram.pillmate2.model.HistoryEntry
 @Composable
 fun HistoryItem(
     historyEntry: HistoryEntry,
+    isDrops: Boolean = false,
     showNotesIndicator: Boolean = false,
     hasAudioNote: Boolean = false,
     onShowStats: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val dropQuantityDescription = if (isDrops) {
+        pluralStringResource(
+            R.plurals.history_drops_accessibility,
+            historyEntry.quantity,
+            historyEntry.quantity
+        )
+    } else {
+        null
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -66,7 +83,7 @@ fun HistoryItem(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "${historyEntry.date} ${historyEntry.time}",
+                text = "${relativeDayLabel(historyEntry.timestamp.toLocalDate())} ${historyEntry.time}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -76,14 +93,21 @@ fun HistoryItem(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (historyEntry.quantity > 1) {
+            if (isDrops || historyEntry.quantity > 1) {
+                val quantityModifier = Modifier
+                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .then(
+                        dropQuantityDescription?.let { description ->
+                            Modifier.semantics { contentDescription = description }
+                        } ?: Modifier
+                    )
                 Surface(
                     shape = RoundedCornerShape(8.dp),
                     color = MaterialTheme.colorScheme.secondaryContainer
                 ) {
                     Text(
-                        text = "x${historyEntry.quantity}",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        text = historyQuantityBadgeText(historyEntry.quantity, isDrops),
+                        modifier = quantityModifier,
                         style = MaterialTheme.typography.labelMedium.copy(
                             fontWeight = FontWeight.SemiBold,
                             fontSize = 10.sp
@@ -121,7 +145,7 @@ fun HistoryItem(
             ) {
                 Icon(
                     imageVector = Icons.Filled.BarChart,
-                    contentDescription = "Ver estadísticas",
+                    contentDescription = stringResource(R.string.history_view_stats),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -133,7 +157,7 @@ fun HistoryItem(
                 color = Color(0xFFD1FAE5)
             ) {
                 Text(
-                    text = "Tomada",
+                    text = stringResource(R.string.entry_taken),
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.SemiBold,
