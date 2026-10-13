@@ -27,7 +27,7 @@
 
 ---
 
-**Contenido:** [Qué es](#qué-es) · [Qué hace](#qué-hace) · [Privacidad](#privacidad) · [Lo que no es](#lo-que-no-es) · [Instalar](#instalar) · [Compilar](#compilar) · [Cómo está hecha](#cómo-está-hecha) · [Contribuir](#contribuir) · [Licencia](#licencia)
+**Contenido:** [Qué es](#qué-es) · [Qué hace](#qué-hace) · [Privacidad](#privacidad) · [Lo que no es](#lo-que-no-es) · [Instalar](#instalar) · [Compilar](#compilar) · [Cómo está hecha](#cómo-está-hecha) · [Contribuir](#contribuir) · [Apoyar](#apoyar-el-proyecto) · [Licencia](#licencia)
 
 ## Qué es
 
@@ -140,6 +140,12 @@ El esquema de la base de datos se exporta a [`app/schemas/`](app/schemas) para p
 Los *issues* con fallos o ideas son bienvenidos. Antes de proponer una función, ten en cuenta los tres principios de arriba y uno más: la app no usa IA.
 
 Si envías cambios: que `./gradlew :app:testDebugUnitTest` pase, y nada de datos de medicación reales en ejemplos, capturas ni tests.
+
+## Apoyar el proyecto
+
+PillMate es gratis y lo seguirá siendo, sin anuncios ni compras. Si te resulta útil y quieres invitarme a un café:
+
+<a href="https://www.buymeacoffee.com/D4vRAM369"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy Me a Coffee"></a>
 
 ## Licencia
 
