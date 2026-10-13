@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.ui.screens
 
+import androidx.compose.ui.res.pluralStringResource
 import com.d4vram.pillmate2.R
 import androidx.compose.ui.res.stringResource
 import android.content.Context
@@ -510,12 +511,12 @@ fun SettingsScreen(
                                         } else {
                                             securityManager.setLockEnabled(true)
                                             securityManager.recordUnlock()
-                                            snackbarMessage = "Bloqueo activado"
+                                            snackbarMessage = context.getString(R.string.settings_lock_enabled)
                                         }
                                     } else {
                                         securityManager.setLockEnabled(false)
                                         securityManager.setBiometricEnabled(false)
-                                        snackbarMessage = "Bloqueo desactivado"
+                                        snackbarMessage = context.getString(R.string.settings_lock_disabled)
                                     }
                                 }
                             }
@@ -921,10 +922,10 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection(title = "🎙️ Notas de Voz") {
+                SettingsSection(title = stringResource(R.string.settings_voice_notes)) {
                     SettingsItem(
-                        title = "Cambiar contraseña de notas",
-                        description = "Modificar contraseña y pista de las notas de voz",
+                        title = stringResource(R.string.settings_voice_password),
+                        description = stringResource(R.string.settings_voice_password_desc),
                         icon = Icons.Default.Lock,
                         onClick = { showVoiceNotePasswordDialog = true }
                     )
@@ -932,8 +933,8 @@ fun SettingsScreen(
                     // 🔄 Restablecer contraseña (requiere PIN de la app)
                     if (securitySettings.isPinConfigured) {
                         SettingsItem(
-                            title = "Restablecer contraseña de notas",
-                            description = "Crear nueva contraseña (requiere PIN de la app)",
+                            title = stringResource(R.string.settings_voice_reset),
+                            description = stringResource(R.string.settings_voice_reset_desc),
                             icon = Icons.Default.RestartAlt,
                             onClick = {
                                 showPinVerificationForReset = true
@@ -944,21 +945,21 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection(title = "ℹ️ Información") {
+                SettingsSection(title = stringResource(R.string.settings_info)) {
                     SettingsItem(
-                        title = "Versión",
+                        title = stringResource(R.string.settings_version),
                         description = "PillMate v" + context.packageManager.getPackageInfo(context.packageName, 0).versionName,
                         icon = Icons.Default.Info
                     )
                     SettingsItem(
-                        title = "Ver la introducción",
-                        description = "Repasa cómo funciona PillMate",
+                        title = stringResource(R.string.settings_show_intro),
+                        description = stringResource(R.string.settings_show_intro_desc),
                         icon = Icons.Default.School,
                         onClick = onShowOnboarding
                     )
                     SettingsItem(
-                        title = "Acerca de",
-                        description = "Autor, código fuente y cómo apoyar el proyecto",
+                        title = stringResource(R.string.settings_about),
+                        description = stringResource(R.string.settings_about_desc),
                         icon = Icons.Default.QuestionMark,
                         onClick = { showAboutDialog = true }
                     )
@@ -978,7 +979,7 @@ fun SettingsScreen(
     if (showUiDialog) {
         AlertDialog(
             onDismissRequest = { showUiDialog = false },
-            title = { Text("Estilo de interfaz") },
+            title = { Text(stringResource(R.string.settings_ui_style)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     AppUiStyle.entries.forEach { style ->
@@ -1018,7 +1019,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showUiDialog = false }) {
-                    Text("Cerrar")
+                    Text(stringResource(R.string.action_close))
                 }
             }
         )
@@ -1027,7 +1028,7 @@ fun SettingsScreen(
     if (showChipPeriodDialog) {
         AlertDialog(
             onDismissRequest = { showChipPeriodDialog = false },
-            title = { Text("Chips de recuento") },
+            title = { Text(stringResource(R.string.settings_chip_count)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     com.d4vram.pillmate2.ui.theme.ChipCountPeriod.entries.forEach { period ->
@@ -1067,7 +1068,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showChipPeriodDialog = false }) {
-                    Text("Cerrar")
+                    Text(stringResource(R.string.action_close))
                 }
             }
         )
@@ -1076,7 +1077,7 @@ fun SettingsScreen(
     if (showSortModeDialog) {
         AlertDialog(
             onDismissRequest = { showSortModeDialog = false },
-            title = { Text("Ordenar medicamentos por") },
+            title = { Text(stringResource(R.string.settings_sort_by)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     SortMode.entries.forEach { mode ->
@@ -1118,7 +1119,7 @@ fun SettingsScreen(
             },
             confirmButton = {
                 TextButton(onClick = { showSortModeDialog = false }) {
-                    Text("Cerrar")
+                    Text(stringResource(R.string.action_close))
                 }
             }
         )
@@ -1137,13 +1138,13 @@ fun SettingsScreen(
                     if (pendingEnableLock) {
                         securityManager.setLockEnabled(true)
                         pendingEnableLock = false
-                        snackbarMessage = "Bloqueo activado"
+                        snackbarMessage = context.getString(R.string.settings_lock_enabled)
                     } else {
-                        snackbarMessage = "PIN guardado"
+                        snackbarMessage = context.getString(R.string.settings_pin_saved)
                     }
                     null
                 } catch (e: Exception) {
-                    e.message ?: "No se pudo guardar el PIN"
+                    e.message ?: context.getString(R.string.settings_pin_save_failed)
                 }
             }
         )
@@ -1156,14 +1157,14 @@ fun SettingsScreen(
                 try {
                     val valid = securityManager.verifyPin(currentPin)
                     if (!valid) {
-                        "PIN actual incorrecto"
+                        context.getString(R.string.settings_pin_wrong)
                     } else {
                         securityManager.setPin(newPin)
-                        snackbarMessage = "PIN actualizado"
+                        snackbarMessage = context.getString(R.string.settings_pin_updated)
                         null
                     }
                 } catch (e: Exception) {
-                    e.message ?: "Error al actualizar el PIN"
+                    e.message ?: context.getString(R.string.settings_pin_update_failed)
                 }
             }
         )
@@ -1175,7 +1176,7 @@ fun SettingsScreen(
             onDismiss = { showTimeoutPicker = false },
             onTimeoutSelected = { duration ->
                 securityManager.updateAutoLockDuration(duration)
-                snackbarMessage = "Tiempo de bloqueo actualizado"
+                snackbarMessage = context.getString(R.string.settings_timeout_updated)
                 showTimeoutPicker = false
             }
         )
@@ -1189,13 +1190,13 @@ fun SettingsScreen(
                     try {
                         val success = voiceNoteSecurityManager.changePassword(currentPassword, newPassword, newHint)
                         if (success) {
-                            snackbarMessage = "Contraseña de notas actualizada"
+                            snackbarMessage = context.getString(R.string.settings_voice_password_updated)
                             showVoiceNotePasswordDialog = false
                         } else {
-                            snackbarMessage = "Contraseña actual incorrecta"
+                            snackbarMessage = context.getString(R.string.settings_voice_password_wrong)
                         }
                     } catch (e: Exception) {
-                        snackbarMessage = e.localizedMessage ?: "Error al cambiar contraseña"
+                        snackbarMessage = e.localizedMessage ?: context.getString(R.string.settings_voice_password_change_failed)
                     }
                 }
             }
@@ -1222,10 +1223,10 @@ fun SettingsScreen(
                 scope.launch {
                     try {
                         voiceNoteSecurityManager.setPassword(newPassword, newHint)
-                        snackbarMessage = "✅ Contraseña de notas restablecida"
+                        snackbarMessage = context.getString(R.string.settings_voice_password_reset_done)
                         showVoiceNoteResetDialog = false
                     } catch (e: Exception) {
-                        snackbarMessage = e.localizedMessage ?: "Error al restablecer contraseña"
+                        snackbarMessage = e.localizedMessage ?: context.getString(R.string.settings_voice_password_reset_failed)
                     }
                 }
             }
@@ -1241,13 +1242,13 @@ fun SettingsScreen(
                         val file = exportHistoryWithAudio(context, repository, includeAudioNotes)
                         shareFile(context, file)
                         snackbarMessage = if (includeAudioNotes) {
-                            "Historial exportado con ${file.length() / 1024}KB de audios"
+                            context.getString(R.string.settings_history_exported, file.length() / 1024)
                         } else {
-                            "Historial exportado sin audios"
+                            context.getString(R.string.settings_history_exported_no_audio)
                         }
                         showHistoryExportDialog = false
                     } catch (e: Exception) {
-                        snackbarMessage = "Error al exportar: ${e.message}"
+                        snackbarMessage = context.getString(R.string.settings_error_export, e.message.orEmpty())
                     }
                 }
             }
@@ -1270,17 +1271,17 @@ fun SettingsScreen(
                         if (password != null) {
                             // Exportar con cifrado AES-256
                             BackupZipManager.createEncryptedBackupZip(context, medications, history, file, password)
-                            snackbarMessage = "✅ Backup cifrado exportado: ${file.name}"
+                            snackbarMessage = context.getString(R.string.settings_backup_encrypted_exported, file.name)
                         } else {
                             // Exportar sin cifrar
                             BackupZipManager.createBackupZip(context, medications, history, file)
-                            snackbarMessage = "✅ Backup exportado: ${file.name}"
+                            snackbarMessage = context.getString(R.string.settings_backup_exported, file.name)
                         }
 
                         shareFile(context, file)
                         showBackupExportDialog = false
                     } catch (e: Exception) {
-                        snackbarMessage = "❌ Error al exportar backup: ${e.message}"
+                        snackbarMessage = context.getString(R.string.settings_backup_export_failed, e.message.orEmpty())
                     }
                 }
             }
@@ -1299,8 +1300,8 @@ fun SettingsScreen(
                     try {
                         pendingEncryptedBackupFile?.let { tempFile ->
                             pendingRestore = PendingRestore(
-                                title = "Restaurar backup cifrado",
-                                description = "Se reemplazarán tus datos actuales por el contenido del backup cifrado seleccionado. Antes se creará una copia local de seguridad.",
+                                title = context.getString(R.string.settings_restore_encrypted_title),
+                                description = context.getString(R.string.settings_restore_encrypted_desc),
                                 zipFile = tempFile,
                                 password = password
                             )
@@ -1308,7 +1309,7 @@ fun SettingsScreen(
                         }
                         showBackupPasswordDialog = false
                     } catch (e: Exception) {
-                        snackbarMessage = "❌ Error: ${e.message ?: "Contraseña incorrecta"}"
+                        snackbarMessage = context.getString(R.string.settings_error_with_message, e.message ?: context.getString(R.string.vn_err_wrong_password))
                         pendingEncryptedBackupFile?.delete()
                         pendingEncryptedBackupFile = null
                         showBackupPasswordDialog = false
@@ -1335,9 +1336,9 @@ fun SettingsScreen(
                         val medications = parsed?.medications ?: restore.medications
                         val history = parsed?.history ?: restore.history
                         repository.replaceAllData(medications, history)
-                        snackbarMessage = "✅ Datos restaurados correctamente"
+                        snackbarMessage = context.getString(R.string.settings_data_restored)
                     } catch (e: Exception) {
-                        snackbarMessage = "❌ Restauración cancelada: ${e.message}"
+                        snackbarMessage = context.getString(R.string.settings_restore_cancelled, e.message.orEmpty())
                     } finally {
                         restore.zipFile?.delete()
                         pendingRestore = null
@@ -1350,8 +1351,8 @@ fun SettingsScreen(
     if (showClearAllDialog) {
         AlertDialog(
             onDismissRequest = { showClearAllDialog = false },
-            title = { Text("Eliminar todos los datos") },
-            text = { Text("Antes de borrar se creará una copia local de seguridad. Esta acción eliminará medicamentos e historial de la app.") },
+            title = { Text(stringResource(R.string.settings_clear_all_title)) },
+            text = { Text(stringResource(R.string.settings_clear_all_body)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -1359,9 +1360,9 @@ fun SettingsScreen(
                             try {
                                 backupManager.createManualBackup()
                                 repository.clearAllData()
-                                snackbarMessage = "✅ Datos eliminados"
+                                snackbarMessage = context.getString(R.string.settings_data_deleted)
                             } catch (e: Exception) {
-                                snackbarMessage = "❌ No se eliminaron datos: ${e.message}"
+                                snackbarMessage = context.getString(R.string.settings_clear_failed, e.message.orEmpty())
                             } finally {
                                 showClearAllDialog = false
                             }
@@ -1369,12 +1370,12 @@ fun SettingsScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Eliminar")
+                    Text(stringResource(R.string.action_delete))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showClearAllDialog = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -1389,7 +1390,7 @@ fun SettingsScreen(
                     backupManager.setAutoBackupIntervalHours(hours)
                     BackupScheduler.refresh(context.applicationContext)
                     showAutoBackupIntervalDialog = false
-                    snackbarMessage = "✅ Frecuencia actualizada"
+                    snackbarMessage = context.getString(R.string.settings_frequency_updated)
                 }
             }
         )
@@ -1397,11 +1398,11 @@ fun SettingsScreen(
 	}
 
 private val lockTimeoutOptions = listOf(
-    0L to "Inmediato",
-    30_000L to "30 segundos",
-    60_000L to "1 minuto",
-    300_000L to "5 minutos",
-    600_000L to "10 minutos"
+    0L to R.string.lock_timeout_immediate,
+    30_000L to R.string.lock_timeout_30s,
+    60_000L to R.string.lock_timeout_1m,
+    300_000L to R.string.lock_timeout_5m,
+    600_000L to R.string.lock_timeout_10m
 )
 
 private data class PendingRestore(
@@ -1413,18 +1414,15 @@ private data class PendingRestore(
     val password: String? = null
 )
 
-private fun formatInterval(hours: Int): String = when {
-    hours < 24 -> "$hours h"
-    hours % 24 == 0 -> {
-        val days = hours / 24
-        if (days == 1) "1 día" else "$days días"
-    }
-    else -> "$hours h"
-}
+@Composable
+private fun formatInterval(hours: Int): String =
+    if (hours >= 24 && hours % 24 == 0) pluralStringResource(R.plurals.interval_days, hours / 24, hours / 24)
+    else stringResource(R.string.interval_hours, hours)
 
+@Composable
 private fun lockTimeoutLabel(durationMs: Long): String {
-    return lockTimeoutOptions.firstOrNull { it.first == durationMs }?.second
-        ?: "Personalizado (${durationMs / 1000}s)"
+    val option = lockTimeoutOptions.firstOrNull { it.first == durationMs }
+    return if (option != null) stringResource(option.second) else stringResource(R.string.lock_timeout_custom, durationMs / 1000)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1499,7 +1497,7 @@ private fun PinSetupDialog(
         },
         dismissButton = {
             TextButton(enabled = !isSubmitting, onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -1588,7 +1586,7 @@ private fun PinChangeDialog(
         },
         dismissButton = {
             TextButton(enabled = !isSubmitting, onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -1629,14 +1627,14 @@ private fun LockTimeoutDialog(
                             }
                         )
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text(label)
+                        Text(stringResource(label))
                     }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cerrar")
+                Text(stringResource(R.string.action_close))
             }
         }
     )
@@ -1897,7 +1895,7 @@ private fun AboutDialog(onDismiss: () -> Unit) {
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Cerrar") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_close)) }
         }
     )
 }
@@ -2150,7 +2148,7 @@ private fun VoiceNotePasswordChangeDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Cambiar contraseña de notas") },
+        title = { Text(stringResource(R.string.settings_voice_password)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -2232,7 +2230,7 @@ private fun VoiceNotePasswordChangeDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -2294,7 +2292,7 @@ private fun PinVerificationDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -2388,7 +2386,7 @@ private fun VoiceNoteResetDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -2453,7 +2451,7 @@ private fun HistoryExportDialog(
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         }
@@ -2477,7 +2475,7 @@ private fun ConfirmRestoreDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -2490,11 +2488,11 @@ private fun AutoBackupIntervalDialog(
     onSelect: (Int) -> Unit
 ) {
     val options = listOf(
-        6 to "Cada 6 horas",
-        12 to "Cada 12 horas",
-        24 to "Cada día",
-        72 to "Cada 3 días",
-        168 to "Cada semana"
+        6 to R.string.autobackup_every_6h,
+        12 to R.string.autobackup_every_12h,
+        24 to R.string.autobackup_every_day,
+        72 to R.string.autobackup_every_3d,
+        168 to R.string.autobackup_every_week
     )
 
     AlertDialog(
@@ -2515,7 +2513,7 @@ private fun AutoBackupIntervalDialog(
                             onClick = { onSelect(hours) }
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(label)
+                        Text(stringResource(label))
                     }
                 }
             }
@@ -2523,7 +2521,7 @@ private fun AutoBackupIntervalDialog(
         confirmButton = {},
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -2602,7 +2600,7 @@ private fun BackupExportDialog(
                         onClick = onDismiss,
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Cancelar")
+                        Text(stringResource(R.string.action_cancel))
                     }
                 }
             }
@@ -2737,7 +2735,7 @@ private fun BackupPasswordInputDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )

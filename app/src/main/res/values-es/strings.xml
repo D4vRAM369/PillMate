@@ -471,4 +471,65 @@
     <string name="settings_export_backup_desc">Compartir backup completo con fotos (con/sin cifrado)</string>
     <string name="settings_view_backups">Ver carpeta de backups</string>
     <string name="settings_view_backups_desc">Abrir ubicación de copias de seguridad</string>
+
+    <!-- Ajustes: notas de voz, información -->
+    <string name="settings_voice_notes">🎙️ Notas de Voz</string>
+    <string name="settings_voice_password">Cambiar contraseña de notas</string>
+    <string name="settings_voice_password_desc">Modificar contraseña y pista de las notas de voz</string>
+    <string name="settings_voice_reset">Restablecer contraseña de notas</string>
+    <string name="settings_voice_reset_desc">Crear nueva contraseña (requiere PIN de la app)</string>
+    <string name="settings_info">ℹ️ Información</string>
+    <string name="settings_version">Versión</string>
+    <string name="settings_show_intro">Ver la introducción</string>
+    <string name="settings_show_intro_desc">Repasa cómo funciona PillMate</string>
+    <string name="settings_about">Acerca de</string>
+    <string name="settings_about_desc">Autor, código fuente y cómo apoyar el proyecto</string>
+
+    <!-- Ajustes: mensajes tras una acción -->
+    <string name="settings_lock_enabled">Bloqueo activado</string>
+    <string name="settings_lock_disabled">Bloqueo desactivado</string>
+    <string name="settings_pin_saved">PIN guardado</string>
+    <string name="settings_pin_save_failed">No se pudo guardar el PIN</string>
+    <string name="settings_pin_wrong">PIN actual incorrecto</string>
+    <string name="settings_pin_updated">PIN actualizado</string>
+    <string name="settings_pin_update_failed">Error al actualizar el PIN</string>
+    <string name="settings_timeout_updated">Tiempo de bloqueo actualizado</string>
+    <string name="settings_voice_password_updated">Contraseña de notas actualizada</string>
+    <string name="settings_voice_password_wrong">Contraseña actual incorrecta</string>
+    <string name="settings_voice_password_change_failed">Error al cambiar contraseña</string>
+    <string name="settings_voice_password_reset_done">✅ Contraseña de notas restablecida</string>
+    <string name="settings_voice_password_reset_failed">Error al restablecer contraseña</string>
+    <string name="settings_history_exported">Historial exportado con %1$dKB de audios</string>
+    <string name="settings_history_exported_no_audio">Historial exportado sin audios</string>
+    <string name="settings_error_export">Error al exportar: %1$s</string>
+    <string name="settings_backup_encrypted_exported">✅ Backup cifrado exportado: %1$s</string>
+    <string name="settings_backup_exported">✅ Backup exportado: %1$s</string>
+    <string name="settings_backup_export_failed">❌ Error al exportar backup: %1$s</string>
+    <string name="settings_restore_encrypted_title">Restaurar backup cifrado</string>
+    <string name="settings_restore_encrypted_desc">Se reemplazarán tus datos actuales por el contenido del backup cifrado seleccionado. Antes se creará una copia local de seguridad.</string>
+    <string name="settings_data_restored">✅ Datos restaurados correctamente</string>
+    <string name="settings_restore_cancelled">❌ Restauración cancelada: %1$s</string>
+    <string name="settings_clear_all_title">Eliminar todos los datos</string>
+    <string name="settings_clear_all_body">Antes de borrar se creará una copia local de seguridad. Esta acción eliminará medicamentos e historial de la app.</string>
+    <string name="settings_data_deleted">✅ Datos eliminados</string>
+    <string name="settings_clear_failed">❌ No se eliminaron datos: %1$s</string>
+    <string name="settings_frequency_updated">✅ Frecuencia actualizada</string>
+
+    <!-- Ajustes: tiempos e intervalos -->
+    <string name="lock_timeout_immediate">Inmediato</string>
+    <string name="lock_timeout_30s">30 segundos</string>
+    <string name="lock_timeout_1m">1 minuto</string>
+    <string name="lock_timeout_5m">5 minutos</string>
+    <string name="lock_timeout_10m">10 minutos</string>
+    <string name="lock_timeout_custom">Personalizado (%1$ds)</string>
+    <string name="interval_hours">%1$d h</string>
+    <plurals name="interval_days">
+        <item quantity="one">%1$d día</item>
+        <item quantity="other">%1$d días</item>
+    </plurals>
+    <string name="autobackup_every_6h">Cada 6 horas</string>
+    <string name="autobackup_every_12h">Cada 12 horas</string>
+    <string name="autobackup_every_day">Cada día</string>
+    <string name="autobackup_every_3d">Cada 3 días</string>
+    <string name="autobackup_every_week">Cada semana</string>
 </resources>
