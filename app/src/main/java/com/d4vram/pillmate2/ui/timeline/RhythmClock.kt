@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -18,12 +19,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
@@ -33,7 +36,9 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.model.HistoryEntry
+import kotlinx.coroutines.delay
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import kotlin.math.PI
 import kotlin.math.atan2
@@ -79,6 +84,14 @@ internal fun hourSlices(entries: List<HistoryEntry>): List<HourSlice> {
     }
 }
 
+/** Leyenda de la vista por horas: cada medicamento con su color, primero los más tomados. */
+internal fun clockLegend(entries: List<HistoryEntry>): List<SlicePart> =
+    entries.groupBy { it.medicationId }.values
+        .map { SlicePart(it.first().clockLabel(), it.first().color, it.size) }
+        .sortedByDescending { it.count }
+
+private const val LEGEND_MAX = 6
+
 /** Fracción del día (0 = 00:00 arriba, sentido horario) de un toque a (dx, dy) del centro. */
 internal fun dayFraction(dx: Float, dy: Float): Double {
     val turn = (atan2(dy.toDouble(), dx.toDouble()) + PI / 2) / (2 * PI)
@@ -111,6 +124,7 @@ private fun Density.dotCenter(dot: ClockDot, width: Float, height: Float): Offse
  * - Varios días: 24 barras radiales (una por hora) apiladas por medicamento.
  *
  * Con [interactive], tocar un punto o una barra muestra debajo qué se tomó.
+ * Con [showNow] (solo tiene sentido si [entries] es el día de hoy) una raya marca la hora actual.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -118,13 +132,21 @@ fun RhythmClock(
     entries: List<HistoryEntry>,
     modifier: Modifier = Modifier,
     diameter: Dp = 232.dp,
-    interactive: Boolean = true
+    interactive: Boolean = true,
+    showNow: Boolean = false
 ) {
     val byHour = remember(entries) { entries.map { it.timestamp.toLocalDate() }.distinct().size > 1 }
     val dots = remember(entries) { if (byHour) emptyList() else clockDots(entries) }
     val slices = remember(entries) { if (byHour) hourSlices(entries) else emptyList() }
     var selected by remember(entries) { mutableStateOf<Int?>(null) }
 
+    val now by produceState(LocalTime.now(), showNow) {
+        while (showNow) {
+            value = LocalTime.now()
+            delay(30_000)
+        }
+    }
+    val nowColor = MaterialTheme.colorScheme.primary
     val track = MaterialTheme.colorScheme.outlineVariant
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     val labelStyle = MaterialTheme.typography.labelSmall
@@ -153,7 +175,10 @@ fun RhythmClock(
             }
             Canvas(
                 Modifier.fillMaxSize().padding(diameter * 0.12f)
-                    .semantics { contentDescription = "Reloj de 24 horas. ${entries.size} registros. $summary" }
+                    .semantics {
+                        contentDescription = "Reloj de 24 horas. ${entries.size} registros. $summary" +
+                            if (showNow && !byHour) " Ahora: ${now.format(timeFormat)}." else ""
+                    }
                     .then(tapModifier)
             ) {
                 val radius = ringRadius(size.width, size.height)
@@ -178,6 +203,12 @@ fun RhythmClock(
                         val half = (if (hour % 6 == 0) 6.dp else 3.dp).toPx()
                         drawLine(track, pointAt(center, hour / 24.0, radius - half), pointAt(center, hour / 24.0, radius + half), 2.dp.toPx())
                     }
+                    if (showNow) {
+                        // "Ahora": una raya que cruza el aro, bajo los puntos. Marca la hora, no un objetivo.
+                        val fraction = (now.hour * 60 + now.minute) / 1440.0
+                        val half = 9.dp.toPx()
+                        drawLine(nowColor, pointAt(center, fraction, radius - half), pointAt(center, fraction, radius + half), 3.dp.toPx(), StrokeCap.Round)
+                    }
                     dots.forEachIndexed { index, dot ->
                         val position = dotCenter(dot, size.width, size.height)
                         val alpha = if (selected == null || selected == index) 1f else 0.3f
@@ -200,10 +231,27 @@ fun RhythmClock(
             val index = selected
             when {
                 entries.isEmpty() -> Text("Sin registros en este periodo.", style = MaterialTheme.typography.bodySmall, color = muted)
-                index == null -> Text(
-                    if (byHour) "Toca una barra para ver qué se tomó a esa hora." else "Toca un punto para ver la toma.",
-                    style = MaterialTheme.typography.bodySmall, color = muted
-                )
+                index == null -> {
+                    Text(
+                        if (byHour) "Toca una barra para ver qué se tomó a esa hora." else "Toca un punto para ver la toma.",
+                        style = MaterialTheme.typography.bodySmall, color = muted
+                    )
+                    if (byHour) {
+                        val legend = remember(entries) { clockLegend(entries) }
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            legend.take(LEGEND_MAX).forEach { part ->
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Box(Modifier.size(10.dp).background(part.color, CircleShape))
+                                    Text(part.label, style = labelStyle, color = muted)
+                                }
+                            }
+                            if (legend.size > LEGEND_MAX) Text("+${legend.size - LEGEND_MAX} más", style = labelStyle, color = muted)
+                        }
+                    }
+                }
                 byHour -> {
                     val slice = slices[index]
                     Text(

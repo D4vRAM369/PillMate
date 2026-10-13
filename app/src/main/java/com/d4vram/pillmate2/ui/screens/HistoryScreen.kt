@@ -246,7 +246,9 @@ fun HistoryScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
                         )
-                        RhythmClock(entriesByPeriod)
+                        // La marca de "ahora" solo cuando el reloj enseña el día de hoy
+                        val showsToday = (selectedDay ?: today.takeIf { selectedPeriod == TimePeriod.TODAY }) == today
+                        RhythmClock(entriesByPeriod, showNow = showsToday)
                         androidx.compose.material3.TextButton(onClick = { navController.navigate("global_stats") }) {
                             Text("Ver estadísticas")
                         }

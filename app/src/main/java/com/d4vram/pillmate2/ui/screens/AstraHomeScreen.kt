@@ -133,7 +133,7 @@ internal fun AstraHomeScreen(
                 val latest = history.maxByOrNull { it.timestamp }
                 Card(onClick = { navController.navigateToTab("history") }, modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth()) {
                     Row(Modifier.padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        RhythmClock(today, diameter = 132.dp, interactive = false)
+                        RhythmClock(today, diameter = 132.dp, interactive = false, showNow = true)
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text("Hoy · ${today.size} ${if (today.size == 1) "toma" else "tomas"}", style = MaterialTheme.typography.titleMedium)
                             if (latest == null) Text("Todavía no hay tomas registradas", style = MaterialTheme.typography.bodyMedium)

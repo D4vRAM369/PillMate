@@ -45,4 +45,11 @@ class DailyRhythmTest {
         assertEquals(18, hour(-100f, -1f)) // izquierda
         assertEquals(23, hour(-1f, -100f)) // justo a la izquierda de arriba
     }
+
+    @Test fun legendListsEachMedicationOnceMostTakenFirst() {
+        val legend = clockLegend(listOf(
+            entry("1", 0, 3, medication = "other"), entry("2", -1, 8), entry("3", -2, 21), entry("4", 0, 22)
+        ))
+        assertEquals(listOf(SlicePart("MED · 5mg", Color.Green, 3), SlicePart("OTHER · 5mg", Color.Green, 1)), legend)
+    }
 }
