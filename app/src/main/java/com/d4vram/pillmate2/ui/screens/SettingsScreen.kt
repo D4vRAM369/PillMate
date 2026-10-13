@@ -85,7 +85,8 @@ fun SettingsScreen(
     themeManager: ThemeManager,
     repository: MedicationRepository,
     securityManager: SecurityManager,
-    onNavigateToPdfExport: () -> Unit = {}
+    onNavigateToPdfExport: () -> Unit = {},
+    onShowOnboarding: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -938,6 +939,12 @@ fun SettingsScreen(
                         title = "Versión",
                         description = "PillMate v2.0.0",
                         icon = Icons.Default.Info
+                    )
+                    SettingsItem(
+                        title = "Ver la introducción",
+                        description = "Repasa cómo funciona PillMate",
+                        icon = Icons.Default.School,
+                        onClick = onShowOnboarding
                     )
                     SettingsItem(
                         title = "Acerca de",

@@ -77,10 +77,14 @@ fun PillMateNavigation(
 
     // 📸 Gestor de permisos para fotografías de medicamentos
     val permissionsManager = remember { PermissionsManager(context) }
-    val isMainOnboardingCompleted by onboardingManager.isMainOnboardingCompleted.collectAsState(initial = false)
+    // null = aún no se ha leído de disco. Sin ese tercer estado, la introducción
+    // parpadeaba en cada arranque hasta que DataStore contestaba.
+    val isMainOnboardingCompleted by onboardingManager.isMainOnboardingCompleted
+        .collectAsState(initial = null as Boolean?)
     val shouldShowPermissionsDialog by permissionsManager.shouldShowPermissionsDialog.collectAsState(initial = false)
 
-    if (!isMainOnboardingCompleted) {
+    if (isMainOnboardingCompleted == null) return
+    if (isMainOnboardingCompleted == false) {
         MainOnboardingScreen(
             onFinish = {
                 coroutineScope.launch {
@@ -212,6 +216,9 @@ fun PillMateNavigation(
                     securityManager = securityManager,
                     onNavigateToPdfExport = {
                         navController.navigate(Screen.PdfExport.route)
+                    },
+                    onShowOnboarding = {
+                        coroutineScope.launch { onboardingManager.resetMainOnboarding() }
                     }
                 )
             }

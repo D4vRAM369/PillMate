@@ -23,9 +23,14 @@ class OnboardingManager(private val context: Context) {
         prefs[MAIN_ONBOARDING_COMPLETED] ?: false
     }
 
-    suspend fun completeMainOnboarding() {
+    suspend fun completeMainOnboarding() = setCompleted(true)
+
+    /** Vuelve a mostrar la introducción (Ajustes → Información). */
+    suspend fun resetMainOnboarding() = setCompleted(false)
+
+    private suspend fun setCompleted(completed: Boolean) {
         context.onboardingDataStore.edit { prefs ->
-            prefs[MAIN_ONBOARDING_COMPLETED] = true
+            prefs[MAIN_ONBOARDING_COMPLETED] = completed
         }
     }
 }
