@@ -937,7 +937,7 @@ fun SettingsScreen(
                 SettingsSection(title = "ℹ️ Información") {
                     SettingsItem(
                         title = "Versión",
-                        description = "PillMate v2.0.0",
+                        description = "PillMate v" + context.packageManager.getPackageInfo(context.packageName, 0).versionName,
                         icon = Icons.Default.Info
                     )
                     SettingsItem(

@@ -41,7 +41,7 @@ Se apoya en tres ideas, y ninguna es negociable:
 2. **Registrar cuesta un toque.** Si apuntar es más lento que no apuntar, nadie apunta.
 3. **Describe, no juzga.** Cuenta lo que hay. No puntúa, no fija objetivos, no aconseja.
 
-> **Estado:** `2.0.0-alpha`. Se usa a diario, pero todavía cambia. Aún no está en Google Play ni hay APK publicado.
+> **Estado:** `2.0.0-beta.1`. Funciona y se usa a diario, pero solo se ha probado en unos pocos dispositivos: si algo falla, abre un *issue*. Aún no está en Google Play ni hay APK publicado.
 
 ## Qué hace
 
