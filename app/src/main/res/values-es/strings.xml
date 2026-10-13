@@ -532,4 +532,73 @@
     <string name="autobackup_every_day">Cada día</string>
     <string name="autobackup_every_3d">Cada 3 días</string>
     <string name="autobackup_every_week">Cada semana</string>
+
+    <!-- Ajustes: diálogos de PIN -->
+    <string name="action_change">Cambiar</string>
+    <string name="action_verify">Verificar</string>
+    <string name="action_reset">Restablecer</string>
+    <string name="action_decrypt">Descifrar</string>
+    <string name="settings_pin_setup_label">PIN (4-8 dígitos)</string>
+    <string name="settings_pin_confirm">Confirmar PIN</string>
+    <string name="settings_pin_err_short">El PIN debe tener al menos 4 dígitos</string>
+    <string name="settings_pin_err_mismatch">Los PIN no coinciden</string>
+    <string name="settings_pin_current">PIN actual</string>
+    <string name="settings_pin_new">Nuevo PIN</string>
+    <string name="settings_pin_new_confirm">Confirmar nuevo PIN</string>
+    <string name="settings_pin_err_new_short">El nuevo PIN debe tener al menos 4 dígitos</string>
+    <string name="settings_pin_err_new_mismatch">Los nuevos PIN no coinciden</string>
+    <string name="settings_pin_err_new_same">El nuevo PIN debe ser diferente</string>
+    <string name="settings_pin_verify_title">Verificar PIN</string>
+    <string name="settings_pin_verify_body">Ingresa el PIN de la app para continuar</string>
+    <string name="settings_pin_err_wrong">PIN incorrecto</string>
+
+    <!-- Ajustes: tarjeta del widget y diálogo Acerca de -->
+    <string name="settings_widget_title">Widget de toma rápida</string>
+    <string name="settings_widget_color">Color</string>
+    <string name="settings_widget_size">Tamaño</string>
+    <string name="settings_widget_shape">Forma</string>
+    <string name="settings_about_title">Acerca de PillMate</string>
+    <string name="settings_about_author">Creada por D4vRAM</string>
+    <string name="settings_about_license">Software libre (licencia GPL v3 o posterior). Sin anuncios, sin cuentas y sin internet.</string>
+
+    <!-- Ajustes: compartir archivos y carpeta de backups -->
+    <string name="settings_file_unavailable">Archivo no disponible</string>
+    <string name="settings_share_csv">Compartir CSV</string>
+    <string name="settings_share_pdf">Compartir PDF</string>
+    <string name="settings_share_backup">Compartir backup</string>
+    <string name="settings_share_file">Compartir archivo</string>
+    <string name="settings_folder_uri_invalid">❌ URI guardado inválido. Reconfigura la carpeta de auto-backup.</string>
+    <string name="settings_folder_uri_empty">❌ URI vacío. Reconfigura la carpeta de auto-backup.</string>
+    <string name="settings_folder_open_failed">❌ No se pudo abrir la carpeta. Intenta reconfigurarla.</string>
+
+    <!-- Ajustes: diálogos de contraseña de notas de voz -->
+    <string name="settings_vp_current">Contraseña actual</string>
+    <string name="settings_vp_new">Nueva contraseña</string>
+    <string name="settings_vp_new_confirm">Confirmar nueva contraseña</string>
+    <string name="settings_vp_new_hint">Nueva pista (opcional)</string>
+    <string name="settings_vp_reset_title">Restablecer Contraseña de Notas</string>
+    <string name="settings_vp_reset_warning">⚠️ Esto creará una nueva contraseña. Las notas antiguas NO se podrán recuperar.</string>
+    <string name="action_hide">Ocultar</string>
+    <string name="action_show">Mostrar</string>
+
+    <!-- Ajustes: diálogos de exportar y restaurar -->
+    <string name="settings_he_title">📦 Exportar historial</string>
+    <string name="settings_he_choose">Elige cómo exportar tu historial de medicamentos:</string>
+    <string name="settings_he_audio_note">Las notas de voz siempre se exportan encriptadas con AES-256</string>
+    <string name="settings_he_with_audio">Con notas de voz</string>
+    <string name="settings_he_text_only">Solo texto (CSV)</string>
+    <string name="settings_replace_data">Reemplazar datos</string>
+    <string name="settings_be_title">📦 Exportar Backup Completo</string>
+    <string name="settings_be_choose">Elige cómo exportar tu backup completo (medicamentos, historial, fotos y audios):</string>
+    <string name="settings_be_encryption">🔒 Cifrado AES-256</string>
+    <string name="settings_be_encryption_body">El cifrado protege tus datos con AES-256. Recomendado si vas a guardar o compartir el backup fuera de tu teléfono.</string>
+    <string name="settings_be_with_encryption">Con cifrado AES-256</string>
+    <string name="settings_be_without_encryption">Sin cifrar</string>
+    <string name="settings_bp_title">🔐 Contraseña para el backup</string>
+    <string name="settings_bp_body">Introduce una contraseña segura para cifrar el backup:</string>
+    <string name="settings_bp_label">Contraseña (mín. 12 caracteres)</string>
+    <string name="settings_bp_too_short">La contraseña debe tener al menos 12 caracteres</string>
+    <string name="settings_bp_export">Exportar cifrado</string>
+    <string name="settings_bi_title">🔐 Backup cifrado</string>
+    <string name="settings_bi_body">Este backup está protegido con cifrado AES-256. Introduce la contraseña para descifrarlo:</string>
 </resources>

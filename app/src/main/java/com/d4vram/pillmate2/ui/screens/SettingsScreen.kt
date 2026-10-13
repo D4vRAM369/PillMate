@@ -1435,6 +1435,7 @@ private fun PinSetupDialog(
     var pin by remember { mutableStateOf("") }
     var confirmPin by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
     var isSubmitting by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -1445,7 +1446,7 @@ private fun PinSetupDialog(
                 OutlinedTextField(
                     value = pin,
                     onValueChange = { if (it.length <= 8) pin = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("PIN (4-8 dígitos)") },
+                    label = { Text(stringResource(R.string.settings_pin_setup_label)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     visualTransformation = PasswordVisualTransformation()
@@ -1453,7 +1454,7 @@ private fun PinSetupDialog(
                 OutlinedTextField(
                     value = confirmPin,
                     onValueChange = { if (it.length <= 8) confirmPin = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Confirmar PIN") },
+                    label = { Text(stringResource(R.string.settings_pin_confirm)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     visualTransformation = PasswordVisualTransformation()
@@ -1472,8 +1473,8 @@ private fun PinSetupDialog(
                 enabled = !isSubmitting,
                 onClick = {
                     when {
-                        pin.length < 4 -> errorMessage = "El PIN debe tener al menos 4 dígitos"
-                        pin != confirmPin -> errorMessage = "Los PIN no coinciden"
+                        pin.length < 4 -> errorMessage = context.getString(R.string.settings_pin_err_short)
+                        pin != confirmPin -> errorMessage = context.getString(R.string.settings_pin_err_mismatch)
                         else -> {
                             errorMessage = null
                             isSubmitting = true
@@ -1492,7 +1493,7 @@ private fun PinSetupDialog(
                     }
                 }
             ) {
-                Text("Guardar")
+                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
@@ -1514,6 +1515,7 @@ private fun PinChangeDialog(
     var newPin by remember { mutableStateOf("") }
     var confirmNewPin by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
     var isSubmitting by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -1524,7 +1526,7 @@ private fun PinChangeDialog(
                 OutlinedTextField(
                     value = currentPin,
                     onValueChange = { if (it.length <= 8) currentPin = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("PIN actual") },
+                    label = { Text(stringResource(R.string.settings_pin_current)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     visualTransformation = PasswordVisualTransformation()
@@ -1532,7 +1534,7 @@ private fun PinChangeDialog(
                 OutlinedTextField(
                     value = newPin,
                     onValueChange = { if (it.length <= 8) newPin = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Nuevo PIN") },
+                    label = { Text(stringResource(R.string.settings_pin_new)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     visualTransformation = PasswordVisualTransformation()
@@ -1540,7 +1542,7 @@ private fun PinChangeDialog(
                 OutlinedTextField(
                     value = confirmNewPin,
                     onValueChange = { if (it.length <= 8) confirmNewPin = it.filter { ch -> ch.isDigit() } },
-                    label = { Text("Confirmar nuevo PIN") },
+                    label = { Text(stringResource(R.string.settings_pin_new_confirm)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
                     visualTransformation = PasswordVisualTransformation()
@@ -1559,9 +1561,9 @@ private fun PinChangeDialog(
                 enabled = !isSubmitting,
                 onClick = {
                     when {
-                        newPin.length < 4 -> errorMessage = "El nuevo PIN debe tener al menos 4 dígitos"
-                        newPin != confirmNewPin -> errorMessage = "Los nuevos PIN no coinciden"
-                        newPin == currentPin -> errorMessage = "El nuevo PIN debe ser diferente"
+                        newPin.length < 4 -> errorMessage = context.getString(R.string.settings_pin_err_new_short)
+                        newPin != confirmNewPin -> errorMessage = context.getString(R.string.settings_pin_err_new_mismatch)
+                        newPin == currentPin -> errorMessage = context.getString(R.string.settings_pin_err_new_same)
                         else -> {
                             errorMessage = null
                             isSubmitting = true
@@ -1581,7 +1583,7 @@ private fun PinChangeDialog(
                     }
                 }
             ) {
-                Text("Actualizar")
+                Text(stringResource(R.string.action_update))
             }
         },
         dismissButton = {
@@ -1665,7 +1667,7 @@ private fun WidgetPreview(
         ) {
             if (size.showHeader) {
                 Text(
-                    text = "Toma rápida",
+                    text = stringResource(R.string.quick_take_title),
                     fontSize = size.textSp.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(color.accentArgb),
@@ -1784,7 +1786,7 @@ private fun WidgetCustomizationCard(
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
-                text = "Widget de toma rápida",
+                text = stringResource(R.string.settings_widget_title),
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                 color = MaterialTheme.colorScheme.onSurface
             )
@@ -1794,7 +1796,7 @@ private fun WidgetCustomizationCard(
 
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = "Color",
+                text = stringResource(R.string.settings_widget_color),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1817,7 +1819,7 @@ private fun WidgetCustomizationCard(
 
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = "Tamaño",
+                text = stringResource(R.string.settings_widget_size),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1834,7 +1836,7 @@ private fun WidgetCustomizationCard(
 
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text(
-                text = "Forma",
+                text = stringResource(R.string.settings_widget_shape),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1867,16 +1869,16 @@ private fun AboutDialog(onDismiss: () -> Unit) {
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Acerca de PillMate") },
+        title = { Text(stringResource(R.string.settings_about_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Creada por D4vRAM",
+                    text = stringResource(R.string.settings_about_author),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "Software libre (licencia GPL v3 o posterior). Sin anuncios, sin cuentas y sin internet.",
+                    text = stringResource(R.string.settings_about_license),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2009,7 +2011,7 @@ private suspend fun createExportFile(
 private suspend fun readTextFromUri(context: Context, uri: Uri): String = withContext(Dispatchers.IO) {
     context.contentResolver.openInputStream(uri)?.use { input ->
         input.bufferedReader().use { it.readText() }
-    } ?: throw IllegalArgumentException("Archivo no disponible")
+    } ?: throw IllegalArgumentException(context.getString(R.string.settings_file_unavailable))
 }
 
 private fun getFileNameFromUri(context: Context, uri: Uri): String? {
@@ -2032,10 +2034,10 @@ private fun shareFile(context: Context, file: File) {
         else -> "application/octet-stream"
     }
     val label = when (file.extension.lowercase()) {
-        "csv" -> "Compartir CSV"
-        "pdf" -> "Compartir PDF"
-        "zip" -> "Compartir backup"
-        else -> "Compartir archivo"
+        "csv" -> context.getString(R.string.settings_share_csv)
+        "pdf" -> context.getString(R.string.settings_share_pdf)
+        "zip" -> context.getString(R.string.settings_share_backup)
+        else -> context.getString(R.string.settings_share_file)
     }
     val shareIntent = Intent(Intent.ACTION_SEND).apply {
         type = mimeType
@@ -2064,7 +2066,7 @@ private fun openBackupsFolder(
                 withContext(Dispatchers.Main) {
                     android.widget.Toast.makeText(
                         context,
-                        "⚠️ Configura primero una carpeta de auto-backup",
+                        context.getString(R.string.settings_choose_folder_first),
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }
@@ -2078,7 +2080,7 @@ private fun openBackupsFolder(
                 withContext(Dispatchers.Main) {
                     android.widget.Toast.makeText(
                         context,
-                        "❌ URI guardado inválido. Reconfigura la carpeta de auto-backup.",
+                        context.getString(R.string.settings_folder_uri_invalid),
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }
@@ -2090,7 +2092,7 @@ private fun openBackupsFolder(
                 withContext(Dispatchers.Main) {
                     android.widget.Toast.makeText(
                         context,
-                        "❌ URI vacío. Reconfigura la carpeta de auto-backup.",
+                        context.getString(R.string.settings_folder_uri_empty),
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }
@@ -2111,7 +2113,7 @@ private fun openBackupsFolder(
                 } catch (e: Exception) {
                     android.widget.Toast.makeText(
                         context,
-                        "❌ No se pudo abrir la carpeta. Intenta reconfigurarla.",
+                        context.getString(R.string.settings_folder_open_failed),
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }
@@ -2120,7 +2122,7 @@ private fun openBackupsFolder(
             withContext(Dispatchers.Main) {
                 android.widget.Toast.makeText(
                     context,
-                    "❌ Error: ${e.message}",
+                    context.getString(R.string.settings_error_with_message, e.message.orEmpty()),
                     android.widget.Toast.LENGTH_SHORT
                 ).show()
             }
@@ -2154,7 +2156,7 @@ private fun VoiceNotePasswordChangeDialog(
                 OutlinedTextField(
                     value = currentPassword,
                     onValueChange = { currentPassword = it },
-                    label = { Text("Contraseña actual") },
+                    label = { Text(stringResource(R.string.settings_vp_current)) },
                     singleLine = true,
                     visualTransformation = if (currentPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -2171,7 +2173,7 @@ private fun VoiceNotePasswordChangeDialog(
                 OutlinedTextField(
                     value = newPassword,
                     onValueChange = { newPassword = it },
-                    label = { Text("Nueva contraseña") },
+                    label = { Text(stringResource(R.string.settings_vp_new)) },
                     singleLine = true,
                     visualTransformation = if (newPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -2188,7 +2190,7 @@ private fun VoiceNotePasswordChangeDialog(
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
-                    label = { Text("Confirmar nueva contraseña") },
+                    label = { Text(stringResource(R.string.settings_vp_new_confirm)) },
                     singleLine = true,
                     visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -2206,14 +2208,14 @@ private fun VoiceNotePasswordChangeDialog(
                 OutlinedTextField(
                     value = hint,
                     onValueChange = { hint = it },
-                    label = { Text("Nueva pista (opcional)") },
+                    label = { Text(stringResource(R.string.settings_vp_new_hint)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
                 
                 if (confirmPassword.isNotBlank() && newPassword != confirmPassword) {
                     Text(
-                        text = "Las contraseñas no coinciden",
+                        text = stringResource(R.string.vn_err_password_mismatch),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -2225,7 +2227,7 @@ private fun VoiceNotePasswordChangeDialog(
                 onClick = { onConfirm(currentPassword, newPassword, hint.ifBlank { null }) },
                 enabled = isValid
             ) {
-                Text("Cambiar")
+                Text(stringResource(R.string.action_change))
             }
         },
         dismissButton = {
@@ -2244,13 +2246,14 @@ private fun PinVerificationDialog(
 ) {
     var pin by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Verificar PIN") },
+        title = { Text(stringResource(R.string.settings_pin_verify_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Ingresa el PIN de la app para continuar")
+                Text(stringResource(R.string.settings_pin_verify_body))
                 
                 OutlinedTextField(
                     value = pin,
@@ -2282,12 +2285,12 @@ private fun PinVerificationDialog(
                         if (securityManager.verifyPin(pin)) {
                             onPinVerified()
                         } else {
-                            errorMessage = "PIN incorrecto"
+                            errorMessage = context.getString(R.string.settings_pin_err_wrong)
                         }
                     }
                 }
             ) {
-                Text("Verificar")
+                Text(stringResource(R.string.action_verify))
             }
         },
         dismissButton = {
@@ -2308,14 +2311,15 @@ private fun VoiceNoteResetDialog(
     var newHint by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Restablecer Contraseña de Notas") },
+        title = { Text(stringResource(R.string.settings_vp_reset_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "⚠️ Esto creará una nueva contraseña. Las notas antiguas NO se podrán recuperar.",
+                    text = stringResource(R.string.settings_vp_reset_warning),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
@@ -2326,13 +2330,13 @@ private fun VoiceNoteResetDialog(
                         newPassword = it
                         errorMessage = null
                     },
-                    label = { Text("Nueva contraseña") },
+                    label = { Text(stringResource(R.string.settings_vp_new)) },
                     visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
                         IconButton(onClick = { showPassword = !showPassword }) {
                             Icon(
                                 imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                contentDescription = if (showPassword) "Ocultar" else "Mostrar"
+                                contentDescription = stringResource(if (showPassword) R.string.action_hide else R.string.action_show)
                             )
                         }
                     },
@@ -2347,7 +2351,7 @@ private fun VoiceNoteResetDialog(
                         confirmPassword = it
                         errorMessage = null
                     },
-                    label = { Text("Confirmar contraseña") },
+                    label = { Text(stringResource(R.string.vn_password_confirm)) },
                     visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
                     singleLine = true,
                     isError = errorMessage != null,
@@ -2357,7 +2361,7 @@ private fun VoiceNoteResetDialog(
                 OutlinedTextField(
                     value = newHint,
                     onValueChange = { newHint = it },
-                    label = { Text("Pista (opcional)") },
+                    label = { Text(stringResource(R.string.vn_hint_optional)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -2375,13 +2379,13 @@ private fun VoiceNoteResetDialog(
             TextButton(
                 onClick = {
                     when {
-                        newPassword.isBlank() -> errorMessage = "La contraseña no puede estar vacía"
-                        newPassword != confirmPassword -> errorMessage = "Las contraseñas no coinciden"
+                        newPassword.isBlank() -> errorMessage = context.getString(R.string.vn_err_password_empty)
+                        newPassword != confirmPassword -> errorMessage = context.getString(R.string.vn_err_password_mismatch)
                         else -> onConfirm(newPassword, newHint)
                     }
                 }
             ) {
-                Text("Restablecer")
+                Text(stringResource(R.string.action_reset))
             }
         },
         dismissButton = {
@@ -2399,11 +2403,11 @@ private fun HistoryExportDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("📦 Exportar historial") },
+        title = { Text(stringResource(R.string.settings_he_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Elige cómo exportar tu historial de medicamentos:",
+                    text = stringResource(R.string.settings_he_choose),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
@@ -2415,13 +2419,13 @@ private fun HistoryExportDialog(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = "🔒 Seguridad",
+                            text = stringResource(R.string.settings_security),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Las notas de voz siempre se exportan encriptadas con AES-256",
+                            text = stringResource(R.string.settings_he_audio_note),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -2437,7 +2441,7 @@ private fun HistoryExportDialog(
                 ) {
                     Icon(imageVector = Icons.Default.Mic, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Con notas de voz")
+                    Text(stringResource(R.string.settings_he_with_audio))
                 }
                 OutlinedButton(
                     onClick = { onExport(false) },
@@ -2445,7 +2449,7 @@ private fun HistoryExportDialog(
                 ) {
                     Icon(imageVector = Icons.Default.FileDownload, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Solo texto (CSV)")
+                    Text(stringResource(R.string.settings_he_text_only))
                 }
                 TextButton(
                     onClick = onDismiss,
@@ -2470,7 +2474,7 @@ private fun ConfirmRestoreDialog(
         text = { Text(restore.description) },
         confirmButton = {
             Button(onClick = onConfirm) {
-                Text("Reemplazar datos")
+                Text(stringResource(R.string.settings_replace_data))
             }
         },
         dismissButton = {
@@ -2545,11 +2549,11 @@ private fun BackupExportDialog(
         // Primer paso: elegir si cifrar o no
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("📦 Exportar Backup Completo") },
+            title = { Text(stringResource(R.string.settings_be_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "Elige cómo exportar tu backup completo (medicamentos, historial, fotos y audios):",
+                        text = stringResource(R.string.settings_be_choose),
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -2561,13 +2565,13 @@ private fun BackupExportDialog(
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "🔒 Cifrado AES-256",
+                                text = stringResource(R.string.settings_be_encryption),
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "El cifrado protege tus datos con AES-256. Recomendado si vas a guardar o compartir el backup fuera de tu teléfono.",
+                                text = stringResource(R.string.settings_be_encryption_body),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -2583,7 +2587,7 @@ private fun BackupExportDialog(
                     ) {
                         Icon(imageVector = Icons.Default.Lock, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Con cifrado AES-256")
+                        Text(stringResource(R.string.settings_be_with_encryption))
                     }
                     OutlinedButton(
                         onClick = {
@@ -2594,7 +2598,7 @@ private fun BackupExportDialog(
                     ) {
                         Icon(imageVector = Icons.Default.FileDownload, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Sin cifrar")
+                        Text(stringResource(R.string.settings_be_without_encryption))
                     }
                     TextButton(
                         onClick = onDismiss,
@@ -2609,18 +2613,18 @@ private fun BackupExportDialog(
         // Segundo paso: ingresar contraseña
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("🔐 Contraseña para el backup") },
+            title = { Text(stringResource(R.string.settings_bp_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "Introduce una contraseña segura para cifrar el backup:",
+                        text = stringResource(R.string.settings_bp_body),
                         style = MaterialTheme.typography.bodyMedium
                     )
 
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Contraseña (mín. 12 caracteres)") },
+                        label = { Text(stringResource(R.string.settings_bp_label)) },
                         singleLine = true,
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
@@ -2637,7 +2641,7 @@ private fun BackupExportDialog(
                     OutlinedTextField(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it },
-                        label = { Text("Confirmar contraseña") },
+                        label = { Text(stringResource(R.string.vn_password_confirm)) },
                         singleLine = true,
                         visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
@@ -2654,7 +2658,7 @@ private fun BackupExportDialog(
 
                     if (confirmPassword.isNotBlank() && password != confirmPassword) {
                         Text(
-                            text = "Las contraseñas no coinciden",
+                            text = stringResource(R.string.vn_err_password_mismatch),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -2662,7 +2666,7 @@ private fun BackupExportDialog(
 
                     if (password.isNotBlank() && password.length < 12) {
                         Text(
-                            text = "La contraseña debe tener al menos 12 caracteres",
+                            text = stringResource(R.string.settings_bp_too_short),
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -2677,12 +2681,12 @@ private fun BackupExportDialog(
                     },
                     enabled = isValid
                 ) {
-                    Text("Exportar cifrado")
+                    Text(stringResource(R.string.settings_bp_export))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showPasswordInput = false }) {
-                    Text("Atrás")
+                    Text(stringResource(R.string.action_back))
                 }
             }
         )
@@ -2699,18 +2703,18 @@ private fun BackupPasswordInputDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("🔐 Backup cifrado") },
+        title = { Text(stringResource(R.string.settings_bi_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Este backup está protegido con cifrado AES-256. Introduce la contraseña para descifrarlo:",
+                    text = stringResource(R.string.settings_bi_body),
                     style = MaterialTheme.typography.bodyMedium
                 )
 
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
-                    label = { Text("Contraseña") },
+                    label = { Text(stringResource(R.string.vn_password)) },
                     singleLine = true,
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     trailingIcon = {
@@ -2730,7 +2734,7 @@ private fun BackupPasswordInputDialog(
                 onClick = { onConfirm(password) },
                 enabled = password.isNotBlank()
             ) {
-                Text("Descifrar")
+                Text(stringResource(R.string.action_decrypt))
             }
         },
         dismissButton = {

@@ -534,4 +534,73 @@
     <string name="autobackup_every_day">Every day</string>
     <string name="autobackup_every_3d">Every 3 days</string>
     <string name="autobackup_every_week">Every week</string>
+
+    <!-- Settings: PIN dialogs -->
+    <string name="action_change">Change</string>
+    <string name="action_verify">Verify</string>
+    <string name="action_reset">Reset</string>
+    <string name="action_decrypt">Decrypt</string>
+    <string name="settings_pin_setup_label">PIN (4-8 digits)</string>
+    <string name="settings_pin_confirm">Confirm PIN</string>
+    <string name="settings_pin_err_short">The PIN must be at least 4 digits</string>
+    <string name="settings_pin_err_mismatch">PINs don\'t match</string>
+    <string name="settings_pin_current">Current PIN</string>
+    <string name="settings_pin_new">New PIN</string>
+    <string name="settings_pin_new_confirm">Confirm new PIN</string>
+    <string name="settings_pin_err_new_short">The new PIN must be at least 4 digits</string>
+    <string name="settings_pin_err_new_mismatch">New PINs don\'t match</string>
+    <string name="settings_pin_err_new_same">The new PIN must be different</string>
+    <string name="settings_pin_verify_title">Verify PIN</string>
+    <string name="settings_pin_verify_body">Enter the app PIN to continue</string>
+    <string name="settings_pin_err_wrong">Wrong PIN</string>
+
+    <!-- Settings: widget card and About dialog -->
+    <string name="settings_widget_title">Quick-take widget</string>
+    <string name="settings_widget_color">Colour</string>
+    <string name="settings_widget_size">Size</string>
+    <string name="settings_widget_shape">Shape</string>
+    <string name="settings_about_title">About PillMate</string>
+    <string name="settings_about_author">Created by D4vRAM</string>
+    <string name="settings_about_license">Free software (GPL v3 or later). No ads, no accounts and no internet.</string>
+
+    <!-- Settings: file sharing and backup folder -->
+    <string name="settings_file_unavailable">File not available</string>
+    <string name="settings_share_csv">Share CSV</string>
+    <string name="settings_share_pdf">Share PDF</string>
+    <string name="settings_share_backup">Share backup</string>
+    <string name="settings_share_file">Share file</string>
+    <string name="settings_folder_uri_invalid">❌ Invalid saved URI. Set the auto-backup folder again.</string>
+    <string name="settings_folder_uri_empty">❌ Empty URI. Set the auto-backup folder again.</string>
+    <string name="settings_folder_open_failed">❌ Couldn\'t open the folder. Try setting it up again.</string>
+
+    <!-- Settings: voice notes password dialogs -->
+    <string name="settings_vp_current">Current password</string>
+    <string name="settings_vp_new">New password</string>
+    <string name="settings_vp_new_confirm">Confirm new password</string>
+    <string name="settings_vp_new_hint">New hint (optional)</string>
+    <string name="settings_vp_reset_title">Reset notes password</string>
+    <string name="settings_vp_reset_warning">⚠️ This creates a new password. Old notes can NOT be recovered.</string>
+    <string name="action_hide">Hide</string>
+    <string name="action_show">Show</string>
+
+    <!-- Settings: export and restore dialogs -->
+    <string name="settings_he_title">📦 Export history</string>
+    <string name="settings_he_choose">Choose how to export your medication history:</string>
+    <string name="settings_he_audio_note">Voice notes are always exported encrypted with AES-256</string>
+    <string name="settings_he_with_audio">With voice notes</string>
+    <string name="settings_he_text_only">Text only (CSV)</string>
+    <string name="settings_replace_data">Replace data</string>
+    <string name="settings_be_title">📦 Export full backup</string>
+    <string name="settings_be_choose">Choose how to export your full backup (medications, history, photos and audio):</string>
+    <string name="settings_be_encryption">🔒 AES-256 encryption</string>
+    <string name="settings_be_encryption_body">Encryption protects your data with AES-256. Recommended if you will store or share the backup outside your phone.</string>
+    <string name="settings_be_with_encryption">With AES-256 encryption</string>
+    <string name="settings_be_without_encryption">Without encryption</string>
+    <string name="settings_bp_title">🔐 Backup password</string>
+    <string name="settings_bp_body">Enter a strong password to encrypt the backup:</string>
+    <string name="settings_bp_label">Password (min. 12 characters)</string>
+    <string name="settings_bp_too_short">The password must be at least 12 characters</string>
+    <string name="settings_bp_export">Export encrypted</string>
+    <string name="settings_bi_title">🔐 Encrypted backup</string>
+    <string name="settings_bi_body">This backup is protected with AES-256 encryption. Enter the password to decrypt it:</string>
 </resources>
