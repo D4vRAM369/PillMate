@@ -231,4 +231,25 @@
         <item quantity="one">Log %1$d unit</item>
         <item quantity="other">Log %1$d units</item>
     </plurals>
+
+    <!-- Common actions (4) -->
+    <string name="action_delete">Delete</string>
+    <string name="action_confirm">Confirm</string>
+    <string name="action_log">Log</string>
+
+    <!-- Medication cards, list rows and grid -->
+    <string name="card_reorder">Reorder</string>
+    <string name="card_options">Options</string>
+    <string name="list_item_log_dose">Log a dose of %1$s</string>
+    <string name="list_item_options">Options for %1$s</string>
+    <string name="grid_add_medication">Add\nmedication</string>
+
+    <!-- Classic dose dialog and pickers -->
+    <string name="dose_dialog_which_dose">Which dose of %1$s are you logging?</string>
+    <string name="dose_dialog_pick_dose">Pick the dose:</string>
+    <string name="dose_dialog_time_label">Time of the dose:</string>
+    <string name="dose_other_time">Another time</string>
+    <string name="time_picker_title">Select time</string>
+    <string name="time_picker_to_keyboard">Switch to keyboard</string>
+    <string name="time_picker_to_clock">Switch to clock</string>
 </resources>

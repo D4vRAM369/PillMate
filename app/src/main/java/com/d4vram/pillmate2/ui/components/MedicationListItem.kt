@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.components
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -46,7 +48,7 @@ fun MedicationListItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(enabled = !busy, onClickLabel = "Registrar toma de ${medication.name}") { showQuantityDialog = true },
+            .clickable(enabled = !busy, onClickLabel = stringResource(R.string.list_item_log_dose, medication.name)) { showQuantityDialog = true },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
@@ -133,7 +135,7 @@ fun MedicationListItem(
                 ) {
                     Icon(
                         imageVector = Icons.Default.MoreVert,
-                        contentDescription = "Opciones de ${medication.name}",
+                        contentDescription = stringResource(R.string.list_item_options, medication.name),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(18.dp)
                     )
@@ -143,14 +145,14 @@ fun MedicationListItem(
                     onDismissRequest = { showMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Editar") },
+                        text = { Text(stringResource(R.string.action_edit)) },
                         onClick = { onEditMedication(medication.id); showMenu = false },
                         leadingIcon = {
                             Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary)
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Eliminar") },
+                        text = { Text(stringResource(R.string.action_delete)) },
                         onClick = { onDeleteMedication(medication.id); showMenu = false },
                         leadingIcon = {
                             Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error)

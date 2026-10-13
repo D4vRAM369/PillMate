@@ -229,4 +229,25 @@
         <item quantity="one">Registrar %1$d unidad</item>
         <item quantity="other">Registrar %1$d unidades</item>
     </plurals>
+
+    <!-- Acciones comunes (4) -->
+    <string name="action_delete">Eliminar</string>
+    <string name="action_confirm">Confirmar</string>
+    <string name="action_log">Registrar</string>
+
+    <!-- Tarjetas, filas y cuadrícula de medicamentos -->
+    <string name="card_reorder">Reordenar</string>
+    <string name="card_options">Opciones</string>
+    <string name="list_item_log_dose">Registrar toma de %1$s</string>
+    <string name="list_item_options">Opciones de %1$s</string>
+    <string name="grid_add_medication">Agregar\nMedicamento</string>
+
+    <!-- Diálogo de toma del diseño Clásico y selectores -->
+    <string name="dose_dialog_which_dose">¿Qué dosis de %1$s vas a registrar?</string>
+    <string name="dose_dialog_pick_dose">Selecciona la dosis:</string>
+    <string name="dose_dialog_time_label">Hora de la toma:</string>
+    <string name="dose_other_time">Otra hora</string>
+    <string name="time_picker_title">Seleccionar hora</string>
+    <string name="time_picker_to_keyboard">Cambiar a teclado</string>
+    <string name="time_picker_to_clock">Cambiar a reloj</string>
 </resources>

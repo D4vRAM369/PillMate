@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.components
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
@@ -154,7 +156,7 @@ fun MedicationCard(
                     ) {
                         Icon(
                             imageVector = Icons.Default.DragIndicator,
-                            contentDescription = "Reordenar",
+                            contentDescription = stringResource(R.string.card_reorder),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
@@ -169,7 +171,7 @@ fun MedicationCard(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
-                                contentDescription = "Opciones",
+                                contentDescription = stringResource(R.string.card_options),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -180,7 +182,7 @@ fun MedicationCard(
                             onDismissRequest = { showMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Editar") },
+                                text = { Text(stringResource(R.string.action_edit)) },
                                 onClick = {
                                     onEditMedication(medication.id)
                                     showMenu = false
@@ -194,7 +196,7 @@ fun MedicationCard(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Eliminar") },
+                                text = { Text(stringResource(R.string.action_delete)) },
                                 onClick = {
                                     onDeleteMedication(medication.id)
                                     showMenu = false
@@ -247,7 +249,7 @@ fun MedicationCard(
                 // Última toma (solo visible si ya se tomó)
                 if (isTakenToday && medication.lastTaken != null) {
                     Text(
-                        text = "Última: ${medication.lastTaken}",
+                        text = stringResource(R.string.home_last_dose, medication.lastTaken.orEmpty()),
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Medium
                         ),
@@ -347,7 +349,7 @@ private fun PillIcon(
             // Foto del medicamento
             AsyncImage(
                 model = photoPath,
-                contentDescription = "Foto del medicamento",
+                contentDescription = stringResource(R.string.photo_description),
                 modifier = Modifier
                     .size(48.dp)
                     .clip(CircleShape),
@@ -432,10 +434,12 @@ internal fun TakeMedicationDialog(
     val formattedTime = remember(selectedHour, selectedMinute) {
         String.format("%02d:%02d", selectedHour, selectedMinute)
     }
-    val formattedDate = remember(selectedDate, dateFormatter) {
+    val todayLabel = stringResource(R.string.period_today)
+    val yesterdayLabel = stringResource(R.string.period_yesterday)
+    val formattedDate = remember(selectedDate, dateFormatter, todayLabel, yesterdayLabel) {
         when (selectedDate) {
-            LocalDate.now() -> "Hoy"
-            LocalDate.now().minusDays(1) -> "Ayer"
+            LocalDate.now() -> todayLabel
+            LocalDate.now().minusDays(1) -> yesterdayLabel
             else -> selectedDate.format(dateFormatter)
         }
     }
@@ -448,12 +452,12 @@ internal fun TakeMedicationDialog(
         title = {
             Column {
                 Text(
-                    text = "Registrar toma",
+                    text = stringResource(R.string.dose_sheet_title),
                     style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "¿Qué dosis de ${medication.name} vas a registrar?",
+                    text = stringResource(R.string.dose_dialog_which_dose, medication.name),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -465,7 +469,7 @@ internal fun TakeMedicationDialog(
                 if (family.size > 1) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
-                            text = "Selecciona la dosis:",
+                            text = stringResource(R.string.dose_dialog_pick_dose),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
@@ -505,7 +509,7 @@ internal fun TakeMedicationDialog(
                 // ⏰ Selector de hora
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "Hora de la toma:",
+                        text = stringResource(R.string.dose_dialog_time_label),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.SemiBold
@@ -522,7 +526,7 @@ internal fun TakeMedicationDialog(
                                 useCurrentTime = true
                                 selectedDate = LocalDate.now()
                             },
-                            label = { Text("Ahora") },
+                            label = { Text(stringResource(R.string.dose_now)) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                 selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -537,7 +541,7 @@ internal fun TakeMedicationDialog(
                                 showTimePicker = true
                             },
                             label = {
-                                Text(if (!useCurrentTime) formattedTime else "Otra hora")
+                                Text(if (!useCurrentTime) formattedTime else stringResource(R.string.dose_other_time))
                             },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -566,7 +570,7 @@ internal fun TakeMedicationDialog(
                                 onClick = {
                                     selectedDate = LocalDate.now().minusDays(1)
                                 },
-                                label = { Text("Ayer") }
+                                label = { Text(stringResource(R.string.period_yesterday)) }
                             )
                         }
                     }
@@ -587,7 +591,7 @@ internal fun TakeMedicationDialog(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Cantidad de unidades",
+                        text = stringResource(R.string.dose_sheet_units),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -669,7 +673,7 @@ internal fun TakeMedicationDialog(
                 shape = RoundedCornerShape(12.dp),
                 modifier = Modifier.fillMaxWidth().height(50.dp)
             ) {
-                Text("Registrar", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.action_log), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -677,7 +681,7 @@ internal fun TakeMedicationDialog(
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.action_cancel), color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     )
@@ -735,13 +739,13 @@ private fun TimePickerDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Seleccionar hora",
+                    text = stringResource(R.string.time_picker_title),
                     style = MaterialTheme.typography.titleLarge
                 )
                 IconButton(onClick = { isClockMode = !isClockMode }) {
                     Icon(
                         imageVector = if (isClockMode) Icons.Default.Keyboard else Icons.Default.Schedule,
-                        contentDescription = if (isClockMode) "Cambiar a teclado" else "Cambiar a reloj",
+                        contentDescription = stringResource(if (isClockMode) R.string.time_picker_to_keyboard else R.string.time_picker_to_clock),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -761,12 +765,12 @@ private fun TimePickerDialog(
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(timePickerState.hour, timePickerState.minute) }) {
-                Text("Confirmar", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.action_confirm), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         },
         shape = RoundedCornerShape(28.dp)
@@ -801,12 +805,12 @@ private fun MedicationDatePickerDialog(
                     onConfirm(selectedDate)
                 }
             ) {
-                Text("Confirmar", fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.action_confirm), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     ) {
