@@ -18,7 +18,7 @@ class DailyRhythmTimelineTest {
 
     @Test fun singleDayDescribesRealEventsAndInvitesToTapADot() {
         compose.setContent { MaterialTheme { RhythmClock(listOf(entry("id", 0, 6))) } }
-        compose.onNodeWithContentDescription("Reloj de 24 horas. 1 registros. 06:00 Ejemplo, 1 unidades").assertExists()
+        compose.onNodeWithContentDescription("Reloj de 24 horas. 1 registros. 06:00 Ejemplo, 1 unidad").assertExists()
         compose.onNodeWithText("Toca un punto para ver la toma.").assertExists()
     }
 
