@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.ui.stats
 
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -90,7 +91,10 @@ fun StatisticsScreen(
     var showPdfExportSheet by remember { mutableStateOf(false) }
 
     // Calcular fechas del periodo actual para pasar al PDF
-    val currentStartDate = remember(uiState.activeFilter, uiState.dateRangeText) {
+    val rangeStart = uiState.rangeStart
+    val dateRangeText = if (rangeStart == null) stringResource(R.string.stats_all_time)
+    else "${com.d4vram.pillmate2.utils.relativeDayLabel(rangeStart)} - ${com.d4vram.pillmate2.utils.relativeDayLabel(uiState.rangeEnd)}"
+    val currentStartDate = remember(uiState.activeFilter, uiState.rangeEnd) {
         when (uiState.activeFilter) {
             FilterRange.WEEK -> java.time.LocalDate.now().minusDays(6)
             FilterRange.DAYS_15 -> java.time.LocalDate.now().minusDays(14)
@@ -105,7 +109,7 @@ fun StatisticsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Estadísticas",
+                        text = stringResource(R.string.stats_title),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -114,7 +118,7 @@ fun StatisticsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = stringResource(R.string.action_back)
                         )
                     }
                 },
@@ -123,7 +127,7 @@ fun StatisticsScreen(
                         IconButton(onClick = { showExportMenu = true }) {
                             Icon(
                                 imageVector = Icons.Default.Share,
-                                contentDescription = "Exportar datos"
+                                contentDescription = stringResource(R.string.stats_export_data)
                             )
                         }
 
@@ -156,19 +160,19 @@ fun StatisticsScreen(
                                                         type = "text/csv"
                                                         putExtra(android.content.Intent.EXTRA_STREAM, uri)
                                                         addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                                        putExtra(android.content.Intent.EXTRA_SUBJECT, "Estadísticas PillMate")
+                                                        putExtra(android.content.Intent.EXTRA_SUBJECT, context.getString(R.string.stats_share_subject))
                                                     }
                                                     context.startActivity(
-                                                        android.content.Intent.createChooser(intent, "Compartir reporte")
+                                                        android.content.Intent.createChooser(intent, context.getString(R.string.stats_share_chooser))
                                                     )
                                                 } catch (e: Exception) {
-                                                    snackbarHostState.showSnackbar("Error al compartir: ${e.message}")
+                                                    snackbarHostState.showSnackbar(context.getString(R.string.stats_share_failed, e.message.orEmpty()))
                                                 }
                                             } else {
-                                                snackbarHostState.showSnackbar("Error al exportar datos")
+                                                snackbarHostState.showSnackbar(context.getString(R.string.stats_export_failed))
                                             }
                                         } else {
-                                            snackbarHostState.showSnackbar("Almacenamiento no disponible")
+                                            snackbarHostState.showSnackbar(context.getString(R.string.stats_storage_unavailable))
                                         }
                                     }
                                 }
@@ -215,8 +219,8 @@ fun StatisticsScreen(
                 totalValue = uiState.totalInUnit,
                 displayUnit = uiState.displayUnit,
                 averageValue = uiState.averageInUnit,
-                lastRecord = uiState.timeSinceLastRecord,
-                trend = uiState.loggingTrend
+                lastRecord = lastRecordLabel(uiState.daysSinceLastRecord),
+                trend = uiState.trend?.let { trendLabel(it) }
             )
 
             // Reloj de 24 h del periodo y filtro activos
@@ -227,7 +231,7 @@ fun StatisticsScreen(
             val lineDuplicatesBars = uiState.displayUnit == "tomas"
             if (lineDuplicatesBars && uiState.activityData.isNotEmpty() && uiState.activeFilter != FilterRange.ALL_TIME) {
                 DateNavigation(
-                    dateRangeText = uiState.dateRangeText,
+                    dateRangeText = dateRangeText,
                     onPrevious = { viewModel.previousPeriod() },
                     onNext = { viewModel.nextPeriod() }
                 )
@@ -237,7 +241,7 @@ fun StatisticsScreen(
                     data = uiState.activityData,
                     unit = uiState.displayUnit,
                     accentColor = uiState.selectedMedicationColor ?: MaterialTheme.colorScheme.primary,
-                    dateRangeText = uiState.dateRangeText,
+                    dateRangeText = dateRangeText,
                     onPrevious = { viewModel.previousPeriod() },
                     onNext = { viewModel.nextPeriod() },
                     showNavigation = uiState.activeFilter != FilterRange.ALL_TIME
@@ -302,8 +306,8 @@ fun DailyDetailSheetContent(
     history: List<HistoryEntryWithUnit>,
     onViewFullHistory: () -> Unit
 ) {
-    val dateFormatter = java.time.format.DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM")
-    val spanishLocale = java.util.Locale.forLanguageTag("es")
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val dateFormatter = com.d4vram.pillmate2.utils.localizedDateFormatter("EEEEdMMMM", locale)
     
     Column(
         modifier = Modifier
@@ -315,13 +319,13 @@ fun DailyDetailSheetContent(
         // Cabecera
         Column {
             Text(
-                text = date.format(dateFormatter.withLocale(spanishLocale)).replaceFirstChar { it.uppercase() },
+                text = date.format(dateFormatter).replaceFirstChar { it.uppercase() },
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = androidx.compose.ui.graphics.Color.White // Título claro
             )
             Text(
-                text = "${history.sumOf { it.entry.quantity }} dosis",
+                text = history.sumOf { it.entry.quantity }.let { pluralStringResource(R.plurals.stats_doses_count, it, it) },
                 style = MaterialTheme.typography.bodyMedium,
                 color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.7f)
             )
@@ -346,7 +350,7 @@ fun DailyDetailSheetContent(
 
                 // Nombre del medicamento (ocupa espacio disponible, sin romper línea)
                 Text(
-                    text = "${item.entry.medicationName} • ${item.displayValue} ${item.displayUnit}",
+                    text = "${item.entry.medicationName} • ${item.displayValue} ${unitLabel(item.displayUnit)}",
                     style = MaterialTheme.typography.bodyLarge,
                     color = androidx.compose.ui.graphics.Color.White,
                     maxLines = 1,
@@ -379,7 +383,7 @@ fun DailyDetailSheetContent(
             shape = RoundedCornerShape(25.dp) // Redondeado completo
         ) {
             Text(
-                text = "Ver historial completo",
+                text = stringResource(R.string.stats_view_full_history),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -395,7 +399,7 @@ fun DoseBreakdownSection(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
-            text = "Desglose por dosis",
+            text = stringResource(R.string.stats_breakdown),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 4.dp)
@@ -416,7 +420,7 @@ fun DoseBreakdownSection(
                 // Mostrar nombre de la familia si hay distintos nombres
                 if (familyName.contains("/")) {
                     Text(
-                        text = "Familia: $familyName",
+                        text = stringResource(R.string.stats_family, familyName),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -472,7 +476,7 @@ fun DoseBreakdownSection(
 
                         // Valor total
                         Text(
-                            text = "${formatBreakdownValue(item.totalValue)}${item.displayUnit}",
+                            text = "${formatBreakdownValue(item.totalValue)}${unitLabel(item.displayUnit)}",
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -528,7 +532,7 @@ fun MainKpiSection(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = displayUnit,
+                        text = unitLabel(displayUnit),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -536,7 +540,7 @@ fun MainKpiSection(
 
                 if (lastRecord.isNotEmpty()) {
                     Text(
-                        text = "Último: $lastRecord",
+                        text = stringResource(R.string.stats_last_record, lastRecord),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -552,7 +556,7 @@ fun MainKpiSection(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "$averageValue $displayUnit/día en promedio",
+                text = stringResource(R.string.stats_average_per_day, averageValue, unitLabel(displayUnit)),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -592,7 +596,7 @@ fun HorizontalActivityChart(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "Tomas por día",
+                text = stringResource(R.string.stats_doses_per_day),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -692,7 +696,7 @@ fun DateNavigation(
         IconButton(onClick = onPrevious) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Anterior"
+                contentDescription = stringResource(R.string.action_previous)
             )
         }
 
@@ -706,7 +710,7 @@ fun DateNavigation(
         IconButton(onClick = onNext) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Siguiente"
+                contentDescription = stringResource(R.string.action_next)
             )
         }
     }
@@ -728,10 +732,10 @@ fun FilterButtons(
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         val filters = listOf(
-            "7 días" to FilterRange.WEEK,
-            "15 días" to FilterRange.DAYS_15,
-            "30 días" to FilterRange.DAYS_30,
-            "Todo" to FilterRange.ALL_TIME
+            stringResource(R.string.period_7_days) to FilterRange.WEEK,
+            stringResource(R.string.period_15_days) to FilterRange.DAYS_15,
+            stringResource(R.string.period_30_days) to FilterRange.DAYS_30,
+            stringResource(R.string.period_all) to FilterRange.ALL_TIME
         )
 
         filters.forEach { (text, range) ->
@@ -780,7 +784,7 @@ fun RhythmSection(entries: List<com.d4vram.pillmate2.model.HistoryEntry>) {
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("Ritmo de 24 horas", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.stats_rhythm_24h), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             RhythmClock(entries, modifier = Modifier.fillMaxWidth())
             insights.forEach { insight ->
                 HorizontalDivider()
@@ -791,5 +795,34 @@ fun RhythmSection(entries: List<com.d4vram.pillmate2.model.HistoryEntry>) {
                 }
             }
         }
+    }
+}
+
+/**
+ * Las unidades viajan por el código como claves ("tomas", "mg", "gotas", "ml") porque la lógica las
+ * compara; aquí se convierten en la palabra que se enseña. "mg" y "ml" se escriben igual en todos los idiomas.
+ */
+@Composable
+internal fun unitLabel(unit: String): String = when (unit) {
+    "tomas" -> stringResource(R.string.clock_doses_label)
+    "gotas" -> stringResource(R.string.unit_drops)
+    else -> unit
+}
+
+@Composable
+private fun lastRecordLabel(days: Long?): String = when (days) {
+    null -> stringResource(R.string.stats_no_records)
+    0L -> stringResource(R.string.period_today)
+    else -> pluralStringResource(R.plurals.stats_days_ago, days.toInt(), days.toInt())
+}
+
+@Composable
+private fun trendLabel(trend: com.d4vram.pillmate2.ui.stats.viewmodel.Trend): String {
+    val amount = kotlin.math.abs(trend.diff)
+    val days = trend.days.toInt()
+    return when {
+        trend.diff > 0 -> pluralStringResource(R.plurals.stats_trend_more, amount, amount, days)
+        trend.diff < 0 -> pluralStringResource(R.plurals.stats_trend_less, amount, amount, days)
+        else -> stringResource(R.string.stats_trend_same, days)
     }
 }

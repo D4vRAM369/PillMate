@@ -640,4 +640,44 @@
     <string name="med_type_capsule">Cápsula</string>
     <string name="med_type_syrup">Jarabe</string>
     <string name="med_type_drops">Gotas</string>
+
+    <!-- Estadísticas -->
+    <string name="stats_all_time">Todo el tiempo</string>
+    <string name="stats_export_data">Exportar datos</string>
+    <string name="stats_share_subject">Estadísticas PillMate</string>
+    <string name="stats_share_chooser">Compartir reporte</string>
+    <string name="stats_share_failed">Error al compartir: %1$s</string>
+    <string name="stats_export_failed">Error al exportar datos</string>
+    <string name="stats_storage_unavailable">Almacenamiento no disponible</string>
+    <plurals name="stats_doses_count">
+        <item quantity="one">%1$d dosis</item>
+        <item quantity="other">%1$d dosis</item>
+    </plurals>
+    <string name="stats_view_full_history">Ver historial completo</string>
+    <string name="stats_breakdown">Desglose por dosis</string>
+    <string name="stats_family">Familia: %1$s</string>
+    <string name="stats_last_record">Último: %1$s</string>
+    <string name="stats_no_records">Sin registros</string>
+    <plurals name="stats_days_ago">
+        <item quantity="one">Hace %1$d día</item>
+        <item quantity="other">Hace %1$d días</item>
+    </plurals>
+    <string name="stats_average_per_day">%1$s %2$s/día en promedio</string>
+    <string name="stats_doses_per_day">Tomas por día</string>
+    <string name="stats_amount_per_day">Cantidad por día (%1$s)</string>
+    <string name="stats_no_data">Sin datos en este periodo</string>
+    <string name="stats_rhythm_24h">Ritmo de 24 horas</string>
+    <string name="action_previous">Anterior</string>
+    <string name="action_next">Siguiente</string>
+    <string name="period_15_days">15 días</string>
+    <string name="unit_drops">gotas</string>
+    <plurals name="stats_trend_more">
+        <item quantity="one">%1$d toma más que los %2$d días anteriores</item>
+        <item quantity="other">%1$d tomas más que los %2$d días anteriores</item>
+    </plurals>
+    <plurals name="stats_trend_less">
+        <item quantity="one">%1$d toma menos que los %2$d días anteriores</item>
+        <item quantity="other">%1$d tomas menos que los %2$d días anteriores</item>
+    </plurals>
+    <string name="stats_trend_same">Igual que los %1$d días anteriores</string>
 </resources>

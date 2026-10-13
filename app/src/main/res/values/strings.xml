@@ -642,4 +642,44 @@
     <string name="med_type_capsule">Capsule</string>
     <string name="med_type_syrup">Syrup</string>
     <string name="med_type_drops">Drops</string>
+
+    <!-- Statistics -->
+    <string name="stats_all_time">All time</string>
+    <string name="stats_export_data">Export data</string>
+    <string name="stats_share_subject">PillMate statistics</string>
+    <string name="stats_share_chooser">Share report</string>
+    <string name="stats_share_failed">Couldn\'t share: %1$s</string>
+    <string name="stats_export_failed">Couldn\'t export the data</string>
+    <string name="stats_storage_unavailable">Storage not available</string>
+    <plurals name="stats_doses_count">
+        <item quantity="one">%1$d dose</item>
+        <item quantity="other">%1$d doses</item>
+    </plurals>
+    <string name="stats_view_full_history">View full history</string>
+    <string name="stats_breakdown">Breakdown by dose</string>
+    <string name="stats_family">Family: %1$s</string>
+    <string name="stats_last_record">Last: %1$s</string>
+    <string name="stats_no_records">No entries</string>
+    <plurals name="stats_days_ago">
+        <item quantity="one">%1$d day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+    <string name="stats_average_per_day">%1$s %2$s/day on average</string>
+    <string name="stats_doses_per_day">Doses per day</string>
+    <string name="stats_amount_per_day">Amount per day (%1$s)</string>
+    <string name="stats_no_data">No data in this period</string>
+    <string name="stats_rhythm_24h">24-hour rhythm</string>
+    <string name="action_previous">Previous</string>
+    <string name="action_next">Next</string>
+    <string name="period_15_days">15 days</string>
+    <string name="unit_drops">drops</string>
+    <plurals name="stats_trend_more">
+        <item quantity="one">%1$d dose more than the previous %2$d days</item>
+        <item quantity="other">%1$d doses more than the previous %2$d days</item>
+    </plurals>
+    <plurals name="stats_trend_less">
+        <item quantity="one">%1$d dose fewer than the previous %2$d days</item>
+        <item quantity="other">%1$d doses fewer than the previous %2$d days</item>
+    </plurals>
+    <string name="stats_trend_same">Same as the previous %1$d days</string>
 </resources>
