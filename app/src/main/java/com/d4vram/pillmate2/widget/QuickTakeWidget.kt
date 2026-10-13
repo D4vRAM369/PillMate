@@ -11,6 +11,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
@@ -171,6 +172,24 @@ internal fun quickTakeColumns(widthDp: Float, heightDp: Float): Int = when {
 internal fun readableOn(background: Color): Color =
     if (background.luminance() > 0.5f) Color(0xFF1B1B1F) else Color.White
 
+// Glance no sabe medir texto ni tiene "autoajuste": el ancho se estima. Una letra ocupa de media
+// ~0,53 veces el tamaño de la fuente (la M más, la i menos); medido en un Pixel con letra al 130 %.
+// Subir si algún nombre aún se parte; bajar si encogen nombres que cabían.
+private const val CharWidthFactor = 0.53f
+private const val MinNameScale = 0.7f // "algo más pequeña", no ilegible: como mucho un 30 % menos
+
+/**
+ * Tamaño de letra con el que [name] cabe en [availableDp] sin partir una palabra. Con una línea
+ * cuenta el nombre entero; con dos, la palabra más larga (las demás saltan de línea solas).
+ * [fontScale] es el "tamaño de fuente" de los ajustes del sistema, que agranda los sp.
+ */
+internal fun fittedNameSp(name: String, baseSp: Int, availableDp: Float, maxLines: Int, fontScale: Float): Int {
+    val chars = if (maxLines > 1) name.split(' ').maxOf { it.length } else name.length
+    val neededDp = chars * baseSp * CharWidthFactor * fontScale
+    if (neededDp <= availableDp) return baseSp
+    return (baseSp * availableDp / neededDp).toInt().coerceAtLeast((baseSp * MinNameScale).toInt())
+}
+
 private val HeaderHeight = 22.dp
 
 @Composable
@@ -240,6 +259,7 @@ private fun WidgetCell(
     modifier: GlanceModifier
 ) {
     val textSp = data.size.textSp
+    val fontScale = LocalContext.current.resources.configuration.fontScale
     val fill = medication?.let { Color(it.colorArgb) } ?: Color(data.color.emptyCellArgb)
     val clickAction = medication?.let {
         actionRunCallback<QuickTakeActionCallback>(
@@ -276,7 +296,7 @@ private fun WidgetCell(
                 CellName(
                     name = medication!!.name,
                     color = readableOn(Color(data.color.backgroundArgb)),
-                    textSp = textSp - 1,
+                    textSp = fittedNameSp(medication.name, textSp - 1, cellWidth.value, 1, fontScale),
                     maxLines = 1
                 )
             }
@@ -298,6 +318,7 @@ private fun WidgetCell(
             // El emoji solo si la celda es alta; el nombre usa 2 líneas si caben.
             val showEmoji = cellHeight >= 50.dp
             val textRoom = cellHeight.value - 8 - (if (showEmoji) textSp + 12 else 0)
+            val nameLines = if (textRoom >= textSp * 2.7f) 2 else 1
             Column(
                 modifier = GlanceModifier.fillMaxSize().padding(4.dp),
                 horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
@@ -307,8 +328,9 @@ private fun WidgetCell(
                 CellName(
                     name = medication.name,
                     color = readableOn(fill),
-                    textSp = textSp,
-                    maxLines = if (textRoom >= textSp * 2.7f) 2 else 1
+                    // 8 = el padding de 4 dp a cada lado de la celda
+                    textSp = fittedNameSp(medication.name, textSp, cellWidth.value - 8, nameLines, fontScale),
+                    maxLines = nameLines
                 )
             }
         }
