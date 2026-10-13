@@ -7,16 +7,15 @@ import org.junit.Test
 
 class PrivacyContractTest {
 
+    // Se mira el manifest fusionado, no el de src/main: las librerías añaden permisos por su cuenta
+    // (WorkManager traía ACCESS_NETWORK_STATE) y esos solo aparecen tras la fusión.
     @Test
-    fun `manifest has no network permissions - app is fully offline`() {
-        val manifest = listOf(
-            File("app/src/main/AndroidManifest.xml"),
-            File("src/main/AndroidManifest.xml")
-        ).firstOrNull { it.exists() }
+    fun `merged manifest has no network permissions - app is fully offline`() {
+        val manifest = File(System.getProperty("mergedManifest") ?: "")
 
-        assertTrue("No se encontró AndroidManifest.xml", manifest != null)
+        assertTrue("No se encontró el manifest fusionado: ${manifest.path}", manifest.isFile)
 
-        val content = manifest!!.readText()
+        val content = manifest.readText()
         assertFalse(content.contains("android.permission.INTERNET"))
         assertFalse(content.contains("android.permission.ACCESS_NETWORK_STATE"))
     }

@@ -109,6 +109,15 @@ android {
     }
 }
 
+// PrivacyContractTest revisa el manifest fusionado (el que acaba en el APK, con lo que añaden las librerías)
+tasks.withType<Test>().configureEach {
+    dependsOn("processDebugManifest")
+    systemProperty(
+        "mergedManifest",
+        layout.buildDirectory.file("intermediates/merged_manifests/debug/processDebugManifest/AndroidManifest.xml").get().asFile.path
+    )
+}
+
 dependencies {
     // Compose BOM — base para todas las libs de Compose
     implementation(platform("androidx.compose:compose-bom:2024.12.01"))
