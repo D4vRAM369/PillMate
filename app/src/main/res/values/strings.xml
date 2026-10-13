@@ -806,4 +806,27 @@
     <string name="notif_take_now">Take now</string>
     <string name="notif_dose_logged">Dose logged ✓</string>
     <string name="notif_dose_logged_named">Dose logged ✓ · %1$s</string>
+
+    <!-- App lock -->
+    <string name="lock_title">Protection enabled</string>
+    <string name="lock_pin_label">Enter your PIN</string>
+    <string name="lock_err_short">PIN too short</string>
+    <string name="lock_err_no_biometrics">Biometrics not available</string>
+    <string name="lock_err_enable_biometrics">Turn on biometrics in settings</string>
+    <string name="lock_err_auth_failed">Authentication failed</string>
+    <string name="lock_prompt_title">Unlock PillMate</string>
+    <string name="lock_prompt_subtitle">Use your fingerprint or face to continue</string>
+
+    <!-- Photo permissions dialog -->
+    <string name="perm_title">Photos and gallery with a clear permission</string>
+    <string name="perm_body">PillMate uses these permissions only to personalise medications with images that stay on your device.</string>
+    <string name="perm_camera_desc">Take quick photos of your medications to recognise them better.</string>
+    <string name="perm_gallery">Photo gallery</string>
+    <string name="perm_gallery_desc">Pick existing images without repeating work.</string>
+    <string name="perm_privacy">Privacy guaranteed</string>
+    <string name="perm_privacy_desc">None of these photos is sent to external services.</string>
+    <string name="perm_denied_before">You declined these permissions before. If you want to use photos on your medications, grant them in the next step.</string>
+    <string name="perm_granted">Permissions granted</string>
+    <string name="perm_continue">Continue and grant permissions</string>
+    <string name="perm_not_now">Not now</string>
 </resources>
