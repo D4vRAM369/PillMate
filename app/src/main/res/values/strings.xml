@@ -252,4 +252,91 @@
     <string name="time_picker_title">Select time</string>
     <string name="time_picker_to_keyboard">Switch to keyboard</string>
     <string name="time_picker_to_clock">Switch to clock</string>
+
+    <!-- Common actions (5) -->
+    <string name="action_share">Share</string>
+
+    <!-- Voice notes: screen -->
+    <string name="voice_notes_title">Voice notes</string>
+    <string name="vn_err_no_mic">Microphone permission denied</string>
+    <string name="vn_export_all">Export all notes</string>
+    <string name="vn_setup_title">Protect your notes</string>
+    <string name="vn_setup_body">Create a password to encrypt your voice notes with AES-256</string>
+    <string name="vn_password">Password</string>
+    <string name="vn_password_confirm">Confirm password</string>
+    <string name="vn_hint_optional">Hint (optional)</string>
+    <string name="vn_password_save">Save password</string>
+    <string name="vn_unlock_title">Enter your password</string>
+    <string name="vn_hint">Hint: %1$s</string>
+    <string name="vn_unlock">Unlock</string>
+    <string name="vn_duration">Duration %1$s • %2$s</string>
+    <string name="vn_stop">Stop</string>
+    <string name="vn_more_options">More options</string>
+    <string name="vn_rename">Rename</string>
+    <string name="vn_change_category">Change category</string>
+    <string name="vn_edit_tags">Edit tags</string>
+    <string name="vn_recording_time">Recording… %1$s</string>
+    <string name="vn_auto_title">Automatic title</string>
+    <string name="vn_default_title">Note %1$s</string>
+    <string name="vn_ready">Ready to record</string>
+    <string name="vn_empty_title">No voice notes</string>
+    <string name="vn_empty_body">Record spoken reminders and keep them encrypted.</string>
+    <string name="vn_empty_start">Start recording</string>
+    <string name="vn_rename_title">Rename note</string>
+    <string name="vn_title_label">Title</string>
+    <string name="vn_delete_title">Delete note</string>
+    <string name="vn_delete_confirm">Delete \"%1$s\"? This can\'t be undone.</string>
+    <string name="vn_category_pick">Select category</string>
+    <string name="vn_tags_hint">Separate tags with commas</string>
+    <string name="vn_tags_label">Tags</string>
+    <string name="vn_tags_placeholder">urgent, important, work</string>
+
+    <!-- Voice notes: categories -->
+    <string name="vn_category_general">General</string>
+    <string name="vn_category_work">Work</string>
+    <string name="vn_category_personal">Personal</string>
+    <string name="vn_category_medical">Medical</string>
+    <string name="vn_category_ideas">Ideas</string>
+    <string name="vn_category_reminders">Reminders</string>
+
+    <!-- Voice notes: messages from the ViewModel and the exporter -->
+    <string name="vn_err_password_empty">Password can\'t be empty</string>
+    <string name="vn_err_password_mismatch">Passwords don\'t match</string>
+    <string name="vn_info_password_set">Password set</string>
+    <string name="vn_err_password_save">Couldn\'t save the password</string>
+    <string name="vn_err_password_verify">Couldn\'t verify the password</string>
+    <string name="vn_info_unlocked">Notes unlocked</string>
+    <string name="vn_err_wrong_password">Wrong password</string>
+    <string name="vn_err_unlock_first">Unlock the notes first</string>
+    <string name="vn_err_start_recording">Couldn\'t start recording</string>
+    <string name="vn_err_stop_recording">Couldn\'t stop recording</string>
+    <string name="vn_info_saved">Voice note saved</string>
+    <string name="vn_err_save">Couldn\'t save the note</string>
+    <string name="vn_err_playback">Error playing the note</string>
+    <string name="vn_err_play">Couldn\'t play the note</string>
+    <string name="vn_info_deleted">Note deleted</string>
+    <string name="vn_err_delete">Couldn\'t delete the note</string>
+    <string name="vn_info_updated">Note updated</string>
+    <string name="vn_err_rename">Couldn\'t rename the note</string>
+    <string name="vn_info_category_updated">Category updated</string>
+    <string name="vn_err_category">Couldn\'t update the category</string>
+    <string name="vn_info_tags_updated">Tags updated</string>
+    <string name="vn_err_tags">Couldn\'t update the tags</string>
+    <string name="vn_share_text">Voice note: %1$s</string>
+    <string name="vn_info_sharing">Getting ready to share…</string>
+    <string name="vn_err_share">Couldn\'t share the note</string>
+    <string name="vn_info_exporting">Exporting notes…</string>
+    <string name="vn_export_subject">Voice notes backup</string>
+    <string name="vn_export_chooser">Export notes backup</string>
+    <string name="vn_err_export">Export failed</string>
+    <string name="vn_err_export_empty">There are no notes to export</string>
+    <string name="vn_err_export_failed">Export failed: %1$s</string>
+    <plurals name="vn_export_text">
+        <item quantity="one">Backup file with %1$d encrypted voice note</item>
+        <item quantity="other">Backup file with %1$d encrypted voice notes</item>
+    </plurals>
+    <plurals name="vn_info_exported">
+        <item quantity="one">Backup exported: %1$d note</item>
+        <item quantity="other">Backup exported: %1$d notes</item>
+    </plurals>
 </resources>

@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.data.voice
 
+import com.d4vram.pillmate2.R
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -50,7 +51,7 @@ class VoiceNoteExporter(
             // 1. Obtener todas las notas
             val notes = repository.getAllNotesForExport()
             if (notes.isEmpty()) {
-                return@withContext ExportResult.Error("No hay notas para exportar")
+                return@withContext ExportResult.Error(context.getString(R.string.vn_err_export_empty))
             }
             
             // 2. Crear directorio temporal
@@ -118,7 +119,7 @@ class VoiceNoteExporter(
             }
             
         } catch (e: Exception) {
-            ExportResult.Error("Error al exportar: ${e.localizedMessage}")
+            ExportResult.Error(context.getString(R.string.vn_err_export_failed, e.localizedMessage.orEmpty()))
         }
     }
     

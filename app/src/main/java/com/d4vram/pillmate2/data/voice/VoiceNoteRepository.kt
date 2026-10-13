@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.data.voice
 
+import com.d4vram.pillmate2.R
 import android.content.Context
 import android.util.Base64
 import com.d4vram.pillmate2.data.local.VoiceNoteDao
@@ -47,7 +48,7 @@ class VoiceNoteRepository(
         val now = Instant.now().toEpochMilli()
         val entity = VoiceNoteEntity(
             id = id,
-            title = title.ifBlank { DEFAULT_TITLE_PREFIX + formatTimestampLabel(now) },
+            title = title.ifBlank { context.getString(R.string.vn_default_title, formatTimestampLabel(now)) },
             createdAtEpochMillis = now,
             updatedAtEpochMillis = now,
             durationMillis = durationMillis,
@@ -136,7 +137,6 @@ class VoiceNoteRepository(
     companion object {
         private const val VOICE_NOTES_DIR = "voice_notes"
         private const val TEMP_FILE_SUFFIX = ".m4a"
-        private const val DEFAULT_TITLE_PREFIX = "Nota "
         private val DEFAULT_TITLE_FORMATTER: DateTimeFormatter =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
     }

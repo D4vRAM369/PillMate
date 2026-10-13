@@ -99,6 +99,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import com.d4vram.pillmate2.utils.localizedDateFormatter
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -137,7 +138,7 @@ fun VoiceNotesScreen(viewModel: VoiceNotesViewModel) {
         if (granted) {
             viewModel.startRecording()
         } else {
-            scope.launch { snackbarHostState.showSnackbar("Sin permiso de micrófono") }
+            scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.vn_err_no_mic)) }
         }
     }
 
@@ -146,7 +147,7 @@ fun VoiceNotesScreen(viewModel: VoiceNotesViewModel) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Notas de voz") },
+                title = { Text(text = stringResource(R.string.voice_notes_title)) },
                 navigationIcon = {
                     Icon(Icons.Default.Mic, contentDescription = null)
                 },
@@ -158,7 +159,7 @@ fun VoiceNotesScreen(viewModel: VoiceNotesViewModel) {
                         ) {
                             Icon(
                                 imageVector = Icons.Default.FileDownload,
-                                contentDescription = "Exportar todas las notas"
+                                contentDescription = stringResource(R.string.vn_export_all)
                             )
                         }
                     }
@@ -229,20 +230,20 @@ private fun PasswordSetupCard(onSave: (String, String, String?) -> Unit) {
         Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Protege tus notas",
+            text = stringResource(R.string.vn_setup_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Crea una contraseña para cifrar tus notas de voz con AES-256",
+            text = stringResource(R.string.vn_setup_body),
             style = MaterialTheme.typography.bodyMedium
         )
         Spacer(modifier = Modifier.height(24.dp))
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Contraseña") },
+            label = { Text(stringResource(R.string.vn_password)) },
             singleLine = true,
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
@@ -258,7 +259,7 @@ private fun PasswordSetupCard(onSave: (String, String, String?) -> Unit) {
         OutlinedTextField(
             value = confirm,
             onValueChange = { confirm = it },
-            label = { Text("Confirmar contraseña") },
+            label = { Text(stringResource(R.string.vn_password_confirm)) },
             singleLine = true,
             visualTransformation = if (confirmVisible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
@@ -274,12 +275,12 @@ private fun PasswordSetupCard(onSave: (String, String, String?) -> Unit) {
         OutlinedTextField(
             value = hint,
             onValueChange = { hint = it },
-            label = { Text("Pista (opcional)") },
+            label = { Text(stringResource(R.string.vn_hint_optional)) },
             singleLine = true
         )
         Spacer(modifier = Modifier.height(24.dp))
         Button(onClick = { onSave(password, confirm, hint.ifBlank { null }) }, enabled = password.isNotBlank() && confirm.isNotBlank()) {
-            Text("Guardar contraseña")
+            Text(stringResource(R.string.vn_password_save))
         }
     }
 }
@@ -302,19 +303,19 @@ private fun UnlockCard(
         Icon(Icons.Default.Lock, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(16.dp))
         Text(
-            text = "Introduce tu contraseña",
+            text = stringResource(R.string.vn_unlock_title),
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.height(8.dp))
         if (!hint.isNullOrBlank()) {
-            Text(text = "Pista: $hint", style = MaterialTheme.typography.bodyMedium)
+            Text(text = stringResource(R.string.vn_hint, hint), style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(8.dp))
         }
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            label = { Text("Contraseña") },
+            label = { Text(stringResource(R.string.vn_password)) },
             singleLine = true,
             visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
             trailingIcon = {
@@ -328,7 +329,7 @@ private fun UnlockCard(
         )
         Spacer(modifier = Modifier.height(24.dp))
         Button(onClick = { onUnlock(password) }, enabled = password.isNotBlank()) {
-            Text("Desbloquear")
+            Text(stringResource(R.string.vn_unlock))
         }
     }
 }
@@ -543,7 +544,7 @@ private fun VoiceNoteRow(
                     )
                     AssistChip(
                         onClick = { /* Mostrar selector de categoría */ },
-                        label = { Text(note.category.displayName) },
+                        label = { Text(stringResource(note.category.labelRes)) },
                         leadingIcon = {
                             Box(
                                 modifier = Modifier
@@ -558,7 +559,7 @@ private fun VoiceNoteRow(
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Duración ${formatDuration(note.durationMillis)} • ${formatTime(note.createdAtEpochMillis)}",
+                    text = stringResource(R.string.vn_duration, formatDuration(note.durationMillis), formatTime(note.createdAtEpochMillis)),
                     style = MaterialTheme.typography.bodySmall
                 )
                 if (note.tags.isNotEmpty()) {
@@ -583,23 +584,23 @@ private fun VoiceNoteRow(
             IconButton(onClick = onPlay) {
                 Icon(
                     imageVector = if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
-                    contentDescription = if (isPlaying) "Detener" else "Reproducir"
+                    contentDescription = stringResource(if (isPlaying) R.string.vn_stop else R.string.voice_note_play)
                 )
             }
             Box {
                 IconButton(onClick = { menuExpanded = true }) {
-                    Icon(Icons.Default.MoreVert, contentDescription = "Más opciones")
+                    Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.vn_more_options))
                 }
                 DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                     DropdownMenuItem(
-                        text = { Text("Renombrar") },
+                        text = { Text(stringResource(R.string.vn_rename)) },
                         onClick = {
                             menuExpanded = false
                             onRename()
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Cambiar categoría") },
+                        text = { Text(stringResource(R.string.vn_change_category)) },
                         leadingIcon = { Icon(Icons.Default.Category, contentDescription = null) },
                         onClick = {
                             menuExpanded = false
@@ -607,7 +608,7 @@ private fun VoiceNoteRow(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Editar etiquetas") },
+                        text = { Text(stringResource(R.string.vn_edit_tags)) },
                         leadingIcon = { Icon(Icons.AutoMirrored.Filled.Label, contentDescription = null) },
                         onClick = {
                             menuExpanded = false
@@ -615,7 +616,7 @@ private fun VoiceNoteRow(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Compartir") },
+                        text = { Text(stringResource(R.string.action_share)) },
                         leadingIcon = { Icon(Icons.Default.Share, contentDescription = null) },
                         onClick = {
                             menuExpanded = false
@@ -623,7 +624,7 @@ private fun VoiceNoteRow(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Eliminar") },
+                        text = { Text(stringResource(R.string.action_delete)) },
                         leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) },
                         onClick = {
                             menuExpanded = false
@@ -679,15 +680,15 @@ private fun RecordControls(
         ) {
             if (isRecording) {
                 Text(
-                    text = "Grabando... ${formatDuration(elapsedMillis)}",
+                    text = stringResource(R.string.vn_recording_time, formatDuration(elapsedMillis)),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.error
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
-                    value = formatRecordingTitle(elapsedMillis),
+                    value = stringResource(R.string.vn_default_title, formatRecordingTitle(elapsedMillis)),
                     onValueChange = { onTitleChanged(it) },
-                    label = { Text("Título automático") },
+                    label = { Text(stringResource(R.string.vn_auto_title)) },
                     enabled = false
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -695,19 +696,19 @@ private fun RecordControls(
                     Button(onClick = onStop, modifier = Modifier.weight(1f)) {
                         Icon(Icons.Default.Stop, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Guardar")
+                        Text(stringResource(R.string.action_save))
                     }
                     OutlinedButton(onClick = onCancel) {
-                        Text("Cancelar")
+                        Text(stringResource(R.string.action_cancel))
                     }
                 }
             } else {
-                Text(text = "Listo para grabar", style = MaterialTheme.typography.titleMedium)
+                Text(text = stringResource(R.string.vn_ready), style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(12.dp))
                 Button(onClick = onStart, modifier = Modifier.fillMaxWidth()) {
                     Icon(Icons.Default.Mic, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Grabar nota de voz")
+                    Text(stringResource(R.string.voice_note_record))
                 }
             }
         }
@@ -724,10 +725,10 @@ private fun EmptyState(isRecording: Boolean, onRecord: () -> Unit) {
     ) {
         Icon(Icons.Default.MicNone, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.height(64.dp))
         Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "Sin notas de voz", style = MaterialTheme.typography.titleMedium)
+        Text(text = stringResource(R.string.vn_empty_title), style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "Graba tus recordatorios hablados y guárdalos cifrados.",
+            text = stringResource(R.string.vn_empty_body),
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(horizontal = 32.dp),
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -735,7 +736,7 @@ private fun EmptyState(isRecording: Boolean, onRecord: () -> Unit) {
         Spacer(modifier = Modifier.height(24.dp))
         if (!isRecording) {
             Button(onClick = onRecord) {
-                Text("Empezar a grabar")
+                Text(stringResource(R.string.vn_empty_start))
             }
         }
     }
@@ -751,22 +752,22 @@ private fun RenameDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Renombrar nota") },
+        title = { Text(stringResource(R.string.vn_rename_title)) },
         text = {
             OutlinedTextField(
                 value = value,
                 onValueChange = { value = it },
-                label = { Text("Título") }
+                label = { Text(stringResource(R.string.vn_title_label)) }
             )
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(value) }) {
-                Text("Guardar")
+                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
@@ -781,13 +782,13 @@ private fun ConfirmDeleteDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.Delete, contentDescription = null) },
-        title = { Text("Eliminar nota") },
-        text = { Text("¿Eliminar \"$title\"? Esta acción es permanente.") },
+        title = { Text(stringResource(R.string.vn_delete_title)) },
+        text = { Text(stringResource(R.string.vn_delete_confirm, title)) },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text("Eliminar") }
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.action_delete)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancelar") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         }
     )
 }
@@ -807,14 +808,14 @@ private fun formatTime(epochMillis: Long): String {
 
 private fun dayLabel(epochMillis: Long): String {
     val instant = Instant.ofEpochMilli(epochMillis)
-    val formatter = DateTimeFormatter.ofPattern("EEEE, d MMM", Locale.getDefault())
+    val formatter = localizedDateFormatter("EEEEdMMM", Locale.getDefault())
     return formatter.format(instant.atZone(ZoneId.systemDefault())).replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
 }
 
 private fun formatRecordingTitle(elapsed: Long): String {
     val instant = Instant.now()
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.getDefault())
-    return "Nota ${formatter.format(instant.atZone(ZoneId.systemDefault()))}"
+    return formatter.format(instant.atZone(ZoneId.systemDefault()))
 }
 
 @Composable
@@ -825,7 +826,7 @@ private fun CategorySelectorDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Seleccionar categoría") },
+        title = { Text(stringResource(R.string.vn_category_pick)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 VoiceNoteCategory.values().forEach { category ->
@@ -851,7 +852,7 @@ private fun CategorySelectorDialog(
                                 )
                         )
                         Text(
-                            text = category.displayName,
+                            text = stringResource(category.labelRes),
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.weight(1f)
                         )
@@ -861,7 +862,7 @@ private fun CategorySelectorDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cerrar")
+                Text(stringResource(R.string.action_close))
             }
         }
     )
@@ -877,19 +878,19 @@ private fun TagsEditorDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Editar etiquetas") },
+        title = { Text(stringResource(R.string.vn_edit_tags)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    text = "Separa las etiquetas con comas",
+                    text = stringResource(R.string.vn_tags_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 OutlinedTextField(
                     value = tagsText,
                     onValueChange = { tagsText = it },
-                    label = { Text("Etiquetas") },
-                    placeholder = { Text("urgente, importante, trabajo") },
+                    label = { Text(stringResource(R.string.vn_tags_label)) },
+                    placeholder = { Text(stringResource(R.string.vn_tags_placeholder)) },
                     modifier = Modifier.fillMaxWidth(),
                     maxLines = 3
                 )
@@ -899,12 +900,12 @@ private fun TagsEditorDialog(
             TextButton(
                 onClick = { onConfirm(tagsText) }
             ) {
-                Text("Guardar")
+                Text(stringResource(R.string.action_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         }
     )
