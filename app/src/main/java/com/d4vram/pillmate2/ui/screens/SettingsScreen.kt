@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +52,7 @@ import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetShape
 import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetSize
 import com.d4vram.pillmate2.ui.theme.ThemeManager
 import com.d4vram.pillmate2.widget.QuickTakeWidget
+import com.d4vram.pillmate2.widget.fittedNameSp
 import com.d4vram.pillmate2.widget.readableOn
 import com.d4vram.pillmate2.notifications.NotificationHelper
 import android.os.Build
@@ -1647,11 +1649,14 @@ private fun WidgetPreview(
 ) {
     val background = Color(color.backgroundArgb)
     val gap = size.gapDp.dp
+    val previewSide = 190
+    // Ancho de cada celda, para encoger los nombres largos igual que el widget real
+    val cellWidthDp = (previewSide - size.paddingDp * 2 - size.gapDp) / 2f
 
     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Column(
             modifier = Modifier
-                .size(190.dp)
+                .size(previewSide.dp)
                 .background(background, RoundedCornerShape(24.dp))
                 .padding(size.paddingDp.dp),
             verticalArrangement = Arrangement.spacedBy(gap)
@@ -1676,6 +1681,7 @@ private fun WidgetPreview(
                             color = color,
                             size = size,
                             shape = shape,
+                            cellWidthDp = cellWidthDp,
                             modifier = Modifier.weight(1f).fillMaxHeight()
                         )
                     }
@@ -1691,8 +1697,10 @@ private fun PreviewCell(
     color: QuickTakeWidgetColor,
     size: QuickTakeWidgetSize,
     shape: QuickTakeWidgetShape,
+    cellWidthDp: Float,
     modifier: Modifier = Modifier
 ) {
+    val fontScale = LocalDensity.current.fontScale
     val fill = medication?.color ?: Color(color.emptyCellArgb)
     val glyph = when {
         medication == null -> "+"
@@ -1719,7 +1727,7 @@ private fun PreviewCell(
             if (medication != null) {
                 Text(
                     text = medication.name,
-                    fontSize = (size.textSp - 1).sp,
+                    fontSize = fittedNameSp(medication.name, size.textSp - 1, cellWidthDp, 1, fontScale).sp,
                     fontWeight = FontWeight.Medium,
                     color = readableOn(Color(color.backgroundArgb)),
                     maxLines = 1,
@@ -1742,7 +1750,8 @@ private fun PreviewCell(
         if (medication != null) {
             Text(
                 text = medication.name,
-                fontSize = size.textSp.sp,
+                // 8 = el padding de 4 dp a cada lado de la celda
+                fontSize = fittedNameSp(medication.name, size.textSp, cellWidthDp - 8, 1, fontScale).sp,
                 fontWeight = FontWeight.Medium,
                 color = readableOn(fill),
                 textAlign = TextAlign.Center,
