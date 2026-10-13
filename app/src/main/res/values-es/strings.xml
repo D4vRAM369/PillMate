@@ -738,4 +738,52 @@
     <string name="pdf_section_monthly_desc">Tendencias y patrones de consumo mensual</string>
     <string name="pdf_section_voice">Notas de voz</string>
     <string name="pdf_section_voice_desc">Transcripciones de notas de voz asociadas</string>
+
+    <!-- Documento PDF -->
+    <plurals name="doses_count">
+        <item quantity="one">%1$d toma</item>
+        <item quantity="other">%1$d tomas</item>
+    </plurals>
+    <string name="pdf_doc_title">Reporte de Medicación</string>
+    <string name="pdf_doc_period">Periodo: %1$s - %2$s</string>
+    <string name="pdf_doc_generated">Generado: %1$s</string>
+    <string name="pdf_doc_summary">RESUMEN</string>
+    <string name="pdf_doc_total_label">Total de tomas:</string>
+    <string name="pdf_doc_avg_label">Promedio diario:</string>
+    <string name="pdf_doc_avg_value">%1$s tomas/día</string>
+    <string name="pdf_doc_days_label">Días con registro:</string>
+    <string name="pdf_doc_days_value">%1$d de %2$d</string>
+    <string name="pdf_doc_active_label">Medicamentos activos:</string>
+    <string name="pdf_doc_medications">MEDICAMENTOS</string>
+    <string name="pdf_doc_weekly">GRÁFICA SEMANAL</string>
+    <string name="pdf_doc_weekly_empty">No hay datos suficientes para la gráfica</string>
+    <string name="pdf_doc_history">HISTORIAL DE TOMAS</string>
+    <string name="pdf_doc_history_cont">HISTORIAL DE TOMAS (continuación)</string>
+    <string name="pdf_doc_hourly">DISTRIBUCIÓN HORARIA</string>
+    <string name="pdf_slot_early">Madrugada</string>
+    <string name="pdf_slot_morning">Mañana</string>
+    <string name="pdf_slot_midday">Mediodía</string>
+    <string name="pdf_slot_afternoon">Tarde</string>
+    <string name="pdf_slot_evening">Noche</string>
+    <string name="pdf_slot_night">Nocturno</string>
+    <string name="pdf_doc_breakdown">DESGLOSE POR DOSIS</string>
+    <string name="pdf_doc_breakdown_empty">No hay datos de dosis disponibles</string>
+    <string name="pdf_doc_and_more">… y %1$d más</string>
+    <string name="pdf_doc_monthly">TENDENCIAS MENSUALES</string>
+    <string name="pdf_doc_monthly_empty">No hay datos mensuales disponibles</string>
+    <string name="pdf_doc_voice">NOTAS DE VOZ</string>
+    <string name="pdf_doc_voice_empty">No hay notas de voz en este periodo</string>
+    <string name="pdf_doc_audio_attached">[Audio adjunto]</string>
+    <string name="pdf_doc_more_notes">… y %1$d notas más</string>
+
+    <!-- CSV de resumen que se comparte desde Estadísticas -->
+    <string name="csv_metric">Métrica</string>
+    <string name="csv_value">Valor</string>
+    <string name="csv_total_doses">Total de Dosis Registradas</string>
+    <string name="csv_daily_average">Promedio Diario de Dosis</string>
+    <string name="csv_active_meds">Total de Medicamentos Activos</string>
+    <string name="csv_total_events">Total de Eventos Registrados</string>
+    <string name="csv_col_total">Dosis Totales Registradas</string>
+    <string name="csv_col_type">Tipo</string>
+    <string name="csv_regular">Regular</string>
 </resources>

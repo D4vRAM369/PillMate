@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.utils
 
+import com.d4vram.pillmate2.R
 import android.content.Context
 import android.os.Environment
 import com.d4vram.pillmate2.model.HistoryEntry
@@ -15,50 +16,6 @@ import java.time.format.DateTimeFormatter
  */
 class StatsExporter(private val context: Context) {
 
-    private val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-
-    /**
-     * Exporta datos estadísticos a CSV
-     */
-    fun exportStatsToCSV(
-        medications: List<Medication>,
-        history: List<HistoryEntry>,
-        fileName: String = "pillmate_stats_${System.currentTimeMillis()}.csv"
-    ): File? {
-        return try {
-            val csvContent = buildString {
-                // Encabezados
-                appendLine("Tipo,Fecha,Hora,Medicamento,Dosis,Cantidad,Notas,Notas de Voz")
-
-                // Datos de historial
-                history.forEach { entry ->
-                    val medication = medications.find { it.id == entry.medicationId }
-                    appendLine("Toma,${entry.date},${entry.time},${medication?.name ?: "Desconocido"},${medication?.dose ?: ""},${entry.quantity},${entry.notes.replace(",", ";")},${entry.audioNoteUri?.let { "Sí" } ?: "No"}")
-                }
-
-                // Datos de medicamentos
-                medications.forEach { med ->
-                    appendLine("Medicamento,,,,,,${med.name} - ${med.dose} - Meta diaria: ${med.dailyGoal}")
-                }
-            }
-
-            // 📦 Guardar en cache para compartir con FileProvider
-            // (FileProvider ya tiene configurado <cache-path> en file_paths.xml)
-            val cacheDir = context.cacheDir
-            val file = File(cacheDir, fileName)
-
-            FileWriter(file).use { writer ->
-                writer.write(csvContent)
-            }
-
-            file
-        } catch (e: Exception) {
-            e.printStackTrace()
-            null
-        }
-    }
-
-
     /**
      * Exporta resumen estadístico a CSV
      */
@@ -72,20 +29,21 @@ class StatsExporter(private val context: Context) {
         return try {
             val csvContent = buildString {
                 // Encabezados
-                appendLine("Métrica,Valor")
+                fun t(id: Int) = context.getString(id)
+                appendLine("${t(R.string.csv_metric)},${t(R.string.csv_value)}")
 
                 // Estadísticas generales (Foco en seguimiento)
-                appendLine("Total de Dosis Registradas,$totalDoses")
-                appendLine("Promedio Diario de Dosis,$averageDaily")
-                appendLine("Total de Medicamentos Activos,${medications.size}")
-                appendLine("Total de Eventos Registrados,${history.size}")
+                appendLine("${t(R.string.csv_total_doses)},$totalDoses")
+                appendLine("${t(R.string.csv_daily_average)},$averageDaily")
+                appendLine("${t(R.string.csv_active_meds)},${medications.size}")
+                appendLine("${t(R.string.csv_total_events)},${history.size}")
 
                 // Estadísticas por medicamento
                 appendLine("")
-                appendLine("Medicamento,Dosis Totales Registradas,Tipo")
+                appendLine("${t(R.string.stats_medication_fallback)},${t(R.string.csv_col_total)},${t(R.string.csv_col_type)}")
                 medications.forEach { med ->
                     val totalDosesForMed = history.filter { it.medicationId == med.id }.sumOf { it.quantity }
-                    appendLine("${med.name},$totalDosesForMed,Regular")
+                    appendLine("${med.name},$totalDosesForMed,${t(R.string.csv_regular)}")
                 }
             }
 

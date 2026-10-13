@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.export
 
+import androidx.annotation.StringRes
+import com.d4vram.pillmate2.R
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -64,6 +66,26 @@ data class DailyDataPoint(
  */
 class PdfGenerator(private val context: Context) {
 
+    // El PDF se escribe en el idioma del móvil. Aquí no hay pantalla: los textos se piden al context.
+    private fun t(@StringRes id: Int, vararg args: Any): String = context.getString(id, *args)
+    private fun doses(count: Int): String = context.resources.getQuantityString(R.plurals.doses_count, count, count)
+
+    /** Las unidades y las franjas viajan como claves en español porque la lógica las compara; aquí se traducen. */
+    private fun unitText(unit: String): String = when (unit) {
+        "tomas" -> t(R.string.clock_doses_label)
+        "gotas" -> t(R.string.unit_drops)
+        else -> unit
+    }
+    private fun slotLabel(key: String): String = when (key) {
+        "Madrugada" -> t(R.string.pdf_slot_early)
+        "Mañana" -> t(R.string.pdf_slot_morning)
+        "Mediodía" -> t(R.string.pdf_slot_midday)
+        "Tarde" -> t(R.string.pdf_slot_afternoon)
+        "Noche" -> t(R.string.pdf_slot_evening)
+        "Nocturno" -> t(R.string.pdf_slot_night)
+        else -> key
+    }
+
     // ===========================================
     // CONSTANTES DE PÁGINA
     // ===========================================
@@ -91,9 +113,9 @@ class PdfGenerator(private val context: Context) {
     // FORMATEADORES
     // ===========================================
 
-    private val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+    private val dateFormatter = com.d4vram.pillmate2.utils.localizedDateFormatter("ddMMyyyy", java.util.Locale.getDefault())
     private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
-    private val dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+    private fun formatDateTime(value: LocalDateTime): String = "${value.format(dateFormatter)} ${value.format(timeFormatter)}"
 
     /**
      * Genera el PDF con la configuración especificada.
@@ -310,17 +332,17 @@ class PdfGenerator(private val context: Context) {
             textAlign = Paint.Align.CENTER
             color = s.textSecondary
         }
-        canvas.drawText("Reporte de Medicación", centerX, yPosition + s.subtitleSize, subtitle)
+        canvas.drawText(t(R.string.pdf_doc_title), centerX, yPosition + s.subtitleSize, subtitle)
         yPosition += s.subtitleSize + s.sectionSpacing
 
         // Periodo
-        val periodText = "Periodo: ${data.startDate.format(dateFormatter)} - ${data.endDate.format(dateFormatter)}"
+        val periodText = t(R.string.pdf_doc_period, data.startDate.format(dateFormatter), data.endDate.format(dateFormatter))
         val secondary = secondaryPaint().apply { textAlign = Paint.Align.CENTER }
         canvas.drawText(periodText, centerX, yPosition + s.bodySize, secondary)
         yPosition += s.bodySize + s.lineSpacing
 
         // Fecha de generación
-        val generatedText = "Generado: ${LocalDateTime.now().format(dateTimeFormatter)}"
+        val generatedText = t(R.string.pdf_doc_generated, formatDateTime(LocalDateTime.now()))
         val small = smallPaint().apply { textAlign = Paint.Align.CENTER }
         canvas.drawText(generatedText, centerX, yPosition + s.smallSize, small)
         yPosition += s.smallSize + s.lineSpacing
@@ -344,17 +366,17 @@ class PdfGenerator(private val context: Context) {
         val rightMargin = pageWidth - style.pageMargin
 
         // Título
-        canvas.drawText("RESUMEN", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        canvas.drawText(t(R.string.pdf_doc_summary), leftMargin, yPosition + style.subtitleSize, subtitlePaint())
         yPosition += style.subtitleSize + style.lineSpacing * 2
 
         val cardTop = yPosition
         val cardPadding = 12f
 
         val items = listOf(
-            "Total de tomas:" to "${data.totalTomas} tomas",
-            "Promedio diario:" to "${formatValue(data.averageDailyTomas)} tomas/día",
-            "Días con registro:" to "${data.daysWithRecords} de ${data.totalDays}",
-            "Medicamentos activos:" to "${data.medications.size}"
+            t(R.string.pdf_doc_total_label) to doses(data.totalTomas),
+            t(R.string.pdf_doc_avg_label) to t(R.string.pdf_doc_avg_value, formatValue(data.averageDailyTomas)),
+            t(R.string.pdf_doc_days_label) to t(R.string.pdf_doc_days_value, data.daysWithRecords, data.totalDays),
+            t(R.string.pdf_doc_active_label) to "${data.medications.size}"
         )
 
         yPosition += cardPadding
@@ -390,7 +412,7 @@ class PdfGenerator(private val context: Context) {
         val rightMargin = pageWidth - style.pageMargin
 
         // Título
-        canvas.drawText("MEDICAMENTOS", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        canvas.drawText(t(R.string.pdf_doc_medications), leftMargin, yPosition + style.subtitleSize, subtitlePaint())
         yPosition += style.subtitleSize + style.lineSpacing * 2
 
         val body = bodyPaint()
@@ -417,7 +439,7 @@ class PdfGenerator(private val context: Context) {
             canvas.drawText(truncatedName, nameStartX, yPosition + style.bodySize, body)
 
             // Valor y porcentaje
-            val valueText = "${formatValue(medTotal.totalValue)} ${medTotal.displayUnit} (${(medTotal.percentage * 100).toInt()}%)"
+            val valueText = "${formatValue(medTotal.totalValue)} ${unitText(medTotal.displayUnit)} (${(medTotal.percentage * 100).toInt()}%)"
             canvas.drawText(valueText, rightMargin, yPosition + style.bodySize, secondary)
 
             yPosition += style.bodySize + style.lineSpacing
@@ -433,7 +455,7 @@ class PdfGenerator(private val context: Context) {
         val rightMargin = pageWidth - style.pageMargin
 
         // Título
-        canvas.drawText("GRÁFICA SEMANAL", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        canvas.drawText(t(R.string.pdf_doc_weekly), leftMargin, yPosition + style.subtitleSize, subtitlePaint())
         yPosition += style.subtitleSize + style.lineSpacing * 2
 
         // Agrupar datos por semana
@@ -447,7 +469,7 @@ class PdfGenerator(private val context: Context) {
 
         if (weeklyData.isEmpty()) {
             val noData = secondaryPaint()
-            canvas.drawText("No hay datos suficientes para la gráfica", leftMargin, yPosition + style.bodySize, noData)
+            canvas.drawText(t(R.string.pdf_doc_weekly_empty), leftMargin, yPosition + style.bodySize, noData)
             yPosition += style.bodySize
             return
         }
@@ -475,7 +497,7 @@ class PdfGenerator(private val context: Context) {
             }
 
             // Etiqueta de semana (dd/MM)
-            val label = weekStart.format(DateTimeFormatter.ofPattern("dd/MM"))
+            val label = weekStart.format(com.d4vram.pillmate2.utils.localizedDateFormatter("ddMM", java.util.Locale.getDefault()))
             canvas.drawText(label, barX + barWidth / 2, chartBottom, labelPaint)
         }
 
@@ -491,7 +513,7 @@ class PdfGenerator(private val context: Context) {
         val rightMargin = pageWidth - style.pageMargin
 
         // Título
-        canvas.drawText("HISTORIAL DE TOMAS", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        canvas.drawText(t(R.string.pdf_doc_history), leftMargin, yPosition + style.subtitleSize, subtitlePaint())
         yPosition += style.subtitleSize + style.lineSpacing * 2
 
         // === DEFINIR COLUMNAS CON ANCHOS FIJOS ===
@@ -517,10 +539,10 @@ class PdfGenerator(private val context: Context) {
         }
         yPosition += 4f
 
-        canvas.drawText("Fecha", col1, yPosition + style.bodySize, header)
-        canvas.drawText("Hora", col2, yPosition + style.bodySize, header)
-        canvas.drawText("Medicamento", col3, yPosition + style.bodySize, header)
-        canvas.drawText("Dosis", col4, yPosition + style.bodySize, header.apply { textAlign = Paint.Align.RIGHT })
+        canvas.drawText(t(R.string.entry_date), col1, yPosition + style.bodySize, header)
+        canvas.drawText(t(R.string.entry_time), col2, yPosition + style.bodySize, header)
+        canvas.drawText(t(R.string.stats_medication_fallback), col3, yPosition + style.bodySize, header)
+        canvas.drawText(t(R.string.med_form_dose), col4, yPosition + style.bodySize, header.apply { textAlign = Paint.Align.RIGHT })
         yPosition += style.bodySize + style.lineSpacing
 
         if (style.showTableBorders) {
@@ -538,7 +560,7 @@ class PdfGenerator(private val context: Context) {
                 startNewPage()
 
                 // Repetir cabecera en nueva página
-                canvas.drawText("HISTORIAL DE TOMAS (continuación)", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+                canvas.drawText(t(R.string.pdf_doc_history_cont), leftMargin, yPosition + style.subtitleSize, subtitlePaint())
                 yPosition += style.subtitleSize + style.lineSpacing
 
                 if (style.showTableBorders) {
@@ -546,11 +568,11 @@ class PdfGenerator(private val context: Context) {
                 }
                 yPosition += 4f
 
-                canvas.drawText("Fecha", col1, yPosition + style.bodySize, bodyBoldPaint())
-                canvas.drawText("Hora", col2, yPosition + style.bodySize, bodyBoldPaint())
-                canvas.drawText("Medicamento", col3, yPosition + style.bodySize, bodyBoldPaint())
+                canvas.drawText(t(R.string.entry_date), col1, yPosition + style.bodySize, bodyBoldPaint())
+                canvas.drawText(t(R.string.entry_time), col2, yPosition + style.bodySize, bodyBoldPaint())
+                canvas.drawText(t(R.string.stats_medication_fallback), col3, yPosition + style.bodySize, bodyBoldPaint())
                 val headerRight = bodyBoldPaint().apply { textAlign = Paint.Align.RIGHT }
-                canvas.drawText("Dosis", col4, yPosition + style.bodySize, headerRight)
+                canvas.drawText(t(R.string.med_form_dose), col4, yPosition + style.bodySize, headerRight)
                 yPosition += style.bodySize + style.lineSpacing
 
                 if (style.showTableBorders) {
@@ -601,7 +623,7 @@ class PdfGenerator(private val context: Context) {
         val rightMargin = pageWidth - style.pageMargin
 
         // Título
-        canvas.drawText("DISTRIBUCIÓN HORARIA", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        canvas.drawText(t(R.string.pdf_doc_hourly), leftMargin, yPosition + style.subtitleSize, subtitlePaint())
         yPosition += style.subtitleSize + style.lineSpacing * 2
 
         val slots = listOf(
@@ -627,7 +649,7 @@ class PdfGenerator(private val context: Context) {
             val barWidth = if (maxValue > 0) (value / maxValue) * barMaxWidth else 0f
 
             // Nombre del slot
-            canvas.drawText(name, leftMargin, yPosition + style.bodySize, body)
+            canvas.drawText(slotLabel(name), leftMargin, yPosition + style.bodySize, body)
 
             // Rango horario
             canvas.drawText(range, leftMargin + 80f, yPosition + style.bodySize, small)
@@ -659,7 +681,7 @@ class PdfGenerator(private val context: Context) {
         val rightMargin = pageWidth - style.pageMargin
 
         // Título
-        canvas.drawText("DESGLOSE POR DOSIS", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        canvas.drawText(t(R.string.pdf_doc_breakdown), leftMargin, yPosition + style.subtitleSize, subtitlePaint())
         yPosition += style.subtitleSize + style.lineSpacing * 2
 
         // Agrupar por medicamento y dosis
@@ -673,7 +695,7 @@ class PdfGenerator(private val context: Context) {
 
         if (doseBreakdown.isEmpty()) {
             val noData = secondaryPaint()
-            canvas.drawText("No hay datos de dosis disponibles", leftMargin, yPosition + style.bodySize, noData)
+            canvas.drawText(t(R.string.pdf_doc_breakdown_empty), leftMargin, yPosition + style.bodySize, noData)
             yPosition += style.bodySize
             return
         }
@@ -687,14 +709,14 @@ class PdfGenerator(private val context: Context) {
 
             val displayName = truncateText("$medName ($dose)", maxNameWidth, body)
             canvas.drawText(displayName, leftMargin, yPosition + style.bodySize, body)
-            canvas.drawText("$count tomas", rightMargin, yPosition + style.bodySize, valueRight)
+            canvas.drawText(doses(count), rightMargin, yPosition + style.bodySize, valueRight)
 
             yPosition += style.bodySize + style.lineSpacing
         }
 
         if (doseBreakdown.size > 20) {
             val more = smallPaint()
-            canvas.drawText("... y ${doseBreakdown.size - 20} más", leftMargin, yPosition + style.smallSize, more)
+            canvas.drawText(t(R.string.pdf_doc_and_more, doseBreakdown.size - 20), leftMargin, yPosition + style.smallSize, more)
             yPosition += style.smallSize
         }
     }
@@ -708,7 +730,7 @@ class PdfGenerator(private val context: Context) {
         val rightMargin = pageWidth - style.pageMargin
 
         // Título
-        canvas.drawText("TENDENCIAS MENSUALES", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        canvas.drawText(t(R.string.pdf_doc_monthly), leftMargin, yPosition + style.subtitleSize, subtitlePaint())
         yPosition += style.subtitleSize + style.lineSpacing * 2
 
         // Agrupar por mes
@@ -720,7 +742,7 @@ class PdfGenerator(private val context: Context) {
 
         if (monthlyData.isEmpty()) {
             val noData = secondaryPaint()
-            canvas.drawText("No hay datos mensuales disponibles", leftMargin, yPosition + style.bodySize, noData)
+            canvas.drawText(t(R.string.pdf_doc_monthly_empty), leftMargin, yPosition + style.bodySize, noData)
             yPosition += style.bodySize
             return
         }
@@ -768,7 +790,7 @@ class PdfGenerator(private val context: Context) {
         val leftMargin = style.pageMargin
 
         // Título
-        canvas.drawText("NOTAS DE VOZ", leftMargin, yPosition + style.subtitleSize, subtitlePaint())
+        canvas.drawText(t(R.string.pdf_doc_voice), leftMargin, yPosition + style.subtitleSize, subtitlePaint())
         yPosition += style.subtitleSize + style.lineSpacing * 2
 
         // Filtrar entradas con notas de voz
@@ -776,7 +798,7 @@ class PdfGenerator(private val context: Context) {
 
         if (entriesWithVoice.isEmpty()) {
             val noData = secondaryPaint()
-            canvas.drawText("No hay notas de voz en este periodo", leftMargin, yPosition + style.bodySize, noData)
+            canvas.drawText(t(R.string.pdf_doc_voice_empty), leftMargin, yPosition + style.bodySize, noData)
             yPosition += style.bodySize
             return
         }
@@ -788,18 +810,18 @@ class PdfGenerator(private val context: Context) {
             ensureSpace(style.bodySize * 2 + style.lineSpacing)
 
             // Fecha y medicamento
-            val header = "${entry.timestamp.format(dateTimeFormatter)} - ${entry.medicationName}"
+            val header = "${formatDateTime(entry.timestamp)} - ${entry.medicationName}"
             canvas.drawText(header, leftMargin, yPosition + style.bodySize, body)
             yPosition += style.bodySize + style.lineSpacing / 2
 
             // Indicador de audio (no podemos mostrar la transcripción sin procesarla)
-            canvas.drawText("  [Audio adjunto]", leftMargin, yPosition + style.smallSize, small)
+            canvas.drawText("  " + t(R.string.pdf_doc_audio_attached), leftMargin, yPosition + style.smallSize, small)
             yPosition += style.smallSize + style.lineSpacing
         }
 
         if (entriesWithVoice.size > 20) {
             val more = smallPaint()
-            canvas.drawText("... y ${entriesWithVoice.size - 20} notas más", leftMargin, yPosition + style.smallSize, more)
+            canvas.drawText(t(R.string.pdf_doc_more_notes, entriesWithVoice.size - 20), leftMargin, yPosition + style.smallSize, more)
             yPosition += style.smallSize
         }
     }
