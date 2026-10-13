@@ -4,6 +4,8 @@
     <string name="export_pdf">Export PDF</string>
     <string name="all_medications">All medications</string>
     <string name="quick_take_widget_description">Log a dose of your four usual medications with one tap.</string>
+    <string name="quick_take_cell_log">Log a dose of %1$s</string>
+    <string name="quick_take_cell_configure">Set up quick access</string>
 
     <!-- Time periods (History and Statistics filters) -->
     <string name="period_today">Today</string>
@@ -394,6 +396,12 @@
     <string name="settings_import_csv_title">Import CSV</string>
     <string name="settings_import_csv_desc">Your current data will be replaced by %1$d medications and %2$d history entries. A local safety copy is made first.</string>
     <string name="settings_import_csv_failed">❌ Couldn\'t import the CSV: %1$s</string>
+    <string name="settings_import_unknown_error">The file could not be imported. Check that it is a valid PillMate file and try again.</string>
+    <string name="csv_import_invalid_format">This is not a recognized PillMate CSV file.</string>
+    <string name="csv_import_medications_missing">The medications section is missing.</string>
+    <string name="csv_import_medication_row_incomplete">A medication row is incomplete.</string>
+    <string name="csv_import_history_missing">The history section is missing.</string>
+    <string name="backup_import_csv_missing">The backup does not contain backup.csv.</string>
 
     <!-- Settings: appearance, sorting, security (header) -->
     <string name="settings_appearance">🎨 Appearance</string>
@@ -503,6 +511,7 @@
     <string name="settings_voice_password_reset_failed">Couldn\'t reset the password</string>
     <string name="settings_history_exported">History exported with %1$dKB of audio</string>
     <string name="settings_history_exported_no_audio">History exported without audio</string>
+    <string name="audio_export_readme">PillMate Export Package\n=======================\n\nContents:\n- backup.csv: Complete data in PillMate CSV format\n- audio_notes/: Encrypted voice notes (AES-256-GCM)\n\nAudio file types:\n- *.enc: Encrypted audio file\n- *.salt: Salt used to derive the key\n- *.iv: Initialization vector\n\nExported: %1$s</string>
     <string name="settings_error_export">Export failed: %1$s</string>
     <string name="settings_backup_encrypted_exported">✅ Encrypted backup exported: %1$s</string>
     <string name="settings_backup_exported">✅ Backup exported: %1$s</string>
@@ -612,7 +621,10 @@
     <string name="nav_settings">Settings</string>
 
     <!-- 24-hour clock -->
-    <string name="clock_description">24-hour clock. %1$d entries. %2$s</string>
+    <plurals name="clock_description">
+        <item quantity="one">24-hour clock. %1$d entry. %2$s</item>
+        <item quantity="other">24-hour clock. %1$d entries. %2$s</item>
+    </plurals>
     <string name="clock_now_suffix">Now: %1$s.</string>
     <plurals name="clock_units">
         <item quantity="one">%1$d unit</item>

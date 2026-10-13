@@ -3,6 +3,7 @@ package com.d4vram.pillmate2.ai
 import com.d4vram.pillmate2.R
 import com.d4vram.pillmate2.model.HistoryEntry
 import java.time.Duration
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -60,7 +61,7 @@ object SmartInsightEngine {
             val (day, dayEntries) = byDay.maxBy { it.value.size }
             result += Insight(
                 t(R.string.insight_day_title),
-                day.format(DateTimeFormatter.ofPattern("EEE d/M", locale)),
+                formatInsightDay(day, locale),
                 t(R.string.insight_day_detail, dayEntries.size, "%.1f".format(locale, total.toFloat() / byDay.size), byDay.size)
             )
         }
@@ -75,3 +76,6 @@ object SmartInsightEngine {
         else -> "${minutes / 1440} d ${minutes % 1440 / 60} h"
     }
 }
+
+internal fun formatInsightDay(date: LocalDate, locale: Locale): String =
+    date.format(DateTimeFormatter.ofPattern("EEE d MMM", locale))

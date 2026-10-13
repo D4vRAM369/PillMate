@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.platform.app.InstrumentationRegistry
+import com.d4vram.pillmate2.R
 import com.d4vram.pillmate2.model.Medication
 import com.d4vram.pillmate2.ui.components.TakeMedicationDialog
 import org.junit.Rule
@@ -13,6 +15,7 @@ import org.junit.Test
 
 class DesignSwitchTest {
     @get:Rule val compose = createComposeRule()
+    private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test fun legacyRestoresOriginalDoseDialogAfterSwitchingBack() {
         val design = mutableStateOf(AppDesign.Legacy)
@@ -22,13 +25,13 @@ class DesignSwitchTest {
                 MaterialTheme { TakeMedicationDialog(medication, listOf(medication), {}, { _, _, _ -> }) }
             }
         }
-        compose.onNodeWithText("Hora de la toma:").assertExists()
-        compose.onNodeWithText("Cambiar fecha y hora").assertDoesNotExist()
+        compose.onNodeWithText(context.getString(R.string.dose_dialog_time_label)).assertExists()
+        compose.onNodeWithText(context.getString(R.string.dose_change_datetime)).assertDoesNotExist()
         compose.runOnIdle { design.value = AppDesign.Astra }
-        compose.onNodeWithText("Cambiar fecha y hora").assertExists()
-        compose.onNodeWithText("Hora de la toma:").assertDoesNotExist()
+        compose.onNodeWithText(context.getString(R.string.dose_change_datetime)).assertExists()
+        compose.onNodeWithText(context.getString(R.string.dose_dialog_time_label)).assertDoesNotExist()
         compose.runOnIdle { design.value = AppDesign.Legacy }
-        compose.onNodeWithText("Hora de la toma:").assertExists()
-        compose.onNodeWithText("Cambiar fecha y hora").assertDoesNotExist()
+        compose.onNodeWithText(context.getString(R.string.dose_dialog_time_label)).assertExists()
+        compose.onNodeWithText(context.getString(R.string.dose_change_datetime)).assertDoesNotExist()
     }
 }

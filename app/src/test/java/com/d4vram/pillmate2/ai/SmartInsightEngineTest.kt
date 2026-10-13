@@ -53,7 +53,7 @@ class SmartInsightEngineTest {
         assertTrue(insights.getValue("Intervalo habitual entre tomas").detail.endsWith("el más corto: 30 min"))
         assertEquals("A", insights.getValue("Más registrado").value)
         assertEquals("4 de 5 tomas (80 %)", insights.getValue("Más registrado").detail)
-        assertTrue(insights.getValue("Día con más tomas").value.endsWith("12/10"))
+        assertEquals("lun 12 oct", insights.getValue("Día con más tomas").value)
     }
 
     @Test
@@ -67,5 +67,12 @@ class SmartInsightEngineTest {
         assertEquals("45 min", SmartInsightEngine.formatMinutes(45))
         assertEquals("3 h 10 min", SmartInsightEngine.formatMinutes(190))
         assertEquals("2 d 1 h", SmartInsightEngine.formatMinutes(2 * 1440 + 60))
+    }
+
+    @Test
+    fun `formats busiest day with the locale's month name`() {
+        val date = java.time.LocalDate.of(2026, 10, 11)
+        assertEquals("Sun 11 Oct", formatInsightDay(date, Locale.US))
+        assertEquals("dom 11 oct", formatInsightDay(date, es))
     }
 }

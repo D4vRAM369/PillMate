@@ -229,11 +229,7 @@ private fun LineChartCanvas(
             )
 
             // Etiqueta del eje Y
-            val valueText = if (value == value.toInt().toFloat()) {
-                value.toInt().toString()
-            } else {
-                String.format("%.1f", value)
-            }
+            val valueText = formatStatisticsNumber(value, locale)
             drawContext.canvas.nativeCanvas.drawText(
                 valueText,
                 leftPadding - 8.dp.toPx(),
@@ -394,7 +390,7 @@ private fun LineChartCanvas(
                 val point = points[index]
                 val dataPoint = data[index]
 
-                val valueText = formatValue(dataPoint.valueInUnit) + " " + unit
+                val valueText = formatStatisticsNumber(dataPoint.valueInUnit, locale) + " " + unit
                 val dateText = dataPoint.date?.format(shortDate).orEmpty()
 
                 val tooltipPaint = android.graphics.Paint().apply {
@@ -441,13 +437,5 @@ private fun LineChartCanvas(
                 )
             }
         }
-    }
-}
-
-private fun formatValue(value: Float): String {
-    return if (value == value.toInt().toFloat()) {
-        value.toInt().toString()
-    } else {
-        String.format("%.1f", value)
     }
 }

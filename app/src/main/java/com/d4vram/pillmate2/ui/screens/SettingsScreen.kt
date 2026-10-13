@@ -38,7 +38,11 @@ import com.d4vram.pillmate2.data.BackupManager
 import com.d4vram.pillmate2.data.BackupSafManager
 import com.d4vram.pillmate2.data.BackupScheduler
 import com.d4vram.pillmate2.data.BackupZipManager
+import com.d4vram.pillmate2.data.BackupImportError
+import com.d4vram.pillmate2.data.BackupImportException
 import com.d4vram.pillmate2.data.CsvUtils
+import com.d4vram.pillmate2.data.CsvImportError
+import com.d4vram.pillmate2.data.CsvImportException
 import com.d4vram.pillmate2.ui.security.SecurityManager
 import com.d4vram.pillmate2.ui.security.SecuritySettings
 import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
@@ -325,7 +329,10 @@ fun SettingsScreen(
                         history = parsed.history
                     )
                 } catch (e: Exception) {
-                    snackbarMessage = context.getString(R.string.settings_import_csv_failed, e.message.orEmpty())
+                    snackbarMessage = context.getString(
+                        R.string.settings_import_csv_failed,
+                        importFailureMessage(context, e)
+                    )
                 }
             }
         }
@@ -1338,7 +1345,10 @@ fun SettingsScreen(
                         repository.replaceAllData(medications, history)
                         snackbarMessage = context.getString(R.string.settings_data_restored)
                     } catch (e: Exception) {
-                        snackbarMessage = context.getString(R.string.settings_restore_cancelled, e.message.orEmpty())
+                        snackbarMessage = context.getString(
+                            R.string.settings_restore_cancelled,
+                            importFailureMessage(context, e)
+                        )
                     } finally {
                         restore.zipFile?.delete()
                         pendingRestore = null
@@ -2807,21 +2817,10 @@ private suspend fun exportHistoryWithAudio(
         }
 
         // 3. Añadir archivo README con instrucciones
-        val readme = """
-            PillMate Export Package
-            =======================
-
-            Contenido:
-            - backup.csv: Datos completos en formato PillMate CSV
-            - audio_notes/: Notas de voz encriptadas (AES-256-GCM)
-
-            Formato de audios:
-            - *.enc: Archivo de audio encriptado
-            - *.salt: Salt para derivación de clave
-            - *.iv: Vector de inicialización
-
-            Exportado el: ${Date(timestamp)}
-        """.trimIndent()
+        val locale = context.resources.configuration.locales[0]
+        val exportedAt = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT, locale)
+            .format(Date(timestamp))
+        val readme = context.getString(R.string.audio_export_readme, exportedAt)
 
         zipOut.putNextEntry(java.util.zip.ZipEntry("README.txt"))
         zipOut.write(readme.toByteArray())
@@ -2829,4 +2828,19 @@ private suspend fun exportHistoryWithAudio(
     }
 
     return@withContext zipFile
+}
+
+private fun importFailureMessage(context: Context, error: Exception): String = when (error) {
+    is CsvImportException -> context.getString(
+        when (error.reason) {
+            CsvImportError.INVALID_FORMAT -> R.string.csv_import_invalid_format
+            CsvImportError.MEDICATIONS_SECTION_MISSING -> R.string.csv_import_medications_missing
+            CsvImportError.MEDICATION_ROW_INCOMPLETE -> R.string.csv_import_medication_row_incomplete
+            CsvImportError.HISTORY_SECTION_MISSING -> R.string.csv_import_history_missing
+        }
+    )
+    is BackupImportException -> when (error.reason) {
+        BackupImportError.CSV_MISSING -> context.getString(R.string.backup_import_csv_missing)
+    }
+    else -> context.getString(R.string.settings_import_unknown_error)
 }

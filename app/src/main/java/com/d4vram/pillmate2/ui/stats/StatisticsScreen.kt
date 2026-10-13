@@ -56,6 +56,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import com.d4vram.pillmate2.R
 import androidx.compose.ui.text.font.FontWeight
@@ -78,11 +79,13 @@ fun StatisticsScreen(
     navController: androidx.navigation.NavController? = null
 ) {
     val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
     val viewModel: StatisticsViewModel = viewModel(
         factory = StatisticsViewModel.provideFactory(repository)
     )
 
     val uiState by viewModel.uiState.collectAsState()
+    LaunchedEffect(locale) { viewModel.updateLocale(locale) }
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -252,7 +255,8 @@ fun StatisticsScreen(
             if (uiState.showingFamilyStats && uiState.doseBreakdown.isNotEmpty()) {
                 DoseBreakdownSection(
                     familyName = uiState.familyName,
-                    breakdown = uiState.doseBreakdown
+                    breakdown = uiState.doseBreakdown,
+                    locale = locale
                 )
             }
 
@@ -350,7 +354,7 @@ fun DailyDetailSheetContent(
 
                 // Nombre del medicamento (ocupa espacio disponible, sin romper línea)
                 Text(
-                    text = "${item.entry.medicationName} • ${item.displayValue} ${unitLabel(item.displayUnit)}",
+                    text = "${item.entry.medicationName} • ${formatStatisticsNumber(item.displayValue, LocalConfiguration.current.locales[0])} ${unitLabel(item.displayUnit)}",
                     style = MaterialTheme.typography.bodyLarge,
                     color = androidx.compose.ui.graphics.Color.White,
                     maxLines = 1,
@@ -395,7 +399,8 @@ fun DailyDetailSheetContent(
 @Composable
 fun DoseBreakdownSection(
     familyName: String,
-    breakdown: List<DoseBreakdownItem>
+    breakdown: List<DoseBreakdownItem>,
+    locale: java.util.Locale
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
@@ -476,7 +481,7 @@ fun DoseBreakdownSection(
 
                         // Valor total
                         Text(
-                            text = "${formatBreakdownValue(item.totalValue)}${unitLabel(item.displayUnit)}",
+                            text = "${formatStatisticsNumber(item.totalValue, locale)}${unitLabel(item.displayUnit)}",
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurface,
@@ -488,17 +493,6 @@ fun DoseBreakdownSection(
         }
     }
 }
-
-private fun formatBreakdownValue(value: Float): String {
-    return if (value == value.toInt().toFloat()) {
-        value.toInt().toString()
-    } else {
-        String.format("%.1f", value)
-    }
-}
-
-
-
 
 @Composable
 fun MainKpiSection(

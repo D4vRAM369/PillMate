@@ -1,5 +1,7 @@
 <resources>
     <string name="quick_take_widget_description">Registra una toma de tus cuatro medicamentos habituales con un toque.</string>
+    <string name="quick_take_cell_log">Registrar una toma de %1$s</string>
+    <string name="quick_take_cell_configure">Configurar acceso rápido</string>
     <string name="export_csv">Exportar CSV</string>
     <string name="export_pdf">Exportar PDF</string>
     <string name="all_medications">Todos los medicamentos</string>
@@ -392,6 +394,12 @@
     <string name="settings_import_csv_title">Importar CSV</string>
     <string name="settings_import_csv_desc">Se reemplazarán tus datos actuales por %1$d medicamentos y %2$d entradas de historial. Antes se creará una copia local de seguridad.</string>
     <string name="settings_import_csv_failed">❌ Error al importar CSV: %1$s</string>
+    <string name="settings_import_unknown_error">No se pudo importar el archivo. Comprueba que sea válido y vuelve a intentarlo.</string>
+    <string name="csv_import_invalid_format">El archivo no tiene un formato CSV de PillMate reconocido.</string>
+    <string name="csv_import_medications_missing">Falta la sección de medicamentos.</string>
+    <string name="csv_import_medication_row_incomplete">Hay una fila de medicamento incompleta.</string>
+    <string name="csv_import_history_missing">Falta la sección del historial.</string>
+    <string name="backup_import_csv_missing">La copia no contiene backup.csv.</string>
 
     <!-- Ajustes: apariencia, orden, seguridad (cabecera) -->
     <string name="settings_appearance">🎨 Apariencia</string>
@@ -501,6 +509,7 @@
     <string name="settings_voice_password_reset_failed">Error al restablecer contraseña</string>
     <string name="settings_history_exported">Historial exportado con %1$dKB de audios</string>
     <string name="settings_history_exported_no_audio">Historial exportado sin audios</string>
+    <string name="audio_export_readme">Paquete de exportación de PillMate\n==================================\n\nContenido:\n- backup.csv: Datos completos en formato CSV de PillMate\n- audio_notes/: Notas de voz cifradas (AES-256-GCM)\n\nTipos de archivo de audio:\n- *.enc: Archivo de audio cifrado\n- *.salt: Salt para derivar la clave\n- *.iv: Vector de inicialización\n\nExportado: %1$s</string>
     <string name="settings_error_export">Error al exportar: %1$s</string>
     <string name="settings_backup_encrypted_exported">✅ Backup cifrado exportado: %1$s</string>
     <string name="settings_backup_exported">✅ Backup exportado: %1$s</string>
@@ -610,7 +619,10 @@
     <string name="nav_settings">Ajustes</string>
 
     <!-- Reloj de 24 horas -->
-    <string name="clock_description">Reloj de 24 horas. %1$d registros. %2$s</string>
+    <plurals name="clock_description">
+        <item quantity="one">Reloj de 24 horas. %1$d registro. %2$s</item>
+        <item quantity="other">Reloj de 24 horas. %1$d registros. %2$s</item>
+    </plurals>
     <string name="clock_now_suffix">Ahora: %1$s.</string>
     <plurals name="clock_units">
         <item quantity="one">%1$d unidad</item>

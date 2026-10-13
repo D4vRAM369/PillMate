@@ -13,29 +13,32 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import com.d4vram.pillmate2.model.Medication
+import com.d4vram.pillmate2.R
 import com.d4vram.pillmate2.ui.quicktake.QuickTapPulseBar
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
 class AstraHomeTest {
     @get:Rule val compose = createComposeRule()
+    private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
     private val medication = Medication("id", "Prueba", "10 mg", "pastilla", Color.Blue, "💊")
 
     @Test fun quantityCannotDropBelowOneAndBusyCannotSave() {
         var saved = 0
         compose.setContent { MaterialTheme { AstraDoseSheet(medication, busy = true, onDismiss = {}, onConfirm = { _, _ -> saved++ }) } }
-        compose.onNodeWithContentDescription("Reducir cantidad").assertIsNotEnabled()
-        compose.onNodeWithText("Guardando…").assertIsNotEnabled()
+        compose.onNodeWithContentDescription(context.getString(R.string.dose_sheet_decrease)).assertIsNotEnabled()
+        compose.onNodeWithText(context.getString(R.string.dose_saving)).assertIsNotEnabled()
         compose.runOnIdle { assertEquals(0, saved) }
     }
 
     @Test fun quantityStepperSavesSelectedInteger() {
         var saved = 0
         compose.setContent { MaterialTheme { AstraDoseSheet(medication, busy = false, onDismiss = {}, onConfirm = { quantity, _ -> saved = quantity }) } }
-        compose.onNodeWithContentDescription("Reducir cantidad").assertIsNotEnabled()
-        compose.onNodeWithContentDescription("Aumentar cantidad").performClick()
-        compose.onNodeWithText("Registrar 2 unidades").performClick()
+        compose.onNodeWithContentDescription(context.getString(R.string.dose_sheet_decrease)).assertIsNotEnabled()
+        compose.onNodeWithContentDescription(context.getString(R.string.dose_sheet_increase)).performClick()
+        compose.onNodeWithText(context.resources.getQuantityString(R.plurals.dose_log_units, 2, 2)).performClick()
         compose.runOnIdle { assertEquals(2, saved) }
     }
 
@@ -48,8 +51,8 @@ class AstraHomeTest {
                 }
             }
         }
-        compose.onNodeWithText("Guardando…").assertIsNotEnabled().performClick()
-        compose.onNodeWithContentDescription("Aumentar cantidad").assertIsNotEnabled()
+        compose.onNodeWithText(context.getString(R.string.dose_saving)).assertIsNotEnabled().performClick()
+        compose.onNodeWithContentDescription(context.getString(R.string.dose_sheet_increase)).assertIsNotEnabled()
         compose.runOnIdle { assertEquals(0, saved) }
     }
 
@@ -57,7 +60,9 @@ class AstraHomeTest {
         var slot = -1
         compose.setContent { MaterialTheme { Column(Modifier.verticalScroll(rememberScrollState())) { QuickTapPulseBar(List(4) { null }, false, {}, {}, { slot = it }) } } }
         for (index in 0..3) {
-            compose.onNodeWithContentDescription("Configurar acceso rápido ${index + 1}").performScrollTo().performClick()
+            compose.onNodeWithContentDescription(
+                context.getString(R.string.quick_take_configure_quick, index + 1)
+            ).performScrollTo().performClick()
             compose.runOnIdle { assertEquals(index, slot) }
         }
     }

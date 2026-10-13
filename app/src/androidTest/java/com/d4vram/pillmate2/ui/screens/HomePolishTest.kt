@@ -11,6 +11,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.platform.app.InstrumentationRegistry
+import com.d4vram.pillmate2.R
 import com.d4vram.pillmate2.ui.theme.AppUiStyle
 import com.d4vram.pillmate2.ui.theme.LocalUiStyle
 import org.junit.Assert.assertEquals
@@ -20,6 +22,7 @@ import org.junit.Test
 
 class HomePolishTest {
     @get:Rule val compose = createComposeRule()
+    private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
 
     @Test fun searchStaysBelowAddButtonWithLargeText() {
         var added = false
@@ -44,26 +47,26 @@ class HomePolishTest {
             }
         }
         val search = compose.onNode(hasSetTextAction()).fetchSemanticsNode().boundsInRoot
-        val add = compose.onNodeWithContentDescription("Agregar medicamento")
+        val add = compose.onNodeWithContentDescription(context.getString(R.string.action_add_medication))
         assertTrue("Search must not overlap the add button", search.top >= add.fetchSemanticsNode().boundsInRoot.bottom)
         add.performClick()
-        compose.onNodeWithContentDescription("Cerrar búsqueda").performClick()
+        compose.onNodeWithContentDescription(context.getString(R.string.history_search_close)).performClick()
         compose.runOnIdle { assertTrue(added); assertTrue(closed) }
     }
 
     @Test fun noResultsOffersWorkingClearAction() {
         var clicks = 0
         compose.setContent { MaterialTheme { EmptyMedicationState(true, { clicks++ }) } }
-        compose.onNodeWithText("Sin resultados").assertIsDisplayed()
-        compose.onNodeWithText("Limpiar búsqueda").performClick()
+        compose.onNodeWithText(context.getString(R.string.home_empty_no_results)).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.home_clear_search)).performClick()
         compose.runOnIdle { assertEquals(1, clicks) }
     }
 
     @Test fun emptyCollectionOffersWorkingAddAction() {
         var clicks = 0
         compose.setContent { MaterialTheme { EmptyMedicationState(false, { clicks++ }) } }
-        compose.onNodeWithText("Tu primer medicamento").assertIsDisplayed()
-        compose.onNodeWithText("Añadir medicamento").performClick()
+        compose.onNodeWithText(context.getString(R.string.home_empty_first)).assertIsDisplayed()
+        compose.onNodeWithText(context.getString(R.string.home_add_medication)).performClick()
         compose.runOnIdle { assertEquals(1, clicks) }
     }
 }

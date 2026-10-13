@@ -8,6 +8,7 @@ import com.d4vram.pillmate2.data.MedicationRepository
 
 import com.d4vram.pillmate2.model.Medication
 import com.d4vram.pillmate2.ui.stats.ActivityDataPoint
+import com.d4vram.pillmate2.ui.stats.formatStatisticsNumber
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -64,7 +65,7 @@ data class StatisticsUiState(
 
 data class HistoryEntryWithUnit(
     val entry: com.d4vram.pillmate2.model.HistoryEntry,
-    val displayValue: String,
+    val displayValue: Float,
     val displayUnit: String,
     val medicationColor: androidx.compose.ui.graphics.Color? = null
 )
@@ -91,6 +92,7 @@ class StatisticsViewModel(
 
     private val _filter = MutableStateFlow(FilterRange.WEEK)
     private var selectedMedicationId: String? = null
+    private var presentationLocale: java.util.Locale = java.util.Locale.getDefault()
 
     // Fecha fin del rango (normalmente hoy, pero permite navegar al pasado)
     private var currentEndDate: LocalDate = LocalDate.now()
@@ -108,6 +110,12 @@ class StatisticsViewModel(
 
     fun setFilter(range: FilterRange) {
         _filter.value = range
+    }
+
+    fun updateLocale(locale: java.util.Locale) {
+        if (presentationLocale == locale) return
+        presentationLocale = locale
+        loadStatistics()
     }
 
     fun selectMedication(medicationId: String?) {
@@ -179,7 +187,7 @@ class StatisticsViewModel(
                 }
                 HistoryEntryWithUnit(
                     entry = entry,
-                    displayValue = formatValueWithUnit(entryValue, entryUnit),
+                    displayValue = entryValue,
                     displayUnit = entryUnit,
                     medicationColor = entryMed?.color
                 )
@@ -303,7 +311,7 @@ class StatisticsViewModel(
                     averageInUnit = formatValueWithUnit(averageInUnit, displayUnit),
                     // Métricas principales
                     totalDosesLogged = trackingMetrics.totalDosesLogged,
-                    averageDailyDoses = String.format("%.1f", trackingMetrics.averageDailyDoses),
+                    averageDailyDoses = formatStatisticsNumber(trackingMetrics.averageDailyDoses, presentationLocale),
                     daysSinceLastRecord = trackingMetrics.daysSinceLastRecord,
                     trend = trendOf(trackingMetrics.totalDosesLogged, previousPeriodDoses, periodDays),
                     // Desglose por variantes de dosis
@@ -411,7 +419,7 @@ class StatisticsViewModel(
          }
 
         // Etiquetas cortas de fecha en el idioma del móvil (sin palabras propias de la app).
-        val locale = java.util.Locale.getDefault()
+        val locale = presentationLocale
         val shortDate = com.d4vram.pillmate2.utils.localizedDateFormatter("ddMM", locale)
 
         return (0 until chartDays).map { offset ->
@@ -498,7 +506,7 @@ class StatisticsViewModel(
     private fun formatValueWithUnit(value: Float, unit: String): String {
         return when {
             value == value.toInt().toFloat() -> "${value.toInt()}"
-            else -> String.format("%.1f", value)
+            else -> formatStatisticsNumber(value, presentationLocale)
         }
     }
 

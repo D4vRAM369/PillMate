@@ -162,7 +162,12 @@ fun RhythmClock(
         }
     }
     val nowSuffix = if (showNow && !byHour) " " + stringResource(R.string.clock_now_suffix, now.format(timeFormat)) else ""
-    val clockDescription = stringResource(R.string.clock_description, entries.size, summary) + nowSuffix
+    val clockDescription = pluralStringResource(
+        R.plurals.clock_description,
+        entries.size,
+        entries.size,
+        summary
+    ) + nowSuffix
 
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Box(Modifier.size(diameter)) {

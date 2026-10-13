@@ -6,6 +6,18 @@ import org.junit.Test
 
 class CsvUtilsTest {
     @Test
+    fun parseCsv_invalidFileReturnsLocalizedErrorCode() {
+        val error = try {
+            CsvUtils.parseCsv("not a PillMate export")
+            null
+        } catch (exception: CsvImportException) {
+            exception.reason
+        }
+
+        assertEquals(CsvImportError.INVALID_FORMAT, error)
+    }
+
+    @Test
     fun parseCsv_supportsHistoryRowsWithoutDoseColumn() {
         val csv = """
             # PillMate CSV v1
