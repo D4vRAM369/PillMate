@@ -802,6 +802,7 @@
     <string name="csv_daily_average">Daily dose average</string>
     <string name="csv_active_meds">Total active medications</string>
     <string name="csv_total_events">Total logged events</string>
+    <string name="csv_medication_amount">%1$s amount (%2$s)</string>
     <string name="csv_col_total">Total doses logged</string>
     <string name="csv_col_type">Type</string>
     <string name="csv_regular">Regular</string>

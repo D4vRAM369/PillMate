@@ -5,10 +5,33 @@ import android.content.Context
 import android.os.Environment
 import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.model.Medication
+import java.text.NumberFormat
 import java.io.File
 import java.io.FileWriter
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+
+internal data class MedicationStatisticsRow(
+    val medication: Medication,
+    val takeCount: Int,
+    val amount: MedicationAmount
+)
+
+internal fun medicationStatisticsRows(
+    history: List<HistoryEntry>,
+    medications: List<Medication>
+): List<MedicationStatisticsRow> {
+    val entriesByMedication = history.groupBy { it.medicationId }
+    return medications.mapNotNull { medication ->
+        val entries = entriesByMedication[medication.id].orEmpty()
+        if (entries.isEmpty()) return@mapNotNull null
+        MedicationStatisticsRow(
+            medication = medication,
+            takeCount = countTakeEvents(entries),
+            amount = amountForMedication(medication, entries)
+        )
+    }
+}
 
 /**
  * 🔥 UTILIDAD PARA EXPORTAR DATOS ESTADÍSTICOS 🔥
@@ -29,7 +52,7 @@ class StatsExporter(private val context: Context) {
         return try {
             val csvContent = buildString {
                 // Encabezados
-                fun t(id: Int) = context.getString(id)
+                fun t(id: Int, vararg args: Any) = context.getString(id, *args)
                 appendLine("${t(R.string.csv_metric)},${t(R.string.csv_value)}")
 
                 // Estadísticas generales (Foco en seguimiento)
@@ -38,12 +61,24 @@ class StatsExporter(private val context: Context) {
                 appendLine("${t(R.string.csv_active_meds)},${medications.size}")
                 appendLine("${t(R.string.csv_total_events)},${history.size}")
 
+                medicationStatisticsRows(history, medications).forEach { row ->
+                    val unitLabel = when (row.amount.unit) {
+                        "gotas" -> t(R.string.unit_drops)
+                        "units" -> t(R.string.unit_units)
+                        else -> row.amount.unit
+                    }
+                    val label = t(R.string.csv_medication_amount, row.medication.name, unitLabel)
+                    val number = NumberFormat.getNumberInstance(
+                        context.resources.configuration.locales[0]
+                    ).format(row.amount.value)
+                    appendLine("$label,$number")
+                }
+
                 // Estadísticas por medicamento
                 appendLine("")
                 appendLine("${t(R.string.stats_medication_fallback)},${t(R.string.csv_col_total)},${t(R.string.csv_col_type)}")
-                medications.forEach { med ->
-                    val totalDosesForMed = history.filter { it.medicationId == med.id }.sumOf { it.quantity }
-                    appendLine("${med.name},$totalDosesForMed,${t(R.string.csv_regular)}")
+                medicationStatisticsRows(history, medications).forEach { row ->
+                    appendLine("${row.medication.name},${row.takeCount},${t(R.string.csv_regular)}")
                 }
             }
 

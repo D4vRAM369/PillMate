@@ -74,6 +74,7 @@ class PdfGenerator(private val context: Context) {
     private fun unitText(unit: String): String = when (unit) {
         "tomas" -> t(R.string.clock_doses_label)
         "gotas" -> t(R.string.unit_drops)
+        "units" -> t(R.string.unit_units)
         else -> unit
     }
     private fun slotLabel(key: String): String = when (key) {
