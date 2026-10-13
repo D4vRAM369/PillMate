@@ -635,4 +635,11 @@
     <string name="quick_sheet_title">Take medication</string>
     <string name="quick_sheet_subtitle">Your most taken</string>
     <string name="quick_sheet_empty">You don\'t have any medications yet.</string>
+
+    <!-- Medication types (shown translated, stored as always) -->
+    <string name="med_type_tablet">Tablet</string>
+    <string name="med_type_pill">Pill</string>
+    <string name="med_type_capsule">Capsule</string>
+    <string name="med_type_syrup">Syrup</string>
+    <string name="med_type_drops">Drops</string>
 </resources>

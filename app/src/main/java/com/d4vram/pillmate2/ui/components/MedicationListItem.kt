@@ -97,11 +97,12 @@ fun MedicationListItem(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+                val typeLabel = medicationTypeLabel(medication.type)
                 Text(
                     text = buildString {
                         append(medication.dose)
                         if (!medication.scheduleTime.isNullOrBlank()) append(" · ${medication.scheduleTime}")
-                        if (medication.type.isNotBlank()) append(" · ${medication.type}")
+                        if (typeLabel.isNotBlank()) append(" · $typeLabel")
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

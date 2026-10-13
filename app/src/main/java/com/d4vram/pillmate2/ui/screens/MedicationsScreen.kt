@@ -50,12 +50,14 @@ fun MedicationsScreen(
 
     var searchQuery by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf("") }
 
+    val context = androidx.compose.ui.platform.LocalContext.current
     val filteredMedications = remember(medications, searchQuery) {
         if (searchQuery.isBlank()) medications
         else medications.filter {
             it.name.contains(searchQuery, ignoreCase = true) ||
             it.dose.contains(searchQuery, ignoreCase = true) ||
-            it.type.contains(searchQuery, ignoreCase = true)
+            it.type.contains(searchQuery, ignoreCase = true) ||
+            com.d4vram.pillmate2.model.MedicationType.label(it.type, context::getString).contains(searchQuery, ignoreCase = true)
         }
     }
 

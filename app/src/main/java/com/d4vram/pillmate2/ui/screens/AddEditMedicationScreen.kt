@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.Medication
+import com.d4vram.pillmate2.model.MedicationType
 import com.d4vram.pillmate2.ui.components.ImagePickerSection
 import com.d4vram.pillmate2.utils.ImageUtils
 import com.d4vram.pillmate2.notifications.ReminderScheduler
@@ -62,7 +63,7 @@ fun AddEditMedicationScreen(
 
     var name by remember { mutableStateOf("") }
     var dose by remember { mutableStateOf("") }
-    var type by remember { mutableStateOf("Comprimido") }
+    var type by remember { mutableStateOf(MedicationType.label(MedicationType.DEFAULT.stored, context::getString)) }
     var selectedColor by remember { mutableStateOf(paletteColors.first()) }
     var selectedEmoji by remember { mutableStateOf(quickEmojiOptions.first()) }
     var dailyGoal by remember { mutableStateOf("1") }
@@ -99,7 +100,7 @@ fun AddEditMedicationScreen(
                 existingMedication = it
                 name = it.name
                 dose = it.dose
-                type = it.type
+                type = MedicationType.label(it.type, context::getString)
                 if (!paletteColors.contains(it.color)) {
                     paletteColors.add(0, it.color)
                 }
@@ -155,11 +156,13 @@ fun AddEditMedicationScreen(
             ExtendedFloatingActionButton(
                 onClick = {
                     if (name.isNotBlank() && dose.isNotBlank()) {
+                        // Lo que se guarda no depende del idioma: "Tablet" vuelve a ser "Comprimido".
+                        val storedType = MedicationType.toStored(type, existingMedication?.type, context::getString)
                         val baseMedication = existingMedication ?: Medication(
                             id = medicationId ?: UUID.randomUUID().toString(),
                             name = name,
                             dose = dose,
-                            type = type,
+                            type = storedType,
                             color = selectedColor,
                             emoji = selectedEmoji,
                             scheduleTime = null,
@@ -176,7 +179,7 @@ fun AddEditMedicationScreen(
                         val medication = baseMedication.copy(
                             name = name,
                             dose = dose,
-                            type = type,
+                            type = storedType,
                             color = selectedColor,
                             emoji = selectedEmoji,
                             dailyGoal = dailyGoal.toIntOrNull() ?: baseMedication.dailyGoal,

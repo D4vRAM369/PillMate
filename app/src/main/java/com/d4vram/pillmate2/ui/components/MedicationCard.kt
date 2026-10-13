@@ -34,7 +34,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import androidx.compose.ui.platform.LocalContext
 import com.d4vram.pillmate2.model.Medication
+import com.d4vram.pillmate2.model.MedicationType
 import kotlinx.coroutines.delay
 import java.io.File
 import java.time.Instant
@@ -239,7 +241,7 @@ fun MedicationCard(
 
                 // Dosis y tipo
                 Text(
-                    text = "${medication.dose} • ${medication.type}",
+                    text = "${medication.dose} • ${medicationTypeLabel(medication.type)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -273,6 +275,13 @@ fun MedicationCard(
             }
         )
     }
+}
+
+/** Tipo tal como debe leerse en el idioma del móvil; lo guardado no cambia (ver [MedicationType]). */
+@Composable
+internal fun medicationTypeLabel(stored: String): String {
+    val context = LocalContext.current
+    return MedicationType.label(stored, context::getString)
 }
 
 /**

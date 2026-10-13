@@ -633,4 +633,11 @@
     <string name="quick_sheet_title">Tomar medicamento</string>
     <string name="quick_sheet_subtitle">Tus más tomados</string>
     <string name="quick_sheet_empty">Aún no tienes medicamentos.</string>
+
+    <!-- Tipos de medicamento (se muestran traducidos, se guardan como siempre) -->
+    <string name="med_type_tablet">Comprimido</string>
+    <string name="med_type_pill">Pastilla</string>
+    <string name="med_type_capsule">Cápsula</string>
+    <string name="med_type_syrup">Jarabe</string>
+    <string name="med_type_drops">Gotas</string>
 </resources>
