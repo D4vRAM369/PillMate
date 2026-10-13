@@ -1,5 +1,8 @@
 <resources>
     <string name="quick_take_widget_description">Registra una toma de tus cuatro medicamentos habituales con un toque.</string>
+    <string name="export_csv">Exportar CSV</string>
+    <string name="export_pdf">Exportar PDF</string>
+    <string name="all_medications">Todos los medicamentos</string>
 
     <!-- Periodos de tiempo (filtros de Historial y Estadísticas) -->
     <string name="period_today">Hoy</string>

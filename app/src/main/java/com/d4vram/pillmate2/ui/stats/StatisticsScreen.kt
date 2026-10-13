@@ -55,6 +55,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.d4vram.pillmate2.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -131,7 +133,7 @@ fun StatisticsScreen(
                             onDismissRequest = { showExportMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Exportar CSV") },
+                                text = { Text(stringResource(R.string.export_csv)) },
                                 onClick = {
                                     showExportMenu = false
                                     coroutineScope.launch {
@@ -172,7 +174,7 @@ fun StatisticsScreen(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Exportar PDF") },
+                                text = { Text(stringResource(R.string.export_pdf)) },
                                 onClick = {
                                     showExportMenu = false
                                     showPdfExportSheet = true

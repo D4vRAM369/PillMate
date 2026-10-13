@@ -34,7 +34,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import com.d4vram.pillmate2.R
 import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.model.Medication
 
@@ -99,7 +101,7 @@ fun MedicationFilterDropdown(
                     val displayText = if (selectedMed != null) {
                         "${selectedMed.name} ${selectedMed.dose}"
                     } else {
-                        "Todos los medicamentos"
+                        stringResource(R.string.all_medications)
                     }
                     Text(
                         text = displayText,
@@ -135,7 +137,7 @@ fun MedicationFilterDropdown(
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary
                         )
-                        Text("Todos los medicamentos")
+                        Text(stringResource(R.string.all_medications))
                     }
                 },
                 onClick = {

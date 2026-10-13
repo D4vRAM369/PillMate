@@ -1,5 +1,8 @@
 <resources>
     <string name="app_name" translatable="false">PillMate</string>
+    <string name="export_csv">Export CSV</string>
+    <string name="export_pdf">Export PDF</string>
+    <string name="all_medications">All medications</string>
     <string name="quick_take_widget_description">Log a dose of your four usual medications with one tap.</string>
 
     <!-- Time periods (History and Statistics filters) -->
