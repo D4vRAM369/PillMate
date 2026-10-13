@@ -8,6 +8,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -1825,12 +1827,19 @@ private fun WidgetCustomizationCard(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Letra algo menor y una sola línea para que quepan los tres; con la letra del sistema
+            // muy ampliada la fila se desliza en vez de partir "Cuadrada" en dos.
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 QuickTakeWidgetShape.entries.forEach { s ->
                     FilterChip(
                         selected = s == shape,
                         onClick = { onShapeChange(s) },
-                        label = { Text(s.title) }
+                        label = {
+                            Text(s.title, style = MaterialTheme.typography.labelMedium, maxLines = 1, softWrap = false)
+                        }
                     )
                 }
             }
