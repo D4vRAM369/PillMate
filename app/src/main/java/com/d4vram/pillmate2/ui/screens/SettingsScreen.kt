@@ -1856,7 +1856,7 @@ private fun AboutDialog(onDismiss: () -> Unit) {
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "Software libre bajo licencia GPL-3.0-or-later. Sin anuncios, sin cuentas y sin internet.",
+                    text = "Software libre (licencia GPL v3 o posterior). Sin anuncios, sin cuentas y sin internet.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
