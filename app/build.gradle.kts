@@ -61,10 +61,13 @@ android {
 
     // Con -Pdev, la build debug se instala como app aparte ("PillMate Dev") para probar cambios
     // sin tocar la app de uso diario ni su base de datos:  ./gradlew :app:assembleDebug -Pdev
+    // -Pdev=<id> usa otro applicationId: uno desechable para los tests de UI, que escriben en los
+    // ajustes de la app y se desinstalan al acabar (ver docs: nunca lanzarlos contra la app diaria).
     if (project.hasProperty("dev")) {
+        val devId = (project.property("dev") as String).ifBlank { "dev.d4vram.pillmate2" }
         androidComponents {
             onVariants(selector().withBuildType("debug")) {
-                it.applicationId.set("dev.d4vram.pillmate2")
+                it.applicationId.set(devId)
                 it.manifestPlaceholders.put("appLabel", "PillMate Dev")
             }
         }
@@ -184,8 +187,8 @@ dependencies {
 
     // Testing
     testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.12.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 
