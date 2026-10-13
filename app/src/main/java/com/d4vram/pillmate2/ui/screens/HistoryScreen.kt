@@ -87,10 +87,12 @@ import kotlinx.coroutines.launch
  * 📊 Pantalla del historial completo
  */
 enum class TimePeriod(val label: String) {
-    ALL("Todo"),
+    // El orden de aquí es el orden de los chips en pantalla
     TODAY("Hoy"),
+    YESTERDAY("Ayer"),
     WEEK("Esta semana"),
-    MONTH("Este mes")
+    MONTH("Este mes"),
+    ALL("Todo")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -126,6 +128,9 @@ fun HistoryScreen(
             TimePeriod.ALL -> historyEntries
             TimePeriod.TODAY -> historyEntries.filter {
                 it.timestamp.toLocalDate() == today
+            }
+            TimePeriod.YESTERDAY -> historyEntries.filter {
+                it.timestamp.toLocalDate() == today.minusDays(1)
             }
             TimePeriod.WEEK -> historyEntries.filter {
                 ChronoUnit.DAYS.between(it.timestamp.toLocalDate(), today) <= 7
