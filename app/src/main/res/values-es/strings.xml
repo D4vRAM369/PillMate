@@ -694,4 +694,48 @@
     <string name="stats_edit_notes">✏️ Editar notas</string>
     <string name="stats_notes">📝 Notas: %1$s</string>
     <string name="stats_voice_attached">🎤 Nota de voz adjunta</string>
+
+    <!-- Exportar PDF: pantallas -->
+    <string name="pdf_share_subject">Reporte PillMate</string>
+    <string name="pdf_share_failed">No se pudo compartir el PDF</string>
+    <string name="pdf_sheet_title">Generar Reporte PDF</string>
+    <string name="pdf_style_title">Estilo del reporte</string>
+    <string name="pdf_style_label">Estilo:</string>
+    <string name="pdf_style_clinical">Clínico</string>
+    <string name="pdf_style_clinical_desc">Formal y profesional. Ideal para compartir con médicos o incluir en historial médico. Colores neutros y estructura clara.</string>
+    <string name="pdf_style_clinical_short">Formal, aspecto médico profesional</string>
+    <string name="pdf_style_pillmate_desc">Colores y estilo de la app. Incluye indicadores de color por medicamento y diseño visual atractivo.</string>
+    <string name="pdf_style_pillmate_short">Colores y estilo de la app</string>
+    <string name="pdf_style_minimal">Minimalista</string>
+    <string name="pdf_style_minimal_desc">Limpio y compacto. Solo los datos esenciales sin elementos decorativos. Perfecto para impresión.</string>
+    <string name="pdf_style_minimal_short">Limpio, solo datos esenciales</string>
+    <string name="pdf_period">Periodo</string>
+    <string name="pdf_period_label">Periodo:</string>
+    <string name="pdf_sections">Secciones a incluir</string>
+    <string name="pdf_sections_label">Secciones a incluir:</string>
+    <string name="pdf_generating">Generando…</string>
+    <string name="pdf_generate">Generar PDF</string>
+    <string name="pdf_from">Desde</string>
+    <string name="pdf_to">Hasta</string>
+    <string name="pdf_err_dates">La fecha final no puede ser anterior a la inicial</string>
+    <string name="pdf_err_generate">Error al generar el PDF</string>
+    <string name="pdf_err_unknown">Error desconocido</string>
+
+    <!-- Exportar PDF: secciones -->
+    <string name="pdf_section_summary">Resumen general</string>
+    <string name="pdf_section_summary_desc">Resumen general con total de tomas y estadísticas</string>
+    <string name="pdf_section_medications">Lista de medicamentos</string>
+    <string name="pdf_section_medications_desc">Lista de medicamentos con cantidades totales</string>
+    <string name="pdf_section_weekly">Gráfica semanal</string>
+    <string name="pdf_section_weekly_desc">Gráfica visual de consumo semanal</string>
+    <string name="pdf_section_history">Historial de tomas</string>
+    <string name="pdf_section_history_desc">Historial detallado de todas las tomas</string>
+    <string name="pdf_section_hourly">Distribución horaria</string>
+    <string name="pdf_section_hourly_desc">Gráfica de distribución por franjas horarias</string>
+    <string name="pdf_section_breakdown">Desglose por dosis</string>
+    <string name="pdf_section_breakdown_desc">Desglose detallado por dosis de cada medicamento</string>
+    <string name="pdf_section_monthly">Tendencias mensuales</string>
+    <string name="pdf_section_monthly_desc">Tendencias y patrones de consumo mensual</string>
+    <string name="pdf_section_voice">Notas de voz</string>
+    <string name="pdf_section_voice_desc">Transcripciones de notas de voz asociadas</string>
 </resources>

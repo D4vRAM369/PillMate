@@ -1,5 +1,8 @@
 package com.d4vram.pillmate2.ui.export
 
+import androidx.annotation.StringRes
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import android.content.Intent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -52,12 +55,12 @@ fun PdfExportScreen(
                     type = "application/pdf"
                     putExtra(Intent.EXTRA_STREAM, uri)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    putExtra(Intent.EXTRA_SUBJECT, "Reporte PillMate")
+                    putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.pdf_share_subject))
                 }
-                context.startActivity(Intent.createChooser(intent, "Compartir reporte"))
+                context.startActivity(Intent.createChooser(intent, context.getString(R.string.stats_share_chooser)))
                 viewModel.clearGeneratedFile()
             } catch (e: Exception) {
-                viewModel.reportShareError(e.message ?: "No se pudo compartir el PDF")
+                viewModel.reportShareError(e.message ?: context.getString(R.string.pdf_share_failed))
             }
         }
     }
@@ -65,12 +68,12 @@ fun PdfExportScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Exportar PDF") },
+                title = { Text(stringResource(R.string.export_pdf)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = stringResource(R.string.action_back)
                         )
                     }
                 }
@@ -87,28 +90,28 @@ fun PdfExportScreen(
         ) {
             // Selector de estilo en cards
             Text(
-                text = "Estilo del reporte",
+                text = stringResource(R.string.pdf_style_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
 
             StyleCard(
-                title = "Clínico",
-                description = "Formal y profesional. Ideal para compartir con médicos o incluir en historial médico. Colores neutros y estructura clara.",
+                title = stringResource(R.string.pdf_style_clinical),
+                description = stringResource(R.string.pdf_style_clinical_desc),
                 selected = uiState.selectedStyle == PdfStyleType.CLINICAL,
                 onClick = { viewModel.setStyle(PdfStyleType.CLINICAL) }
             )
 
             StyleCard(
                 title = "PillMate",
-                description = "Colores y estilo de la app. Incluye indicadores de color por medicamento y diseño visual atractivo.",
+                description = stringResource(R.string.pdf_style_pillmate_desc),
                 selected = uiState.selectedStyle == PdfStyleType.PILLMATE,
                 onClick = { viewModel.setStyle(PdfStyleType.PILLMATE) }
             )
 
             StyleCard(
-                title = "Minimalista",
-                description = "Limpio y compacto. Solo los datos esenciales sin elementos decorativos. Perfecto para impresión.",
+                title = stringResource(R.string.pdf_style_minimal),
+                description = stringResource(R.string.pdf_style_minimal_desc),
                 selected = uiState.selectedStyle == PdfStyleType.MINIMAL,
                 onClick = { viewModel.setStyle(PdfStyleType.MINIMAL) }
             )
@@ -117,7 +120,7 @@ fun PdfExportScreen(
 
             // Selector de periodo
             Text(
-                text = "Periodo",
+                text = stringResource(R.string.pdf_period),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -133,7 +136,7 @@ fun PdfExportScreen(
 
             // Secciones a incluir
             Text(
-                text = "Secciones a incluir",
+                text = stringResource(R.string.pdf_sections),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -159,11 +162,11 @@ fun PdfExportScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             Column {
                                 Text(
-                                    text = section.displayName,
+                                    text = stringResource(section.labelRes),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = getSectionDescription(section),
+                                    text = stringResource(getSectionDescription(section)),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -193,10 +196,10 @@ fun PdfExportScreen(
                         strokeWidth = 2.dp
                     )
                     Spacer(modifier = Modifier.width(12.dp))
-                    Text("Generando...")
+                    Text(stringResource(R.string.pdf_generating))
                 } else {
                     Text(
-                        text = "Generar PDF",
+                        text = stringResource(R.string.pdf_generate),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -286,7 +289,7 @@ private fun PeriodSelectorFull(
     var showStartPicker by remember { mutableStateOf(false) }
     var showEndPicker by remember { mutableStateOf(false) }
 
-    val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+    val dateFormatter = com.d4vram.pillmate2.utils.localizedDateFormatter("ddMMyyyy", androidx.compose.ui.platform.LocalConfiguration.current.locales[0])
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -311,7 +314,7 @@ private fun PeriodSelectorFull(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "Desde",
+                        text = stringResource(R.string.pdf_from),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -343,7 +346,7 @@ private fun PeriodSelectorFull(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "Hasta",
+                        text = stringResource(R.string.pdf_to),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -375,12 +378,12 @@ private fun PeriodSelectorFull(
                         showStartPicker = false
                     }
                 ) {
-                    Text("Aceptar")
+                    Text(stringResource(R.string.action_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showStartPicker = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         ) {
@@ -405,12 +408,12 @@ private fun PeriodSelectorFull(
                         showEndPicker = false
                     }
                 ) {
-                    Text("Aceptar")
+                    Text(stringResource(R.string.action_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEndPicker = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         ) {
@@ -422,15 +425,16 @@ private fun PeriodSelectorFull(
 /**
  * Devuelve una descripción corta para cada sección
  */
-private fun getSectionDescription(section: PdfSection): String {
+@StringRes
+private fun getSectionDescription(section: PdfSection): Int {
     return when (section) {
-        PdfSection.SUMMARY -> "Resumen general con total de tomas y estadísticas"
-        PdfSection.MEDICATIONS -> "Lista de medicamentos con cantidades totales"
-        PdfSection.WEEKLY_CHART -> "Gráfica visual de consumo semanal"
-        PdfSection.HISTORY -> "Historial detallado de todas las tomas"
-        PdfSection.HOURLY_DISTRIBUTION -> "Gráfica de distribución por franjas horarias"
-        PdfSection.DOSE_BREAKDOWN -> "Desglose detallado por dosis de cada medicamento"
-        PdfSection.MONTHLY_TRENDS -> "Tendencias y patrones de consumo mensual"
-        PdfSection.VOICE_NOTES -> "Transcripciones de notas de voz asociadas"
+        PdfSection.SUMMARY -> R.string.pdf_section_summary_desc
+        PdfSection.MEDICATIONS -> R.string.pdf_section_medications_desc
+        PdfSection.WEEKLY_CHART -> R.string.pdf_section_weekly_desc
+        PdfSection.HISTORY -> R.string.pdf_section_history_desc
+        PdfSection.HOURLY_DISTRIBUTION -> R.string.pdf_section_hourly_desc
+        PdfSection.DOSE_BREAKDOWN -> R.string.pdf_section_breakdown_desc
+        PdfSection.MONTHLY_TRENDS -> R.string.pdf_section_monthly_desc
+        PdfSection.VOICE_NOTES -> R.string.pdf_section_voice_desc
     }
 }

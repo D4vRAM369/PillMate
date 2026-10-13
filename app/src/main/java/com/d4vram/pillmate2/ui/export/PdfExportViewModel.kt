@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.ui.export
 
+import com.d4vram.pillmate2.R
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -96,7 +97,7 @@ class PdfExportViewModel(
     fun generatePdf(context: Context) {
         val state = _uiState.value
         if (state.endDate.isBefore(state.startDate)) {
-            _uiState.update { it.copy(error = "La fecha final no puede ser anterior a la inicial") }
+            _uiState.update { it.copy(error = context.getString(R.string.pdf_err_dates)) }
             return
         }
 
@@ -127,13 +128,13 @@ class PdfExportViewModel(
                     }
                 } else {
                     _uiState.update {
-                        it.copy(isGenerating = false, error = "Error al generar el PDF")
+                        it.copy(isGenerating = false, error = context.getString(R.string.pdf_err_generate))
                     }
                 }
 
             } catch (e: Exception) {
                 _uiState.update {
-                    it.copy(isGenerating = false, error = e.message ?: "Error desconocido")
+                    it.copy(isGenerating = false, error = e.message ?: context.getString(R.string.pdf_err_unknown))
                 }
             }
         }

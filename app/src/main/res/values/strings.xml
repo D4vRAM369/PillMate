@@ -696,4 +696,48 @@
     <string name="stats_edit_notes">✏️ Edit notes</string>
     <string name="stats_notes">📝 Notes: %1$s</string>
     <string name="stats_voice_attached">🎤 Voice note attached</string>
+
+    <!-- PDF export: screens -->
+    <string name="pdf_share_subject">PillMate report</string>
+    <string name="pdf_share_failed">Couldn\'t share the PDF</string>
+    <string name="pdf_sheet_title">Generate PDF report</string>
+    <string name="pdf_style_title">Report style</string>
+    <string name="pdf_style_label">Style:</string>
+    <string name="pdf_style_clinical">Clinical</string>
+    <string name="pdf_style_clinical_desc">Formal and professional. Ideal for sharing with doctors or adding to a medical record. Neutral colours and a clear structure.</string>
+    <string name="pdf_style_clinical_short">Formal, professional medical look</string>
+    <string name="pdf_style_pillmate_desc">The app\'s colours and style. Includes a colour marker per medication and an attractive visual design.</string>
+    <string name="pdf_style_pillmate_short">The app\'s colours and style</string>
+    <string name="pdf_style_minimal">Minimal</string>
+    <string name="pdf_style_minimal_desc">Clean and compact. Only the essential data, no decoration. Perfect for printing.</string>
+    <string name="pdf_style_minimal_short">Clean, essential data only</string>
+    <string name="pdf_period">Period</string>
+    <string name="pdf_period_label">Period:</string>
+    <string name="pdf_sections">Sections to include</string>
+    <string name="pdf_sections_label">Sections to include:</string>
+    <string name="pdf_generating">Generating…</string>
+    <string name="pdf_generate">Generate PDF</string>
+    <string name="pdf_from">From</string>
+    <string name="pdf_to">To</string>
+    <string name="pdf_err_dates">The end date can\'t be before the start date</string>
+    <string name="pdf_err_generate">Couldn\'t generate the PDF</string>
+    <string name="pdf_err_unknown">Unknown error</string>
+
+    <!-- PDF export: sections -->
+    <string name="pdf_section_summary">General summary</string>
+    <string name="pdf_section_summary_desc">General summary with total doses and statistics</string>
+    <string name="pdf_section_medications">Medication list</string>
+    <string name="pdf_section_medications_desc">Medication list with total amounts</string>
+    <string name="pdf_section_weekly">Weekly chart</string>
+    <string name="pdf_section_weekly_desc">Visual chart of weekly use</string>
+    <string name="pdf_section_history">Dose history</string>
+    <string name="pdf_section_history_desc">Detailed history of every dose</string>
+    <string name="pdf_section_hourly">Hourly distribution</string>
+    <string name="pdf_section_hourly_desc">Chart of the distribution across time slots</string>
+    <string name="pdf_section_breakdown">Breakdown by dose</string>
+    <string name="pdf_section_breakdown_desc">Detailed breakdown by dose of each medication</string>
+    <string name="pdf_section_monthly">Monthly trends</string>
+    <string name="pdf_section_monthly_desc">Monthly use trends and patterns</string>
+    <string name="pdf_section_voice">Voice notes</string>
+    <string name="pdf_section_voice_desc">Transcriptions of attached voice notes</string>
 </resources>

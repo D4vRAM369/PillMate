@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.export
 
+import androidx.annotation.StringRes
+import com.d4vram.pillmate2.R
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
@@ -217,15 +219,15 @@ data class PdfStyle(
 /**
  * Secciones disponibles para incluir en el PDF
  */
-enum class PdfSection(val displayName: String, val defaultSelected: Boolean) {
-    SUMMARY("Resumen general", true),
-    MEDICATIONS("Lista de medicamentos", true),
-    WEEKLY_CHART("Gráfica semanal", true),
-    HISTORY("Historial de tomas", false),
-    HOURLY_DISTRIBUTION("Distribución horaria", false),
-    DOSE_BREAKDOWN("Desglose por dosis", false),
-    MONTHLY_TRENDS("Tendencias mensuales", false),
-    VOICE_NOTES("Notas de voz", false)
+enum class PdfSection(@StringRes val labelRes: Int, val defaultSelected: Boolean) {
+    SUMMARY(R.string.pdf_section_summary, true),
+    MEDICATIONS(R.string.pdf_section_medications, true),
+    WEEKLY_CHART(R.string.pdf_section_weekly, true),
+    HISTORY(R.string.pdf_section_history, false),
+    HOURLY_DISTRIBUTION(R.string.pdf_section_hourly, false),
+    DOSE_BREAKDOWN(R.string.pdf_section_breakdown, false),
+    MONTHLY_TRENDS(R.string.pdf_section_monthly, false),
+    VOICE_NOTES(R.string.pdf_section_voice, false)
 }
 
 /**
