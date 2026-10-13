@@ -23,14 +23,19 @@ class QuickTakeWidgetLayoutTest {
     fun `long names shrink instead of breaking a word`() {
         // Cabe: no se toca
         assertEquals(12, fittedNameSp("Aspirina", 12, 88f, 2, 1f))
-        // No cabe: baja lo justo
-        assertEquals(11, fittedNameSp("Melatonina", 12, 60f, 2, 1f))
-        // Caso real: celda de 87 dp, preset Normal (13 sp) y letra del sistema al 130 %
-        assertEquals(12, fittedNameSp("Melatonina", 13, 87f, 2, 1.3f))
-        assertEquals(13, fittedNameSp("Omeprazol", 13, 87f, 2, 1.3f))
-        // Dos líneas: manda la palabra más larga, no el nombre entero
-        assertEquals(12, fittedNameSp("Vitamina D", 12, 55f, 2, 1f))
-        assertEquals(10, fittedNameSp("Vitamina D", 12, 55f, 1, 1f))
+        // Casos reales: preset Normal (13 sp), letra del sistema al 130 %.
+        // Rejilla 2x2, celda de 87 dp: los nombres largos bajan un punto, los cortos no
+        assertEquals(12, fittedNameSp("Melatonina", 13, 87f, 1, 1.3f))
+        assertEquals(12, fittedNameSp("Omeprazol", 13, 87f, 1, 1.3f))
+        assertEquals(13, fittedNameSp("Aspirina", 13, 87f, 1, 1.3f))
+        // Rejilla 4x1, celda de 75 dp: menos hueco, baja más
+        assertEquals(10, fittedNameSp("Omeprazol", 13, 75f, 1, 1.3f))
+        // Dos líneas: manda la palabra más ancha, no el nombre entero
+        assertEquals(13, fittedNameSp("Vitamina D", 13, 75f, 2, 1.3f))
+        assertEquals(10, fittedNameSp("Vitamina D", 13, 75f, 1, 1.3f))
+        // Mismas letras, distinto ancho: las m pesan más que las i
+        assertEquals(12, fittedNameSp("illilli", 12, 30f, 1, 1f))
+        assertEquals(8, fittedNameSp("mammamm", 12, 30f, 1, 1f))
         // Nunca por debajo del 70 %
         assertEquals(8, fittedNameSp("Paracetamol/Codeína", 12, 40f, 1, 1f))
     }

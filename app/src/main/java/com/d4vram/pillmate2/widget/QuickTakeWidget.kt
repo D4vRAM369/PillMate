@@ -172,20 +172,31 @@ internal fun quickTakeColumns(widthDp: Float, heightDp: Float): Int = when {
 internal fun readableOn(background: Color): Color =
     if (background.luminance() > 0.5f) Color(0xFF1B1B1F) else Color.White
 
-// Glance no sabe medir texto ni tiene "autoajuste": el ancho se estima. Una letra ocupa de media
-// ~0,53 veces el tamaño de la fuente (la M más, la i menos); medido en un Pixel con letra al 130 %.
-// Subir si algún nombre aún se parte; bajar si encogen nombres que cabían.
-private const val CharWidthFactor = 0.53f
+// Glance no sabe medir texto ni tiene "autoajuste": el ancho se estima. Una letra normal ocupa
+// ~0,58 veces el tamaño de la fuente (medido en un Pixel con letra al 130 %); se usa 0,60 para dejar
+// margen, porque quedarse corto corta el nombre y pasarse solo lo encoge un punto. Las letras anchas
+// y estrechas se ponderan en charUnits. Subir si algún nombre aún se corta.
+private const val CharWidthFactor = 0.60f
 private const val MinNameScale = 0.7f // "algo más pequeña", no ilegible: como mucho un 30 % menos
+
+/** Ancho de una letra en "letras normales": la m ocupa como letra y media, la i menos de media. */
+private fun charUnits(c: Char): Float = when {
+    c in "iljI.,' " -> 0.4f
+    c in "trf" -> 0.6f
+    c in "mwMW" -> 1.5f
+    c.isUpperCase() -> 1.3f
+    else -> 1f
+}
 
 /**
  * Tamaño de letra con el que [name] cabe en [availableDp] sin partir una palabra. Con una línea
- * cuenta el nombre entero; con dos, la palabra más larga (las demás saltan de línea solas).
+ * cuenta el nombre entero; con dos, la palabra más ancha (las demás saltan de línea solas).
  * [fontScale] es el "tamaño de fuente" de los ajustes del sistema, que agranda los sp.
  */
 internal fun fittedNameSp(name: String, baseSp: Int, availableDp: Float, maxLines: Int, fontScale: Float): Int {
-    val chars = if (maxLines > 1) name.split(' ').maxOf { it.length } else name.length
-    val neededDp = chars * baseSp * CharWidthFactor * fontScale
+    val pieces = if (maxLines > 1) name.split(' ') else listOf(name)
+    val units = pieces.maxOf { piece -> piece.sumOf { charUnits(it).toDouble() } }.toFloat()
+    val neededDp = units * baseSp * CharWidthFactor * fontScale
     if (neededDp <= availableDp) return baseSp
     return (baseSp * availableDp / neededDp).toInt().coerceAtLeast((baseSp * MinNameScale).toInt())
 }
@@ -317,8 +328,9 @@ private fun WidgetCell(
         } else {
             // El emoji solo si la celda es alta; el nombre usa 2 líneas si caben.
             val showEmoji = cellHeight >= 50.dp
-            val textRoom = cellHeight.value - 8 - (if (showEmoji) textSp + 12 else 0)
-            val nameLines = if (textRoom >= textSp * 2.7f) 2 else 1
+            // Las alturas de texto también crecen con el tamaño de letra del sistema
+            val textRoom = cellHeight.value - 8 - (if (showEmoji) (textSp + 12) * fontScale else 0f)
+            val nameLines = if (textRoom >= textSp * 2.7f * fontScale) 2 else 1
             Column(
                 modifier = GlanceModifier.fillMaxSize().padding(4.dp),
                 horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
