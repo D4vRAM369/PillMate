@@ -52,12 +52,16 @@ enum class QuickTakeWidgetColor(
 enum class QuickTakeWidgetSize(
     val storageValue: String,
     val title: String,
-    val cellHeightDp: Int,
-    val paddingDp: Int
+    val paddingDp: Int,
+    val gapDp: Int,
+    val textSp: Int,
+    val showHeader: Boolean
 ) {
-    Compact("compact", "Compacto", 52, 7),
-    Normal("normal",   "Normal",   72, 10),
-    Large("large",     "Grande",   92, 12);
+    // Las celdas ya no tienen alto fijo: se reparten el espacio del widget.
+    // El preset solo decide la densidad (márgenes, texto y si hay título).
+    Compact("compact", "Compacto", 6, 4, 11, false),
+    Normal("normal",   "Normal",   10, 6, 13, true),
+    Large("large",     "Grande",   12, 8, 15, true);
 
     companion object {
         fun fromStorage(value: String?): QuickTakeWidgetSize =

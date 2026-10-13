@@ -23,6 +23,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.BackupManager
 import com.d4vram.pillmate2.data.BackupSafManager
@@ -45,6 +48,7 @@ import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetShape
 import com.d4vram.pillmate2.ui.theme.QuickTakeWidgetSize
 import com.d4vram.pillmate2.ui.theme.ThemeManager
 import com.d4vram.pillmate2.widget.QuickTakeWidget
+import com.d4vram.pillmate2.widget.readableOn
 import com.d4vram.pillmate2.notifications.NotificationHelper
 import android.os.Build
 import android.Manifest
@@ -1616,6 +1620,8 @@ private fun LockTimeoutDialog(
     )
 }
 
+// Maqueta del widget 2x2. Sigue las mismas reglas que QuickTakeWidget (celdas que
+// se reparten el espacio, círculo con el nombre debajo, sin dosis).
 @Composable
 private fun WidgetPreview(
     color: QuickTakeWidgetColor,
@@ -1623,36 +1629,41 @@ private fun WidgetPreview(
     shape: QuickTakeWidgetShape,
     slots: List<Medication?>
 ) {
-    val cornerRadius = when (shape) {
-        QuickTakeWidgetShape.Circle -> 48.dp
-        QuickTakeWidgetShape.Rounded -> 18.dp
-        QuickTakeWidgetShape.Square -> 4.dp
-    }
-    val bgColor = Color(color.backgroundArgb)
-    val emptyCellColor = Color(color.emptyCellArgb)
-    val cellHeight = size.cellHeightDp.dp
-    val padding = size.paddingDp.dp
+    val background = Color(color.backgroundArgb)
+    val gap = size.gapDp.dp
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(bgColor, RoundedCornerShape(12.dp))
-            .padding(padding)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                text = "Toma rápida",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                color = Color(0xFF234236)
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                PreviewCell(slots.getOrNull(0), emptyCellColor, cornerRadius, cellHeight, Modifier.weight(1f))
-                PreviewCell(slots.getOrNull(1), emptyCellColor, cornerRadius, cellHeight, Modifier.weight(1f))
+    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Column(
+            modifier = Modifier
+                .size(190.dp)
+                .background(background, RoundedCornerShape(24.dp))
+                .padding(size.paddingDp.dp),
+            verticalArrangement = Arrangement.spacedBy(gap)
+        ) {
+            if (size.showHeader) {
+                Text(
+                    text = "Toma rápida",
+                    fontSize = size.textSp.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(color.accentArgb),
+                    maxLines = 1
+                )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                PreviewCell(slots.getOrNull(2), emptyCellColor, cornerRadius, cellHeight, Modifier.weight(1f))
-                PreviewCell(slots.getOrNull(3), emptyCellColor, cornerRadius, cellHeight, Modifier.weight(1f))
+            for (row in 0..1) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(gap)
+                ) {
+                    for (column in 0..1) {
+                        PreviewCell(
+                            medication = slots.getOrNull(row * 2 + column),
+                            color = color,
+                            size = size,
+                            shape = shape,
+                            modifier = Modifier.weight(1f).fillMaxHeight()
+                        )
+                    }
+                }
             }
         }
     }
@@ -1661,41 +1672,67 @@ private fun WidgetPreview(
 @Composable
 private fun PreviewCell(
     medication: Medication?,
-    emptyCellColor: Color,
-    cornerRadius: Dp,
-    cellHeight: Dp,
+    color: QuickTakeWidgetColor,
+    size: QuickTakeWidgetSize,
+    shape: QuickTakeWidgetShape,
     modifier: Modifier = Modifier
 ) {
-    val bg = medication?.color ?: emptyCellColor
-    Box(
-        modifier = modifier
-            .height(cellHeight)
-            .background(bg, RoundedCornerShape(cornerRadius))
-            .padding(4.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        if (medication == null) {
-            Text(
-                text = "Elegir",
-                style = MaterialTheme.typography.labelSmall,
-                color = Color(0xFF48675A),
-                maxLines = 1
-            )
-        } else {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+    val fill = medication?.color ?: Color(color.emptyCellArgb)
+    val glyph = when {
+        medication == null -> "+"
+        medication.emoji.isNotBlank() -> medication.emoji
+        else -> medication.name.take(1).uppercase()
+    }
+    val glyphColor = if (medication == null) Color(color.accentArgb) else readableOn(fill)
+
+    if (shape == QuickTakeWidgetShape.Circle) {
+        Column(
+            modifier = modifier,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .aspectRatio(1f)
+                    .background(fill, CircleShape),
+                contentAlignment = Alignment.Center
             ) {
-                if (medication.emoji.isNotBlank()) {
-                    Text(text = medication.emoji, style = MaterialTheme.typography.labelSmall)
-                }
+                Text(glyph, fontSize = (size.textSp + 6).sp, fontWeight = FontWeight.Bold, color = glyphColor)
+            }
+            if (medication != null) {
                 Text(
-                    text = medication.name.take(12),
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = Color.White,
-                    maxLines = 1
+                    text = medication.name,
+                    fontSize = (size.textSp - 1).sp,
+                    fontWeight = FontWeight.Medium,
+                    color = readableOn(Color(color.backgroundArgb)),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
+        }
+        return
+    }
+
+    val radius = if (shape == QuickTakeWidgetShape.Rounded) 16.dp else 4.dp
+    Column(
+        modifier = modifier
+            .background(fill, RoundedCornerShape(radius))
+            .padding(4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(glyph, fontSize = (size.textSp + 6).sp, fontWeight = FontWeight.Bold, color = glyphColor)
+        if (medication != null) {
+            Text(
+                text = medication.name,
+                fontSize = size.textSp.sp,
+                fontWeight = FontWeight.Medium,
+                color = readableOn(fill),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

@@ -5,18 +5,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
-import androidx.glance.Image
-import androidx.glance.ImageProvider
+import androidx.glance.LocalSize
 import androidx.glance.action.ActionParameters
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
@@ -28,6 +30,7 @@ import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
+import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
 import androidx.glance.layout.height
@@ -40,7 +43,6 @@ import androidx.glance.text.TextAlign
 import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.d4vram.pillmate2.MainActivity
-import com.d4vram.pillmate2.R
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.data.local.MedicationEntity
 import com.d4vram.pillmate2.data.local.PillMateDatabase
@@ -57,6 +59,10 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 
 class QuickTakeWidget : GlanceAppWidget() {
+    // Exact: Glance nos da el tamaño real del widget (LocalSize) cada vez que se
+    // redimensiona, y con él decidimos la rejilla y qué cabe en cada celda.
+    override val sizeMode: SizeMode = SizeMode.Exact
+
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         provideContent {
             // Leer datos DENTRO de provideContent y de forma reactiva.
@@ -102,7 +108,7 @@ private data class QuickTakeWidgetData(
         val EMPTY = QuickTakeWidgetData(
             slots = List(QuickTakeSettings.SLOT_COUNT) { null },
             shape = QuickTakeWidgetShape.Rounded,
-            color = QuickTakeWidgetColor.Dark,
+            color = QuickTakeWidgetColor.Green,
             size = QuickTakeWidgetSize.Normal
         )
     }
@@ -154,37 +160,73 @@ private object QuickTakeWidgetRepository {
     }
 }
 
+/** Columnas de la rejilla según la proporción del widget: 4x1, 2x2 o 1x4. */
+internal fun quickTakeColumns(widthDp: Float, heightDp: Float): Int = when {
+    widthDp >= heightDp * 2.2f -> 4
+    heightDp >= widthDp * 2.2f -> 1
+    else -> 2
+}
+
+/** Texto legible sobre un color de fondo cualquiera: oscuro sobre claro, blanco sobre oscuro. */
+internal fun readableOn(background: Color): Color =
+    if (background.luminance() > 0.5f) Color(0xFF1B1B1F) else Color.White
+
+private val HeaderHeight = 22.dp
+
 @Composable
 private fun QuickTakeWidgetContent(data: QuickTakeWidgetData) {
-    // Grado 2 de personalización: color por defecto Oscuro; las celdas usan el
-    // color real de cada medicamento. El header/acento usa el accent del tema.
+    val widgetSize = LocalSize.current
+    val preset = data.size
+    val padding = preset.paddingDp.dp
+    val gap = preset.gapDp.dp
+
+    // El título solo aparece si sobra altura: en un widget bajo se lo comería todo.
+    val innerWidth = widgetSize.width - padding * 2
+    val showHeader = preset.showHeader && widgetSize.height >= 150.dp
+    val innerHeight = widgetSize.height - padding * 2 - (if (showHeader) HeaderHeight else 0.dp)
+
+    val columns = quickTakeColumns(innerWidth.value, innerHeight.value)
+    val rows = QuickTakeSettings.SLOT_COUNT / columns
+    val cellWidth = (innerWidth - gap * (columns - 1)) / columns
+    val cellHeight = (innerHeight - gap * (rows - 1)) / rows
+
     Column(
         modifier = GlanceModifier
             .fillMaxSize()
             .background(ColorProvider(Color(data.color.backgroundArgb)))
-            .padding(data.size.paddingDp.dp),
-        verticalAlignment = Alignment.Vertical.CenterVertically,
-        horizontalAlignment = Alignment.Horizontal.CenterHorizontally
+            .cornerRadius(24.dp)
+            .padding(padding)
     ) {
-        Text(
-            text = "Toma rápida",
-            style = TextStyle(
-                color = ColorProvider(Color(data.color.accentArgb)),
-                fontWeight = FontWeight.Bold
-            ),
-            modifier = GlanceModifier.fillMaxWidth()
-        )
-        Spacer(modifier = GlanceModifier.height(6.dp))
-        Row(modifier = GlanceModifier.fillMaxWidth()) {
-            WidgetCell(data.slots.getOrNull(0), data.shape, data.color, data.size, GlanceModifier.defaultWeight())
-            Spacer(modifier = GlanceModifier.width(6.dp))
-            WidgetCell(data.slots.getOrNull(1), data.shape, data.color, data.size, GlanceModifier.defaultWeight())
+        if (showHeader) {
+            Text(
+                text = "Toma rápida",
+                style = TextStyle(
+                    color = ColorProvider(Color(data.color.accentArgb)),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = preset.textSp.sp
+                ),
+                maxLines = 1,
+                modifier = GlanceModifier
+                    .fillMaxWidth()
+                    .height(HeaderHeight)
+                    .clickable(actionStartActivity<MainActivity>())
+            )
         }
-        Spacer(modifier = GlanceModifier.height(6.dp))
-        Row(modifier = GlanceModifier.fillMaxWidth()) {
-            WidgetCell(data.slots.getOrNull(2), data.shape, data.color, data.size, GlanceModifier.defaultWeight())
-            Spacer(modifier = GlanceModifier.width(6.dp))
-            WidgetCell(data.slots.getOrNull(3), data.shape, data.color, data.size, GlanceModifier.defaultWeight())
+        for (row in 0 until rows) {
+            if (row > 0) Spacer(modifier = GlanceModifier.height(gap))
+            // defaultWeight: las filas se reparten TODO el alto disponible.
+            Row(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
+                for (column in 0 until columns) {
+                    if (column > 0) Spacer(modifier = GlanceModifier.width(gap))
+                    WidgetCell(
+                        medication = data.slots.getOrNull(row * columns + column),
+                        data = data,
+                        cellWidth = cellWidth,
+                        cellHeight = cellHeight,
+                        modifier = GlanceModifier.defaultWeight().fillMaxHeight()
+                    )
+                }
+            }
         }
     }
 }
@@ -192,18 +234,13 @@ private fun QuickTakeWidgetContent(data: QuickTakeWidgetData) {
 @Composable
 private fun WidgetCell(
     medication: MedicationEntity?,
-    shape: QuickTakeWidgetShape,
-    color: QuickTakeWidgetColor,
-    size: QuickTakeWidgetSize,
-    modifier: GlanceModifier = GlanceModifier
+    data: QuickTakeWidgetData,
+    cellWidth: Dp,
+    cellHeight: Dp,
+    modifier: GlanceModifier
 ) {
-    val radius = when (shape) {
-        QuickTakeWidgetShape.Circle -> 48.dp
-        QuickTakeWidgetShape.Rounded -> 18.dp
-        QuickTakeWidgetShape.Square -> 4.dp
-    }
-    val background = medication?.let { ColorProvider(Color(it.colorArgb)) }
-        ?: ColorProvider(Color(color.emptyCellArgb))
+    val textSp = data.size.textSp
+    val fill = medication?.let { Color(it.colorArgb) } ?: Color(data.color.emptyCellArgb)
     val clickAction = medication?.let {
         actionRunCallback<QuickTakeActionCallback>(
             parameters = actionParametersOf(
@@ -213,82 +250,107 @@ private fun WidgetCell(
         )
     } ?: actionStartActivity<MainActivity>()
 
+    if (data.shape == QuickTakeWidgetShape.Circle) {
+        // Un círculo de verdad necesita una caja cuadrada: su lado es lo que quepa
+        // en la celda. El nombre va debajo, si queda sitio.
+        val labelHeight = (textSp * 1.6f).dp
+        val showLabel = medication != null && cellHeight - labelHeight >= 36.dp
+        val available = if (showLabel) cellHeight - labelHeight else cellHeight
+        val diameter = (if (cellWidth < available) cellWidth else available) - 2.dp
+
+        Column(
+            modifier = modifier.clickable(clickAction),
+            horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
+            verticalAlignment = Alignment.Vertical.CenterVertically
+        ) {
+            Box(
+                modifier = GlanceModifier
+                    .size(diameter)
+                    .background(ColorProvider(fill))
+                    .cornerRadius(diameter / 2),
+                contentAlignment = Alignment.Center
+            ) {
+                CellGlyph(medication, data, fill, (diameter.value * 0.4f).toInt())
+            }
+            if (showLabel) {
+                CellName(
+                    name = medication!!.name,
+                    color = readableOn(Color(data.color.backgroundArgb)),
+                    textSp = textSp - 1,
+                    maxLines = 1
+                )
+            }
+        }
+        return
+    }
+
+    val radius = if (data.shape == QuickTakeWidgetShape.Rounded) 16.dp else 4.dp
     Box(
         modifier = modifier
-            .height(size.cellHeightDp.dp)
-            .background(background)
+            .background(ColorProvider(fill))
             .cornerRadius(radius)
             .clickable(clickAction),
         contentAlignment = Alignment.Center
     ) {
         if (medication == null) {
-            EmptyCell()
+            CellGlyph(null, data, fill, textSp + 9)
         } else {
-            MedicationCell(medication)
+            // El emoji solo si la celda es alta; el nombre usa 2 líneas si caben.
+            val showEmoji = cellHeight >= 50.dp
+            val textRoom = cellHeight.value - 8 - (if (showEmoji) textSp + 12 else 0)
+            Column(
+                modifier = GlanceModifier.fillMaxSize().padding(4.dp),
+                horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
+                verticalAlignment = Alignment.Vertical.CenterVertically
+            ) {
+                if (showEmoji) CellGlyph(medication, data, fill, textSp + 6)
+                CellName(
+                    name = medication.name,
+                    color = readableOn(fill),
+                    textSp = textSp,
+                    maxLines = if (textRoom >= textSp * 2.7f) 2 else 1
+                )
+            }
         }
     }
 }
 
+/** Lo que identifica la celda de un vistazo: emoji, inicial del nombre o "+" si está vacía. */
 @Composable
-private fun MedicationCell(medication: MedicationEntity) {
-    Column(
-        modifier = GlanceModifier.fillMaxSize().padding(6.dp),
-        horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
-        verticalAlignment = Alignment.Vertical.CenterVertically
-    ) {
-        // Emoji
-        Text(
-            text = medication.emoji.ifBlank { "✓" },
-            style = TextStyle(
-                color = ColorProvider(Color.White),
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
-        )
-        // Nombre
-        Text(
-            text = medication.name.take(14),
-            style = TextStyle(
-                color = ColorProvider(Color.White),
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+private fun CellGlyph(
+    medication: MedicationEntity?,
+    data: QuickTakeWidgetData,
+    fill: Color,
+    textSp: Int
+) {
+    Text(
+        text = when {
+            medication == null -> "+"
+            medication.emoji.isNotBlank() -> medication.emoji
+            else -> medication.name.take(1).uppercase()
+        },
+        style = TextStyle(
+            color = ColorProvider(
+                if (medication == null) Color(data.color.accentArgb) else readableOn(fill)
             ),
-            maxLines = 1
-        )
-        // Dosis → refuerza la legibilidad y aprovecha el dato ya disponible.
-        if (medication.dose.isNotBlank()) {
-            Text(
-                text = medication.dose.take(10),
-                style = TextStyle(
-                    color = ColorProvider(Color.White.copy(alpha = 0.8f)),
-                    fontSize = 9.sp,
-                    textAlign = TextAlign.Center
-                ),
-                maxLines = 1
-            )
-        }
-    }
+            fontWeight = FontWeight.Bold,
+            fontSize = textSp.sp,
+            textAlign = TextAlign.Center
+        ),
+        maxLines = 1
+    )
 }
 
 @Composable
-private fun EmptyCell() {
-    Column(
-        horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
-        verticalAlignment = Alignment.Vertical.CenterVertically
-    ) {
-        Image(
-            provider = ImageProvider(R.mipmap.ic_launcher),
-            contentDescription = null,
-            modifier = GlanceModifier.size(18.dp)
-        )
-        Text(
-            text = "Elegir",
-            style = TextStyle(
-                color = ColorProvider(Color(0xFF48675A)),
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Center
-            ),
-            maxLines = 1
-        )
-    }
+private fun CellName(name: String, color: Color, textSp: Int, maxLines: Int) {
+    Text(
+        text = name,
+        style = TextStyle(
+            color = ColorProvider(color),
+            fontWeight = FontWeight.Medium,
+            fontSize = textSp.sp,
+            textAlign = TextAlign.Center
+        ),
+        maxLines = maxLines
+    )
 }
