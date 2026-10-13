@@ -84,7 +84,14 @@ object NotificationHelper {
      * Al tocarla abre el bottom-sheet con los medicamentos más tomados.
      */
     fun showQuickTakeNotification(context: Context) {
-        if (!hasNotificationPermission(context)) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
         createQuickTakeChannel(context)
 
         val intent = Intent(context, com.d4vram.pillmate2.ui.quicktake.QuickTakeSheetActivity::class.java).apply {
