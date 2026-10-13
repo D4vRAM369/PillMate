@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.components
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import android.Manifest
 import android.media.MediaPlayer
 import android.media.MediaRecorder
@@ -35,6 +37,7 @@ import com.d4vram.pillmate2.data.AudioNoteManager
 import com.d4vram.pillmate2.data.DraftNote
 import com.d4vram.pillmate2.data.DraftNoteManager
 import com.d4vram.pillmate2.model.HistoryEntry
+import com.d4vram.pillmate2.utils.relativeDayLabel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -342,13 +345,13 @@ fun NotesModal(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "${historyEntry.date} • ${historyEntry.time}",
+                                text = "${relativeDayLabel(historyEntry.timestamp.toLocalDate())} • ${historyEntry.time}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             if (historyEntry.quantity > 1) {
                                 Text(
-                                    text = "Cantidad registrada: x${historyEntry.quantity}",
+                                    text = stringResource(R.string.entry_quantity_logged, historyEntry.quantity),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -359,7 +362,7 @@ fun NotesModal(
                     IconButton(onClick = onDismiss) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Cerrar"
+                            contentDescription = stringResource(R.string.action_close)
                         )
                     }
                 }
@@ -377,13 +380,13 @@ fun NotesModal(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "⏰ Momento de la toma",
+                                text = stringResource(R.string.entry_time_section),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             if (!isEditing) {
                                 TextButton(onClick = { isEditing = true }) {
-                                    Text("Editar")
+                                    Text(stringResource(R.string.action_edit))
                                 }
                             }
                         }
@@ -393,13 +396,13 @@ fun NotesModal(
                                 value = formattedDisplayDate,
                                 onValueChange = {},
                                 modifier = Modifier.fillMaxWidth(),
-                                label = { Text("Fecha") },
+                                label = { Text(stringResource(R.string.entry_date)) },
                                 readOnly = true,
                                 trailingIcon = {
                                     IconButton(onClick = { showDatePicker = true }) {
                                         Icon(
                                             imageVector = Icons.Default.CalendarToday,
-                                            contentDescription = "Cambiar fecha"
+                                            contentDescription = stringResource(R.string.entry_change_date)
                                         )
                                     }
                                 }
@@ -409,13 +412,13 @@ fun NotesModal(
                                 value = formattedDisplayTime,
                                 onValueChange = {},
                                 modifier = Modifier.fillMaxWidth(),
-                                label = { Text("Hora") },
+                                label = { Text(stringResource(R.string.entry_time)) },
                                 readOnly = true,
                                 trailingIcon = {
                                     IconButton(onClick = { showTimePicker = true }) {
                                         Icon(
                                             imageVector = Icons.Default.AccessTime,
-                                            contentDescription = "Cambiar hora"
+                                            contentDescription = stringResource(R.string.entry_change_time)
                                         )
                                     }
                                 }
@@ -428,7 +431,7 @@ fun NotesModal(
                                 )
                             ) {
                                 Text(
-                                    text = "${historyEntry.date} • ${historyEntry.time}",
+                                    text = "${relativeDayLabel(historyEntry.timestamp.toLocalDate())} • ${historyEntry.time}",
                                     modifier = Modifier.padding(16.dp),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurface
@@ -445,7 +448,7 @@ fun NotesModal(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "📝 Notas adicionales",
+                                text = stringResource(R.string.notes_section),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -455,7 +458,7 @@ fun NotesModal(
                                     IconButton(onClick = { isEditing = true }) {
                                         Icon(
                                             imageVector = Icons.Default.Edit,
-                                            contentDescription = "Editar notas",
+                                            contentDescription = stringResource(R.string.notes_edit),
                                             tint = MaterialTheme.colorScheme.primary
                                         )
                                     }
@@ -466,7 +469,7 @@ fun NotesModal(
                                     }) {
                                         Icon(
                                             imageVector = Icons.Default.Delete,
-                                            contentDescription = "Eliminar notas",
+                                            contentDescription = stringResource(R.string.notes_delete),
                                             tint = MaterialTheme.colorScheme.error
                                         )
                                     }
@@ -478,7 +481,7 @@ fun NotesModal(
                             OutlinedTextField(
                                 value = notesText,
                                 onValueChange = { notesText = it },
-                                label = { Text("Notas (opcional)") },
+                                label = { Text(stringResource(R.string.notes_field_label)) },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(120.dp),
@@ -502,10 +505,10 @@ fun NotesModal(
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Mic,
-                                        contentDescription = "Grabar nota de voz"
+                                        contentDescription = null // el texto del botón ya lo dice
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("Grabar nota de voz")
+                                    Text(stringResource(R.string.voice_note_record))
                                 }
                             }
 
@@ -533,7 +536,7 @@ fun NotesModal(
                                             Spacer(modifier = Modifier.width(8.dp))
                                             Column {
                                                 Text(
-                                                    text = "Grabando...",
+                                                    text = stringResource(R.string.voice_note_recording),
                                                     style = MaterialTheme.typography.bodyMedium,
                                                     fontWeight = FontWeight.Bold
                                                 )
@@ -549,7 +552,7 @@ fun NotesModal(
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Stop,
-                                                contentDescription = "Detener grabación",
+                                                contentDescription = stringResource(R.string.voice_note_stop),
                                                 tint = MaterialTheme.colorScheme.error
                                             )
                                         }
@@ -576,7 +579,7 @@ fun NotesModal(
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Text(
-                                                text = "🎤 Nota de voz",
+                                                text = stringResource(R.string.voice_note_title),
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -599,14 +602,14 @@ fun NotesModal(
                                                                 addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
                                                             }
                                                             context.startActivity(
-                                                                android.content.Intent.createChooser(shareIntent, "Compartir nota de voz")
+                                                                android.content.Intent.createChooser(shareIntent, context.getString(R.string.voice_note_share))
                                                             )
                                                         }
                                                     }
                                                 ) {
                                                     Icon(
                                                         imageVector = Icons.Default.Share,
-                                                        contentDescription = "Compartir audio",
+                                                        contentDescription = stringResource(R.string.voice_note_share_audio),
                                                         tint = MaterialTheme.colorScheme.primary
                                                     )
                                                 }
@@ -619,7 +622,7 @@ fun NotesModal(
                                                 ) {
                                                     Icon(
                                                         imageVector = Icons.Default.Delete,
-                                                        contentDescription = "Eliminar audio",
+                                                        contentDescription = stringResource(R.string.voice_note_delete_audio),
                                                         tint = MaterialTheme.colorScheme.error
                                                     )
                                                 }
@@ -661,7 +664,7 @@ fun NotesModal(
                                             ) {
                                                 Icon(
                                                     imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                                    contentDescription = if (isPlaying) "Pausar" else "Reproducir",
+                                                    contentDescription = stringResource(if (isPlaying) R.string.voice_note_pause else R.string.voice_note_play),
                                                     modifier = Modifier.size(32.dp)
                                                 )
                                             }
@@ -690,7 +693,7 @@ fun NotesModal(
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(
-                                        text = "Sin notas adicionales",
+                                        text = stringResource(R.string.notes_empty),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         textAlign = TextAlign.Center
@@ -699,7 +702,7 @@ fun NotesModal(
                                     Spacer(modifier = Modifier.height(8.dp))
 
                                     Button(onClick = { isEditing = true }) {
-                                        Text("Añadir notas")
+                                        Text(stringResource(R.string.notes_add))
                                     }
                                 }
                             }
@@ -722,7 +725,7 @@ fun NotesModal(
                                 isEditing = false
                                 hasDraftChanges = false
                             }) {
-                                Text("Cancelar")
+                                Text(stringResource(R.string.action_cancel))
                             }
 
                             Spacer(modifier = Modifier.width(8.dp))
@@ -759,7 +762,7 @@ fun NotesModal(
                                 },
                                 enabled = hasChanges
                             ) {
-                                Text("Guardar cambios")
+                                Text(stringResource(R.string.action_save_changes))
                             }
                         }
                     }
@@ -786,12 +789,12 @@ fun NotesModal(
                     }
                     showDatePicker = false
                 }) {
-                    Text("Aceptar")
+                    Text(stringResource(R.string.action_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         ) {
@@ -818,7 +821,7 @@ fun NotesModal(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Selecciona la hora",
+                        text = stringResource(R.string.entry_pick_time),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -830,7 +833,7 @@ fun NotesModal(
                         horizontalArrangement = Arrangement.End
                     ) {
                         TextButton(onClick = { showTimePicker = false }) {
-                            Text("Cancelar")
+                            Text(stringResource(R.string.action_cancel))
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(onClick = {
@@ -840,7 +843,7 @@ fun NotesModal(
                                 .withNano(0)
                             showTimePicker = false
                         }) {
-                            Text("Aceptar")
+                            Text(stringResource(R.string.action_ok))
                         }
                     }
                 }

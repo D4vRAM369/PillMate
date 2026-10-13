@@ -28,4 +28,36 @@
     <string name="history_rhythm_caption">Each mark is a logged dose, not a goal.</string>
     <string name="history_view_stats">View statistics</string>
     <string name="history_stats_summary">Today: %1$d • 7 days: %2$d</string>
+
+    <!-- Common actions -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_ok">OK</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_close">Close</string>
+    <string name="action_save_changes">Save changes</string>
+
+    <!-- History entry and its notes dialog -->
+    <string name="entry_taken">Taken</string>
+    <string name="entry_quantity_logged">Logged quantity: x%1$d</string>
+    <string name="entry_time_section">⏰ Time of the dose</string>
+    <string name="entry_date">Date</string>
+    <string name="entry_time">Time</string>
+    <string name="entry_change_date">Change date</string>
+    <string name="entry_change_time">Change time</string>
+    <string name="entry_pick_time">Pick the time</string>
+    <string name="notes_section">📝 Additional notes</string>
+    <string name="notes_edit">Edit notes</string>
+    <string name="notes_delete">Delete notes</string>
+    <string name="notes_field_label">Notes (optional)</string>
+    <string name="notes_empty">No additional notes</string>
+    <string name="notes_add">Add notes</string>
+    <string name="voice_note_record">Record voice note</string>
+    <string name="voice_note_recording">Recording…</string>
+    <string name="voice_note_stop">Stop recording</string>
+    <string name="voice_note_title">🎤 Voice note</string>
+    <string name="voice_note_share">Share voice note</string>
+    <string name="voice_note_share_audio">Share audio</string>
+    <string name="voice_note_delete_audio">Delete audio</string>
+    <string name="voice_note_play">Play</string>
+    <string name="voice_note_pause">Pause</string>
 </resources>

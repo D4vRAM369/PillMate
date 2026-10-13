@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.components
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -16,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.d4vram.pillmate2.model.HistoryEntry
+import com.d4vram.pillmate2.utils.relativeDayLabel
 
 /**
  * 📜 Item del historial de medicamentos tomados
@@ -66,7 +69,7 @@ fun HistoryItem(
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = "${historyEntry.date} ${historyEntry.time}",
+                text = "${relativeDayLabel(historyEntry.timestamp.toLocalDate())} ${historyEntry.time}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -121,7 +124,7 @@ fun HistoryItem(
             ) {
                 Icon(
                     imageVector = Icons.Filled.BarChart,
-                    contentDescription = "Ver estadísticas",
+                    contentDescription = stringResource(R.string.history_view_stats),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -133,7 +136,7 @@ fun HistoryItem(
                 color = Color(0xFFD1FAE5)
             ) {
                 Text(
-                    text = "Tomada",
+                    text = stringResource(R.string.entry_taken),
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.SemiBold,

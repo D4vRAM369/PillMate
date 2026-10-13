@@ -1,6 +1,5 @@
 package com.d4vram.pillmate2.ui.screens
 
-import android.text.format.DateFormat
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animate
@@ -48,6 +47,7 @@ import kotlinx.coroutines.delay
 import com.d4vram.pillmate2.ui.theme.AppDesign
 import com.d4vram.pillmate2.ui.theme.LocalAppDesign
 import com.d4vram.pillmate2.ui.timeline.RhythmClock
+import com.d4vram.pillmate2.utils.localizedDateFormatter
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -586,13 +586,6 @@ private fun HistoryActionButton(
         )
     }
 }
-
-/**
- * Formato de fecha con las piezas de [skeleton] ("EEEdM" = día de la semana, día y mes) puestas en el
- * orden y con los separadores de [locale]: "lun, 13/10" en español, "Mon, 10/13" en inglés de EE. UU.
- */
-private fun localizedDateFormatter(skeleton: String, locale: Locale): DateTimeFormatter =
-    DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)
 
 private fun groupEntriesByPeriod(
     entries: List<HistoryEntry>,
