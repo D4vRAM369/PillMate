@@ -24,6 +24,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.d4vram.pillmate2.data.MedicationRepository
@@ -112,6 +113,7 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var showUiDialog by remember { mutableStateOf(false) }
+    var showAboutDialog by remember { mutableStateOf(false) }
     var showChipPeriodDialog by remember { mutableStateOf(false) }
     var showSortModeDialog by remember { mutableStateOf(false) }
     val securitySettings by securityManager.settings.collectAsState(initial = SecuritySettings())
@@ -948,8 +950,9 @@ fun SettingsScreen(
                     )
                     SettingsItem(
                         title = "Acerca de",
-                        description = "Información de la aplicación",
-                        icon = Icons.Default.QuestionMark
+                        description = "Autor, código fuente y cómo apoyar el proyecto",
+                        icon = Icons.Default.QuestionMark,
+                        onClick = { showAboutDialog = true }
                     )
                 }
             }
@@ -958,6 +961,10 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(80.dp))
             }
         }
+    }
+
+    if (showAboutDialog) {
+        AboutDialog(onDismiss = { showAboutDialog = false })
     }
 
     if (showUiDialog) {
@@ -1829,6 +1836,48 @@ private fun WidgetCustomizationCard(
             }
         }
     }
+}
+
+@Composable
+@OptIn(ExperimentalLayoutApi::class)
+private fun AboutDialog(onDismiss: () -> Unit) {
+    // La app no tiene permiso de internet: los enlaces se abren en el navegador del móvil.
+    val uriHandler = LocalUriHandler.current
+    val open = { url: String -> runCatching { uriHandler.openUri(url) }; Unit }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Acerca de PillMate") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "Creada por D4vRAM",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = "Software libre bajo licencia GPL-3.0-or-later. Sin anuncios, sin cuentas y sin internet.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AssistChip(
+                        onClick = { open("https://github.com/D4vRAM369/PillMate") },
+                        label = { Text("GitHub") },
+                        leadingIcon = { Icon(Icons.Default.Code, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    )
+                    AssistChip(
+                        onClick = { open("https://www.buymeacoffee.com/D4vRAM369") },
+                        label = { Text("Buy Me a Coffee") },
+                        leadingIcon = { Icon(Icons.Default.Coffee, contentDescription = null, modifier = Modifier.size(18.dp)) }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Cerrar") }
+        }
+    )
 }
 
 @Composable
