@@ -125,7 +125,8 @@ fun HistoryScreen(
             delay(30_000)
         }
     }
-    var selectedPeriod by remember(astra) { mutableStateOf(if (astra) TimePeriod.TODAY else TimePeriod.ALL) }
+    // Los dos diseños abren en "Hoy": es el primer chip, así el seleccionado siempre está a la vista
+    var selectedPeriod by remember { mutableStateOf(TimePeriod.TODAY) }
     // Día concreto: manda sobre el periodo hasta que se quita o se elige un periodo.
     var selectedDay by remember { mutableStateOf(initialDay) }
     var selectedHistoryEntry by remember { mutableStateOf<HistoryEntry?>(null) }
@@ -646,7 +647,7 @@ private fun StatisticsQuickCard(
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Text(
-                        text = "Hoy: $takenToday • Semana: $takenThisWeek",
+                        text = "Hoy: $takenToday • 7 días: $takenThisWeek",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                     )
