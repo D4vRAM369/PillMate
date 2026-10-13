@@ -683,6 +683,7 @@
     <string name="action_next">Siguiente</string>
     <string name="period_15_days">15 días</string>
     <string name="unit_drops">gotas</string>
+    <string name="unit_units">unidades</string>
     <plurals name="stats_trend_more">
         <item quantity="one">%1$d toma más que los %2$d días anteriores</item>
         <item quantity="other">%1$d tomas más que los %2$d días anteriores</item>

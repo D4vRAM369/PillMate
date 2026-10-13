@@ -16,6 +16,9 @@ internal data class DailyDoseMetrics(
 
 internal fun countTakeEvents(entries: Collection<HistoryEntry>): Int = entries.size
 
+internal fun averageTakeEvents(entries: Collection<HistoryEntry>, days: Long): Float =
+    if (days > 0) countTakeEvents(entries).toFloat() / days else 0f
+
 internal fun amountForMedication(
     medication: Medication,
     entries: List<HistoryEntry>

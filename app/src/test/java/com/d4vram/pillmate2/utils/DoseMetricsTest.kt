@@ -72,6 +72,18 @@ class DoseMetricsTest {
         assertEquals(10f, metrics.amount, 0.001f)
     }
 
+    @Test
+    fun averageUsesEntriesRatherThanRecordedUnits() {
+        val entries = listOf(entry(medicationId = "valium", quantity = 2))
+
+        assertEquals(0.5f, averageTakeEvents(entries, 2), 0.001f)
+    }
+
+    @Test
+    fun averageWithNoDaysIsZero() {
+        assertEquals(0f, averageTakeEvents(emptyList(), 0), 0.001f)
+    }
+
     private fun medication(id: String, dose: String, type: String) = Medication(
         id = id,
         name = id,

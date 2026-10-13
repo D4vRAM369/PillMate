@@ -7,8 +7,14 @@ import androidx.lifecycle.viewModelScope
 import com.d4vram.pillmate2.data.MedicationRepository
 
 import com.d4vram.pillmate2.model.Medication
+import com.d4vram.pillmate2.model.MedicationType
 import com.d4vram.pillmate2.ui.stats.ActivityDataPoint
 import com.d4vram.pillmate2.ui.stats.formatStatisticsNumber
+import com.d4vram.pillmate2.utils.amountForMedication
+import com.d4vram.pillmate2.utils.amountsByMedication
+import com.d4vram.pillmate2.utils.averageTakeEvents
+import com.d4vram.pillmate2.utils.countTakeEvents
+import com.d4vram.pillmate2.utils.dailyDoseMetrics
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -252,7 +258,7 @@ class StatisticsViewModel(
                     queryStartDate.minusDays(1).toEpochDay()
                 )
                     .filter { currentSelectedId == null || it.medicationId in familyIds }
-                    .sumOf { it.quantity }
+                    .let(::countTakeEvents)
             }
 
             // Calcular desglose por variante si hay familia seleccionada
@@ -286,12 +292,11 @@ class StatisticsViewModel(
                 end = endDate,
                 history = filteredHistory,
                 allMedications = allMedications,
-                selectedMedication = selectedMed,
                 displayUnit = displayUnit
             )
 
             val recentHistoryList = filteredHistory.take(5)
-            val totalInUnit = calculateTotalInUnit(filteredHistory, selectedMed, displayUnit)
+            val totalInUnit = calculateTotalInUnit(filteredHistory, displayUnit, allMedications)
             val averageInUnit = if (totalDays > 0) totalInUnit / totalDays else 0f
 
             _uiState.update {
@@ -354,12 +359,10 @@ class StatisticsViewModel(
         // Calcular total por cada medicamento
         val totals = familyMeds.map { med ->
             val medHistory = history.filter { it.medicationId == med.id }
-            val totalValue = when (unit) {
-                "mg" -> {
-                    val doseValue = extractDoseValue(med.dose)
-                    medHistory.sumOf { it.quantity } * doseValue
-                }
-                else -> medHistory.sumOf { it.quantity }.toFloat()
+            val totalValue = if (unit == "tomas") {
+                countTakeEvents(medHistory).toFloat()
+            } else {
+                amountForMedication(med, medHistory).value
             }
             med to totalValue
         }
@@ -387,8 +390,8 @@ class StatisticsViewModel(
         history: List<com.d4vram.pillmate2.model.HistoryEntry>
     ): TrackingMetrics {
         val totalDays = ChronoUnit.DAYS.between(startDate, endDate) + 1
-        val totalDosesLogged = history.sumOf { it.quantity }
-        val averageDailyDoses = if (totalDays > 0) totalDosesLogged.toFloat() / totalDays else 0f
+        val totalDosesLogged = countTakeEvents(history)
+        val averageDailyDoses = averageTakeEvents(history, totalDays)
 
         val daysSinceLastRecord = history.maxOfOrNull { it.timestamp.toLocalDate() }
             ?.let { ChronoUnit.DAYS.between(it, LocalDate.now()) }
@@ -407,7 +410,6 @@ class StatisticsViewModel(
         end: LocalDate,
         history: List<com.d4vram.pillmate2.model.HistoryEntry>,
         allMedications: List<Medication> = emptyList(),
-        selectedMedication: Medication? = null,
         displayUnit: String = "tomas"
     ): List<ActivityDataPoint> {
         val days = ChronoUnit.DAYS.between(start, end).toInt() + 1
@@ -421,6 +423,7 @@ class StatisticsViewModel(
         // Etiquetas cortas de fecha en el idioma del móvil (sin palabras propias de la app).
         val locale = presentationLocale
         val shortDate = com.d4vram.pillmate2.utils.localizedDateFormatter("ddMM", locale)
+        val medicationsById = allMedications.associateBy { it.id }
 
         return (0 until chartDays).map { offset ->
             val date = chartStart.plusDays(offset.toLong())
@@ -432,43 +435,30 @@ class StatisticsViewModel(
 
             // Tomas reales ese día
             val entriesOnDate = history.filter { it.timestamp.toLocalDate() == date }
-            val takenCount = entriesOnDate.sumOf { it.quantity }
-
-            // Calcular valor en la unidad correcta
-            val valueInUnit = when (displayUnit) {
-                "mg" -> {
-                    // Sumar mg de cada entrada según la dosis del medicamento
-                    entriesOnDate.sumOf { entry ->
-                        val entryMed = allMedications.find { it.id == entry.medicationId }
-                        val doseValue = entryMed?.dose?.let { extractDoseValue(it) } ?: 1f
-                        entry.quantity * doseValue.toDouble()
-                    }.toFloat()
-                }
-                "gotas", "ml" -> takenCount.toFloat()
-                else -> takenCount.toFloat() // tomas
-            }
+            val metrics = dailyDoseMetrics(
+                entries = entriesOnDate,
+                medicationsById = medicationsById,
+                unit = displayUnit
+            )
 
             ActivityDataPoint(
                 dayName = dayName,
-                totalValue = takenCount.toFloat(),
+                totalValue = metrics.takeCount.toFloat(),
                 unit = displayUnit,
-                hasRecords = takenCount > 0,
+                hasRecords = metrics.takeCount > 0,
                 date = date,
-                valueInUnit = valueInUnit
+                valueInUnit = metrics.amount
             )
         }
     }
     // Determina la unidad de display según el tipo de medicamento
     private fun getDisplayUnitForMedication(medication: com.d4vram.pillmate2.model.Medication?): String {
         if (medication == null) return "tomas"
-        return when {
-            medication.type.equals("Gota", ignoreCase = true) ||
-            medication.type.equals("Gotas", ignoreCase = true) -> "gotas"
-            medication.type.equals("Jarabe", ignoreCase = true) -> "ml"
-            medication.type.equals("Pastilla", ignoreCase = true) ||
-            medication.type.equals("Cápsula", ignoreCase = true) ||
-            medication.type.equals("Comprimido", ignoreCase = true) -> "mg"
-            else -> "tomas"
+        return when (MedicationType.fromStored(medication.type)) {
+            MedicationType.DROPS -> "gotas"
+            MedicationType.SYRUP -> "ml"
+            MedicationType.TABLET, MedicationType.PILL, MedicationType.CAPSULE -> "mg"
+            null -> "units"
         }
     }
 
@@ -482,24 +472,18 @@ class StatisticsViewModel(
     // Calcula el total en la unidad correcta
     private fun calculateTotalInUnit(
         history: List<com.d4vram.pillmate2.model.HistoryEntry>,
-        medication: com.d4vram.pillmate2.model.Medication?,
-        unit: String
+        unit: String,
+        allMedications: List<Medication>
     ): Float {
-        return when (unit) {
-            "mg" -> {
-                // Para mg, multiplicamos cantidad por el valor de dosis del medicamento
-                val doseValue = medication?.dose?.let { extractDoseValue(it) } ?: 1f
-                history.sumOf { it.quantity }.toFloat() * doseValue
-            }
-            "gotas", "ml" -> {
-                // Para gotas/ml, sumamos directamente las cantidades
-                history.sumOf { it.quantity }.toFloat()
-            }
-            else -> {
-                // Para tomas, sumamos las cantidades
-                history.sumOf { it.quantity }.toFloat()
-            }
+        if (unit == "tomas") return countTakeEvents(history).toFloat()
+        val medicationsWithHistory = allMedications.filter { med ->
+            history.any { it.medicationId == med.id }
         }
+        return amountsByMedication(history, medicationsWithHistory)
+            .values
+            .filter { it.unit == unit }
+            .sumOf { it.value.toDouble() }
+            .toFloat()
     }
 
     // Formatea el valor para mostrar

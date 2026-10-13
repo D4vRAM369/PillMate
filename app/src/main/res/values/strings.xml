@@ -685,6 +685,7 @@
     <string name="action_next">Next</string>
     <string name="period_15_days">15 days</string>
     <string name="unit_drops">drops</string>
+    <string name="unit_units">units</string>
     <plurals name="stats_trend_more">
         <item quantity="one">%1$d dose more than the previous %2$d days</item>
         <item quantity="other">%1$d doses more than the previous %2$d days</item>

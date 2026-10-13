@@ -329,7 +329,7 @@ fun DailyDetailSheetContent(
                 color = androidx.compose.ui.graphics.Color.White // Título claro
             )
             Text(
-                text = history.sumOf { it.entry.quantity }.let { pluralStringResource(R.plurals.stats_doses_count, it, it) },
+                text = history.size.let { pluralStringResource(R.plurals.stats_doses_count, it, it) },
                 style = MaterialTheme.typography.bodyMedium,
                 color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.7f)
             )
@@ -798,13 +798,14 @@ fun RhythmSection(entries: List<com.d4vram.pillmate2.model.HistoryEntry>) {
 }
 
 /**
- * Las unidades viajan por el código como claves ("tomas", "mg", "gotas", "ml") porque la lógica las
+ * Las unidades viajan por el código como claves ("tomas", "mg", "gotas", "ml", "units") porque la lógica las
  * compara; aquí se convierten en la palabra que se enseña. "mg" y "ml" se escriben igual en todos los idiomas.
  */
 @Composable
 internal fun unitLabel(unit: String): String = when (unit) {
     "tomas" -> stringResource(R.string.clock_doses_label)
     "gotas" -> stringResource(R.string.unit_drops)
+    "units" -> stringResource(R.string.unit_units)
     else -> unit
 }
 
