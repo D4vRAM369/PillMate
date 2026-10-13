@@ -8,6 +8,7 @@ import android.content.Intent
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.semantics.Role
@@ -46,6 +47,7 @@ import com.d4vram.pillmate2.data.CsvImportException
 import com.d4vram.pillmate2.ui.security.SecurityManager
 import com.d4vram.pillmate2.ui.security.SecuritySettings
 import com.d4vram.pillmate2.ui.security.rememberVoiceNoteSecurityManager
+import com.d4vram.pillmate2.ui.components.AppLanguageDialog
 import com.d4vram.pillmate2.ui.export.PdfExportSheet
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -69,6 +71,8 @@ import androidx.biometric.BiometricManager
 import com.d4vram.pillmate2.model.SortMode
 import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.model.Medication
+import com.d4vram.pillmate2.ui.settings.AppLanguageOption
+import com.d4vram.pillmate2.ui.settings.appLanguageOptionForTag
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -79,6 +83,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.core.content.FileProvider
+import androidx.core.os.LocaleListCompat
 import java.io.File
 import java.text.DateFormat
 import java.util.Date
@@ -103,6 +108,9 @@ fun SettingsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val isDarkMode by themeManager.isDarkMode.collectAsState(initial = false)
+    val selectedAppLanguage = appLanguageOptionForTag(
+        AppCompatDelegate.getApplicationLocales().toLanguageTags()
+    )
     val appDesign by themeManager.appDesign.collectAsState(initial = AppDesign.Astra)
     val uiStyle by themeManager.uiStyle.collectAsState(initial = AppUiStyle.Default)
     val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)
@@ -124,6 +132,7 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var showUiDialog by remember { mutableStateOf(false) }
+    var showLanguageDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showChipPeriodDialog by remember { mutableStateOf(false) }
     var showSortModeDialog by remember { mutableStateOf(false) }
@@ -400,6 +409,15 @@ fun SettingsScreen(
                             }
                         )
                     }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                    SettingsItem(
+                        title = stringResource(R.string.settings_language_title),
+                        description = stringResource(selectedAppLanguage.labelRes),
+                        icon = Icons.Default.Language,
+                        onClick = { showLanguageDialog = true }
+                    )
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
@@ -977,6 +995,22 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(80.dp))
             }
         }
+    }
+
+    if (showLanguageDialog) {
+        AppLanguageDialog(
+            selected = selectedAppLanguage,
+            onSelect = { option ->
+                showLanguageDialog = false
+                val locales = if (option == AppLanguageOption.SYSTEM) {
+                    LocaleListCompat.getEmptyLocaleList()
+                } else {
+                    LocaleListCompat.forLanguageTags(option.localeTag)
+                }
+                AppCompatDelegate.setApplicationLocales(locales)
+            },
+            onDismiss = { showLanguageDialog = false }
+        )
     }
 
     if (showAboutDialog) {

@@ -410,6 +410,10 @@
     <!-- Settings: appearance, sorting, security (header) -->
     <string name="settings_appearance">🎨 Appearance</string>
     <string name="settings_dark_mode">Dark mode</string>
+    <string name="settings_language_title">App language</string>
+    <string name="settings_language_device">Device language</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_spanish">Español</string>
     <string name="settings_on">On</string>
     <string name="settings_off">Off</string>
     <string name="settings_screen_design">Screen design</string>

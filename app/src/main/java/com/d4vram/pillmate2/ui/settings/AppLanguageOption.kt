@@ -1,12 +1,17 @@
 package com.d4vram.pillmate2.ui.settings
 
+import androidx.annotation.StringRes
+import com.d4vram.pillmate2.R
 import java.util.Locale
 
 /** Idiomas que el selector de Ajustes permite fijar para toda la aplicación. */
-internal enum class AppLanguageOption(val localeTag: String) {
-    SYSTEM(""),
-    ENGLISH("en"),
-    SPANISH("es")
+internal enum class AppLanguageOption(
+    val localeTag: String,
+    @StringRes val labelRes: Int
+) {
+    SYSTEM("", R.string.settings_language_device),
+    ENGLISH("en", R.string.settings_language_english),
+    SPANISH("es", R.string.settings_language_spanish)
 }
 
 /**

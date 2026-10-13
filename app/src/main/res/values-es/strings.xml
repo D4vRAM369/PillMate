@@ -408,6 +408,10 @@
     <!-- Ajustes: apariencia, orden, seguridad (cabecera) -->
     <string name="settings_appearance">🎨 Apariencia</string>
     <string name="settings_dark_mode">Modo oscuro</string>
+    <string name="settings_language_title">Idioma de la aplicación</string>
+    <string name="settings_language_device">Idioma del dispositivo</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_spanish">Español</string>
     <string name="settings_on">Activado</string>
     <string name="settings_off">Desactivado</string>
     <string name="settings_screen_design">Diseño de pantallas</string>
