@@ -1,5 +1,9 @@
 package com.d4vram.pillmate2.ui.screens
 
+import com.d4vram.pillmate2.widget.fittedNameSp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -536,7 +540,7 @@ private fun QuickTakeSlotCard(
 ) {
     Card(
         modifier = Modifier
-            .width(176.dp)
+            .width(200.dp)
             .height(132.dp)
             .clickable(enabled = medication != null) {
                 medication?.let(onQuickTake)
@@ -573,13 +577,17 @@ private fun QuickTakeSlotCard(
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
+                    val name = medication?.name ?: "Elegir"
                     Text(
-                        text = medication?.name ?: "Elegir",
+                        text = name,
+                        // 92 dp = ancho de la tarjeta menos márgenes, avatar y botón de editar
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = fittedNameSp(name, 14, 92f, 1, LocalDensity.current.fontScale).sp
                         ),
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = medication?.dose ?: "Casilla $slotNumber",
