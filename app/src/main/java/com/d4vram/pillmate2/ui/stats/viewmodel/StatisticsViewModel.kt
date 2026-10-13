@@ -386,10 +386,7 @@ class StatisticsViewModel(
                     narrativeSummary = narrative,
                     mostActiveDay = trackingMetrics.mostActiveDay,
                     leastActiveDay = trackingMetrics.leastActiveDay,
-                    loggingTrend = trackingMetrics.loggingTrend?.let { trend ->
-                        val sign = if (trend > 0) "+" else ""
-                        "$sign$trend % respecto a los $periodDays días anteriores"
-                    },
+                    loggingTrend = trendText(trackingMetrics.totalDosesLogged, previousPeriodDoses, periodDays),
                     weeklyActivityPattern = trackingMetrics.weeklyActivityPattern,
                     monthlyActivityData = trackingMetrics.monthlyActivityData,
                     loggingConsistency = trackingMetrics.loggingConsistency,
@@ -782,3 +779,18 @@ class StatisticsViewModel(
 /** Variación en % frente al periodo anterior; null si no hubo tomas con las que comparar. */
 internal fun trendPercent(current: Int, previous: Int): Int? =
     if (previous > 0) ((current - previous).toFloat() / previous * 100).roundToInt() else null
+
+/**
+ * Diferencia en tomas frente al periodo anterior, lista para mostrar; null si no hubo tomas con las
+ * que comparar. En tomas y no en %: con pocas tomas el porcentaje se dispara (de 1 a 18 es +1700 %).
+ */
+internal fun trendText(current: Int, previous: Int, days: Long): String? {
+    if (previous <= 0) return null
+    val diff = current - previous
+    val amount = kotlin.math.abs(diff).let { if (it == 1) "1 toma" else "$it tomas" }
+    return when {
+        diff > 0 -> "$amount más que los $days días anteriores"
+        diff < 0 -> "$amount menos que los $days días anteriores"
+        else -> "Igual que los $days días anteriores"
+    }
+}
