@@ -31,10 +31,13 @@ private val LightColorScheme = lightColorScheme(
     onSurfaceVariant = Color(0xFF64748B),
     primaryContainer = Color(0xFFE0F2FE),
     onPrimaryContainer = Color(0xFF0C4A6E),
-    secondaryContainer = Color(0xFFF3E8FF),
+    // Lila con cuerpo: sobre blanco, el F3E8FF anterior apenas distinguía un chip seleccionado
+    secondaryContainer = Color(0xFFDDD6FE),
     onSecondaryContainer = Color(0xFF581C87),
     tertiaryContainer = Color(0xFFFEF3C7),
-    onTertiaryContainer = Color(0xFF92400E)
+    onTertiaryContainer = Color(0xFF92400E),
+    // Sin definir, Material pone un gris casi invisible sobre blanco (aro del reloj, divisores)
+    outlineVariant = Color(0xFF94A3B8)
 )
 
 private val DarkColorScheme = darkColorScheme(
