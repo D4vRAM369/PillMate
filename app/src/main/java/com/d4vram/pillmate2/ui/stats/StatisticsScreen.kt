@@ -213,7 +213,8 @@ fun StatisticsScreen(
                 totalValue = uiState.totalInUnit,
                 displayUnit = uiState.displayUnit,
                 averageValue = uiState.averageInUnit,
-                lastRecord = uiState.timeSinceLastRecord
+                lastRecord = uiState.timeSinceLastRecord,
+                trend = uiState.loggingTrend
             )
 
             // Reloj de 24 h del periodo y filtro activos
@@ -498,7 +499,8 @@ fun MainKpiSection(
     totalValue: String,
     displayUnit: String,
     averageValue: String,
-    lastRecord: String
+    lastRecord: String,
+    trend: String? = null
 ) {
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
@@ -552,6 +554,15 @@ fun MainKpiSection(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            // Sin color de "bien/mal": en medicación a demanda, más o menos tomas no es bueno ni malo
+            if (trend != null) {
+                Text(
+                    text = trend,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }

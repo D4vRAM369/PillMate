@@ -72,7 +72,7 @@ data class StatisticsUiState(
     val narrativeSummary: String = "",
     val mostActiveDay: String = "",
     val leastActiveDay: String = "",
-    val loggingTrend: String = "0%",
+    val loggingTrend: String? = null, // null: no hay periodo anterior con el que comparar
     val weeklyActivityPattern: Map<String, Int> = emptyMap(),
     val monthlyActivityData: List<StatisticsViewModel.MonthlyActivityPoint> = emptyList(),
     val loggingConsistency: String = "",
@@ -258,6 +258,17 @@ class StatisticsViewModel(
                 }
             }
 
+            // La tendencia compara con el periodo anterior de igual duración, que la query de arriba no trae
+            val periodDays = ChronoUnit.DAYS.between(queryStartDate, endDate) + 1
+            val previousPeriodDoses = if (range == FilterRange.ALL_TIME) 0 else {
+                medicationRepository.getHistoryBetween(
+                    queryStartDate.minusDays(periodDays).toEpochDay(),
+                    queryStartDate.minusDays(1).toEpochDay()
+                )
+                    .filter { currentSelectedId == null || it.medicationId in familyIds }
+                    .sumOf { it.quantity }
+            }
+
             // Calcular desglose por variante si hay familia seleccionada
             val (doseBreakdown, showingFamily, familyName) = if (currentSelectedId != null && familyIds.size > 1) {
                 val familyMeds = allMedications.filter { it.id in familyIds }
@@ -282,6 +293,7 @@ class StatisticsViewModel(
                 startDate = effectiveStartDate,
                 endDate = endDate,
                 history = filteredHistory,
+                previousPeriodDoses = previousPeriodDoses,
                 medications = allMedications,
                 selectedMedicationId = currentSelectedId,
                 weeklyPatternHistory = allHistory.filter { it.timestamp.toLocalDate() in endDate.minusDays(27)..endDate }
@@ -341,7 +353,7 @@ class StatisticsViewModel(
                 range = range,
                 daysWithRecords = trackingMetrics.totalDaysWithRecords,
                 totalDays = totalDays,
-                trend = trackingMetrics.loggingTrend
+                trend = trackingMetrics.loggingTrend ?: 0
             )
 
             val lastTakenText = filteredHistory.firstOrNull()?.let { "${it.date} ${it.time}" } ?: "Nunca"
@@ -374,7 +386,10 @@ class StatisticsViewModel(
                     narrativeSummary = narrative,
                     mostActiveDay = trackingMetrics.mostActiveDay,
                     leastActiveDay = trackingMetrics.leastActiveDay,
-                    loggingTrend = if (trackingMetrics.loggingTrend > 0) "+${trackingMetrics.loggingTrend}%" else "${trackingMetrics.loggingTrend}%",
+                    loggingTrend = trackingMetrics.loggingTrend?.let { trend ->
+                        val sign = if (trend > 0) "+" else ""
+                        "$sign$trend % respecto a los $periodDays días anteriores"
+                    },
                     weeklyActivityPattern = trackingMetrics.weeklyActivityPattern,
                     monthlyActivityData = trackingMetrics.monthlyActivityData,
                     loggingConsistency = trackingMetrics.loggingConsistency,
@@ -482,6 +497,7 @@ class StatisticsViewModel(
         startDate: LocalDate,
         endDate: LocalDate,
         history: List<com.d4vram.pillmate2.model.HistoryEntry>,
+        previousPeriodDoses: Int,
         medications: List<com.d4vram.pillmate2.model.Medication>,
         selectedMedicationId: String?,
         weeklyPatternHistory: List<com.d4vram.pillmate2.model.HistoryEntry>
@@ -503,15 +519,7 @@ class StatisticsViewModel(
         val leastActiveDay = weeklyActivityPattern.minByOrNull { it.value }?.key ?: ""
 
         // Tendencia
-        val previousPeriodStart = startDate.minusDays(totalDays)
-        val previousPeriodEnd = startDate.minusDays(1)
-        val previousPeriodDoses = history.filter { 
-            it.timestamp.toLocalDate() in previousPeriodStart..previousPeriodEnd 
-        }.sumOf { it.quantity }
-
-        val loggingTrend = if (previousPeriodDoses > 0) {
-            ((totalDosesLogged - previousPeriodDoses).toFloat() / previousPeriodDoses * 100).roundToInt()
-        } else 0
+        val loggingTrend = trendPercent(totalDosesLogged, previousPeriodDoses)
 
         // Tiempo desde el último registro
         val timeSinceLastRecord = if (history.isNotEmpty()) {
@@ -603,7 +611,7 @@ class StatisticsViewModel(
         val averageDailyDoses: Float,
         val mostActiveDay: String,
         val leastActiveDay: String,
-        val loggingTrend: Int,
+        val loggingTrend: Int?,
         val weeklyActivityPattern: Map<String, Int>,
         val monthlyActivityData: List<MonthlyActivityPoint>,
         val loggingConsistency: String,
@@ -770,3 +778,7 @@ class StatisticsViewModel(
         }
     }
 }
+
+/** Variación en % frente al periodo anterior; null si no hubo tomas con las que comparar. */
+internal fun trendPercent(current: Int, previous: Int): Int? =
+    if (previous > 0) ((current - previous).toFloat() / previous * 100).roundToInt() else null
