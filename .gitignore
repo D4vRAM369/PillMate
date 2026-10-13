@@ -50,6 +50,7 @@ build_*.log
 
 # AI assistant / agent tool state and session exports (local only)
 .claude/
+CLAUDE.md
 .codex
 .grok/
 .superpowers/
