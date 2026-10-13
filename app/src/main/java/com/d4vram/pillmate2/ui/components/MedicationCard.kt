@@ -251,7 +251,7 @@ fun MedicationCard(
                 // Última toma (solo visible si ya se tomó)
                 if (isTakenToday && medication.lastTaken != null) {
                     Text(
-                        text = stringResource(R.string.home_last_dose, medication.lastTaken.orEmpty()),
+                        text = stringResource(R.string.home_last_dose, lastTakenLabel(medication)),
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Medium
                         ),
@@ -275,6 +275,17 @@ fun MedicationCard(
             }
         )
     }
+}
+
+/**
+ * "Hoy 14:14" / "Today 14:14": se calcula con la fecha real de la última toma. El texto que trae
+ * el repositorio ([Medication.lastTaken]) está siempre en español y solo se usa si no hay fecha.
+ */
+@Composable
+private fun lastTakenLabel(medication: Medication): String {
+    val millis = medication.lastTakenTimestamp ?: return medication.lastTaken.orEmpty()
+    val at = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDateTime()
+    return "${com.d4vram.pillmate2.utils.relativeDayLabel(at.toLocalDate())} ${at.format(DateTimeFormatter.ofPattern("HH:mm"))}"
 }
 
 /** Tipo tal como debe leerse en el idioma del móvil; lo guardado no cambia (ver [MedicationType]). */
