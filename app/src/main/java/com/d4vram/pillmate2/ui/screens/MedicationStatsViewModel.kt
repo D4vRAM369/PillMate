@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.screens
 
+import androidx.annotation.StringRes
+import com.d4vram.pillmate2.R
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -15,10 +17,10 @@ import java.time.YearMonth
 import java.time.temporal.ChronoUnit
 
 // Enum para los períodos de filtro
-enum class StatsPeriod(val label: String) {
-    WEEK("Última semana"),
-    MONTH("Último mes"),
-    ALL("Todo")
+enum class StatsPeriod(@StringRes val labelRes: Int) {
+    WEEK(R.string.stats_period_week),
+    MONTH(R.string.stats_period_month),
+    ALL(R.string.period_all)
 }
 
 class MedicationStatsViewModel(

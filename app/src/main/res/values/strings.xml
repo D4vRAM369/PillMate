@@ -682,4 +682,18 @@
         <item quantity="other">%1$d doses fewer than the previous %2$d days</item>
     </plurals>
     <string name="stats_trend_same">Same as the previous %1$d days</string>
+
+    <!-- Statistics of one medication -->
+    <string name="stats_period_week">Last week</string>
+    <string name="stats_period_month">Last month</string>
+    <string name="stats_doses_found">Doses found: %1$d</string>
+    <string name="stats_error_no_id">Error: medication ID not found.</string>
+    <string name="stats_prev_month">Previous month</string>
+    <string name="stats_next_month">Next month</string>
+    <string name="stats_medication_fallback">Medication</string>
+    <string name="stats_entry_time">Time: %1$s</string>
+    <string name="stats_entry_dose">Dose: %1$s</string>
+    <string name="stats_edit_notes">✏️ Edit notes</string>
+    <string name="stats_notes">📝 Notes: %1$s</string>
+    <string name="stats_voice_attached">🎤 Voice note attached</string>
 </resources>

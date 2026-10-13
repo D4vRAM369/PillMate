@@ -680,4 +680,18 @@
         <item quantity="other">%1$d tomas menos que los %2$d días anteriores</item>
     </plurals>
     <string name="stats_trend_same">Igual que los %1$d días anteriores</string>
+
+    <!-- Estadísticas de un medicamento -->
+    <string name="stats_period_week">Última semana</string>
+    <string name="stats_period_month">Último mes</string>
+    <string name="stats_doses_found">Número de tomas encontradas: %1$d</string>
+    <string name="stats_error_no_id">Error: ID del medicamento no encontrado.</string>
+    <string name="stats_prev_month">Mes anterior</string>
+    <string name="stats_next_month">Mes siguiente</string>
+    <string name="stats_medication_fallback">Medicamento</string>
+    <string name="stats_entry_time">Hora: %1$s</string>
+    <string name="stats_entry_dose">Dosis: %1$s</string>
+    <string name="stats_edit_notes">✏️ Editar notas</string>
+    <string name="stats_notes">📝 Notas: %1$s</string>
+    <string name="stats_voice_attached">🎤 Nota de voz adjunta</string>
 </resources>
