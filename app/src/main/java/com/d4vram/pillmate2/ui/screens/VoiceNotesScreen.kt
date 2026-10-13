@@ -36,7 +36,7 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.Label
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -608,7 +608,7 @@ private fun VoiceNoteRow(
                     )
                     DropdownMenuItem(
                         text = { Text("Editar etiquetas") },
-                        leadingIcon = { Icon(Icons.Default.Label, contentDescription = null) },
+                        leadingIcon = { Icon(Icons.AutoMirrored.Filled.Label, contentDescription = null) },
                         onClick = {
                             menuExpanded = false
                             showTagsDialog = true
