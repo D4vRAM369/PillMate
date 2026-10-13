@@ -86,6 +86,12 @@ android {
         compose = true
     }
 
+    // Declara a Android los idiomas de la app (los que tienen carpeta values-xx) para que
+    // aparezca en Ajustes del sistema → Idiomas de aplicaciones. Ver res/resources.properties.
+    androidResources {
+        generateLocaleConfig = true
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
