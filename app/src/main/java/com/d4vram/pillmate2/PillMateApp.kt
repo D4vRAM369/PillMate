@@ -1,6 +1,8 @@
 package com.d4vram.pillmate2
 
 import android.app.Application
+import android.content.Context
+import androidx.core.content.ContextCompat
 import com.d4vram.pillmate2.data.BackupScheduler
 import com.d4vram.pillmate2.notifications.NotificationHelper
 import com.d4vram.pillmate2.ui.theme.ThemeManager
@@ -12,6 +14,10 @@ import kotlinx.coroutines.launch
 
 class PillMateApp : Application() {
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(ContextCompat.getContextForLanguage(base))
+    }
 
     override fun onCreate() {
         super.onCreate()

@@ -3,7 +3,7 @@ package com.d4vram.pillmate2.ui.quicktake
 import com.d4vram.pillmate2.R
 import androidx.compose.ui.res.stringResource
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,7 +55,7 @@ import kotlinx.coroutines.launch
  *
  * Tema translúcido (ver Manifest): el sheet flota sobre lo que hubiera detrás.
  */
-class QuickTakeSheetActivity : ComponentActivity() {
+class QuickTakeSheetActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

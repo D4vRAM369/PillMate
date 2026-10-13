@@ -9,7 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.lifecycleScope
-import androidx.fragment.app.FragmentActivity
+import androidx.appcompat.app.AppCompatActivity
 import com.d4vram.pillmate2.ui.navigation.PillMateNavigation
 import com.d4vram.pillmate2.ui.onboarding.OnboardingManager
 import com.d4vram.pillmate2.ui.security.AppLockScreen
@@ -20,7 +20,7 @@ import com.d4vram.pillmate2.ui.theme.ThemeManager
 import kotlinx.coroutines.launch
 import java.io.File
 
-class MainActivity : FragmentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var themeManager: ThemeManager
     private lateinit var securityManager: SecurityManager
