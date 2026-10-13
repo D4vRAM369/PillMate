@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.screens
 
+import android.text.format.DateFormat
+import androidx.annotation.StringRes
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
@@ -62,12 +64,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.consumePositionChange
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.d4vram.pillmate2.R
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.ui.components.HistoryItem
@@ -86,13 +92,13 @@ import kotlinx.coroutines.launch
 /**
  * 📊 Pantalla del historial completo
  */
-enum class TimePeriod(val label: String) {
+enum class TimePeriod(@StringRes val labelRes: Int) {
     // El orden de aquí es el orden de los chips en pantalla
-    TODAY("Hoy"),
-    YESTERDAY("Ayer"),
-    WEEK("7 días"),
-    MONTH("30 días"),
-    ALL("Todo")
+    TODAY(R.string.period_today),
+    YESTERDAY(R.string.period_yesterday),
+    WEEK(R.string.period_7_days),
+    MONTH(R.string.period_30_days),
+    ALL(R.string.period_all)
 }
 
 /**
@@ -152,9 +158,14 @@ fun HistoryScreen(
         }
     }
 
+    // Las fechas siguen el idioma del móvil (orden día/mes incluido), no un "es" fijo
+    val locale = LocalConfiguration.current.locales[0]
+    val todayLabel = stringResource(R.string.period_today)
+    val yesterdayLabel = stringResource(R.string.period_yesterday)
+
     // Agrupar entradas por período
-    val groupedEntries = remember(filteredEntries) {
-        groupEntriesByPeriod(filteredEntries)
+    val groupedEntries = remember(filteredEntries, todayLabel, yesterdayLabel, locale) {
+        groupEntriesByPeriod(filteredEntries, todayLabel, yesterdayLabel, locale)
     }
 
     Scaffold(
@@ -162,7 +173,7 @@ fun HistoryScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = if (astra) "Historial" else "📊 Historial",
+                        text = stringResource(R.string.history_title).let { if (astra) it else "📊 $it" },
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Bold
                         )
@@ -177,7 +188,9 @@ fun HistoryScreen(
                     ) {
                         Icon(
                             imageVector = if (isSearchVisible) Icons.Default.Close else Icons.Default.Search,
-                            contentDescription = if (isSearchVisible) "Cerrar búsqueda" else "Buscar en notas"
+                            contentDescription = stringResource(
+                                if (isSearchVisible) R.string.history_search_close else R.string.history_search_open
+                            )
                         )
                     }
                 }
@@ -210,10 +223,10 @@ fun HistoryScreen(
                         item {
                             FilterChip(
                                 onClick = { selectedDay = null },
-                                label = { Text(day.format(DateTimeFormatter.ofPattern("EEE d/M", Locale("es", "ES")))) },
+                                label = { Text(day.format(localizedDateFormatter("EEEdM", locale))) },
                                 selected = true,
                                 trailingIcon = {
-                                    Icon(Icons.Default.Close, contentDescription = "Quitar filtro de día", modifier = Modifier.size(18.dp))
+                                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.history_remove_day_filter), modifier = Modifier.size(18.dp))
                                 }
                             )
                         }
@@ -221,7 +234,7 @@ fun HistoryScreen(
                     items(TimePeriod.values()) { period ->
                         FilterChip(
                             onClick = { selectedDay = null; selectedPeriod = period },
-                            label = { Text(period.label) },
+                            label = { Text(stringResource(period.labelRes)) },
                             selected = selectedDay == null && selectedPeriod == period
                         )
                     }
@@ -236,13 +249,17 @@ fun HistoryScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Tu ritmo · " + (selectedDay?.format(DateTimeFormatter.ofPattern("d/M")) ?: selectedPeriod.label.lowercase()),
+                            text = stringResource(
+                                R.string.history_rhythm_title,
+                                selectedDay?.format(localizedDateFormatter("dM", locale))
+                                    ?: stringResource(selectedPeriod.labelRes).lowercase(locale)
+                            ),
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.fillMaxWidth()
                         )
                         Text(
-                            text = "Cada marca es una toma registrada, no un objetivo.",
+                            text = stringResource(R.string.history_rhythm_caption),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)
@@ -251,7 +268,7 @@ fun HistoryScreen(
                         val showsToday = (selectedDay ?: today.takeIf { selectedPeriod == TimePeriod.TODAY }) == today
                         RhythmClock(entriesByPeriod, showNow = showsToday)
                         androidx.compose.material3.TextButton(onClick = { navController.navigate("global_stats") }) {
-                            Text("Ver estadísticas")
+                            Text(stringResource(R.string.history_view_stats))
                         }
                     }
                 }
@@ -267,7 +284,7 @@ fun HistoryScreen(
                         value = notesSearchQuery,
                         onValueChange = { notesSearchQuery = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Buscar en notas del historial...") },
+                        placeholder = { Text(stringResource(R.string.history_search_placeholder)) },
                         singleLine = true,
                         leadingIcon = {
                             Icon(
@@ -280,7 +297,7 @@ fun HistoryScreen(
                                 IconButton(onClick = { notesSearchQuery = "" }) {
                                     Icon(
                                         imageVector = Icons.Default.Close,
-                                        contentDescription = "Limpiar búsqueda"
+                                        contentDescription = stringResource(R.string.history_search_clear)
                                     )
                                 }
                             }
@@ -295,9 +312,9 @@ fun HistoryScreen(
 
                 item {
                     val resultText = if (notesSearchQuery.isBlank()) {
-                        "Escribe para filtrar por contenido de notas"
+                        stringResource(R.string.history_search_hint)
                     } else {
-                        "${filteredEntries.size} resultado(s) en notas"
+                        pluralStringResource(R.plurals.history_search_results, filteredEntries.size, filteredEntries.size)
                     }
                     Text(
                         text = resultText,
@@ -323,9 +340,9 @@ fun HistoryScreen(
                     ) {
                         Text(
                             text = if (notesSearchQuery.isNotBlank()) {
-                                "No hay notas que coincidan con \"$notesSearchQuery\""
+                                stringResource(R.string.history_no_matching_notes, notesSearchQuery)
                             } else {
-                                "No hay registros para este filtro"
+                                stringResource(R.string.history_empty_filter)
                             },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -570,12 +587,23 @@ private fun HistoryActionButton(
     }
 }
 
-private fun groupEntriesByPeriod(entries: List<HistoryEntry>): List<Pair<String, List<HistoryEntry>>> {
+/**
+ * Formato de fecha con las piezas de [skeleton] ("EEEdM" = día de la semana, día y mes) puestas en el
+ * orden y con los separadores de [locale]: "lun, 13/10" en español, "Mon, 10/13" en inglés de EE. UU.
+ */
+private fun localizedDateFormatter(skeleton: String, locale: Locale): DateTimeFormatter =
+    DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)
+
+private fun groupEntriesByPeriod(
+    entries: List<HistoryEntry>,
+    todayLabel: String,
+    yesterdayLabel: String,
+    locale: Locale
+): List<Pair<String, List<HistoryEntry>>> {
     if (entries.isEmpty()) return emptyList()
 
     val today = LocalDate.now()
-    val locale = Locale("es", "ES")
-    val dateFormatter = DateTimeFormatter.ofPattern("EEE dd/MM/yy", locale)
+    val dateFormatter = localizedDateFormatter("EEEddMMyy", locale)
 
     val groupedByDate = entries.groupBy { it.timestamp.toLocalDate() }
     val sortedDates = groupedByDate.keys.sortedDescending()
@@ -583,8 +611,8 @@ private fun groupEntriesByPeriod(entries: List<HistoryEntry>): List<Pair<String,
     return sortedDates.map { entryDate ->
         val daysDiff = ChronoUnit.DAYS.between(entryDate, today)
         val label = when (daysDiff) {
-            0L -> "Hoy"
-            1L -> "Ayer"
+            0L -> todayLabel
+            1L -> yesterdayLabel
             else -> dateFormatter.format(entryDate).replaceFirstChar { it.titlecase(locale) }
         }
         label to groupedByDate.getValue(entryDate).sortedByDescending { it.timestamp }
@@ -640,14 +668,14 @@ private fun StatisticsQuickCard(
 
                 Column {
                     Text(
-                        text = "Ver Estadísticas",
+                        text = stringResource(R.string.history_view_stats),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold
                         ),
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Text(
-                        text = "Hoy: $takenToday • 7 días: $takenThisWeek",
+                        text = stringResource(R.string.history_stats_summary, takenToday, takenThisWeek),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                     )
@@ -656,7 +684,7 @@ private fun StatisticsQuickCard(
 
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = "Ver estadísticas",
+                contentDescription = null, // decorativo: el título de la tarjeta ya lo dice
                 tint = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
             )
         }

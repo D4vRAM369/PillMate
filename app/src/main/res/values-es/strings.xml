@@ -1,0 +1,29 @@
+<resources>
+    <string name="quick_take_widget_description">Registra una toma de tus cuatro medicamentos habituales con un toque.</string>
+
+    <!-- Periodos de tiempo (filtros de Historial y Estadísticas) -->
+    <string name="period_today">Hoy</string>
+    <string name="period_yesterday">Ayer</string>
+    <string name="period_7_days">7 días</string>
+    <string name="period_30_days">30 días</string>
+    <string name="period_all">Todo</string>
+
+    <!-- Historial -->
+    <string name="history_title">Historial</string>
+    <string name="history_search_open">Buscar en notas</string>
+    <string name="history_search_close">Cerrar búsqueda</string>
+    <string name="history_search_clear">Limpiar búsqueda</string>
+    <string name="history_search_placeholder">Buscar en notas del historial…</string>
+    <string name="history_search_hint">Escribe para filtrar por contenido de notas</string>
+    <plurals name="history_search_results">
+        <item quantity="one">%1$d resultado en notas</item>
+        <item quantity="other">%1$d resultados en notas</item>
+    </plurals>
+    <string name="history_no_matching_notes">No hay notas que coincidan con \"%1$s\"</string>
+    <string name="history_empty_filter">No hay registros para este filtro</string>
+    <string name="history_remove_day_filter">Quitar filtro de día</string>
+    <string name="history_rhythm_title">Tu ritmo · %1$s</string>
+    <string name="history_rhythm_caption">Cada marca es una toma registrada, no un objetivo.</string>
+    <string name="history_view_stats">Ver estadísticas</string>
+    <string name="history_stats_summary">Hoy: %1$d • 7 días: %2$d</string>
+</resources>

@@ -1,31 +1,31 @@
 <resources>
-    <string name="app_name">PillMate</string>
-    <string name="quick_take_widget_description">Registra una toma de tus cuatro medicamentos habituales con un toque.</string>
+    <string name="app_name" translatable="false">PillMate</string>
+    <string name="quick_take_widget_description">Log a dose of your four usual medications with one tap.</string>
 
-    <!-- Navigation -->
-    <string name="nav_home">Home</string>
-    <string name="nav_medications">Meds</string>
-    <string name="nav_history">History</string>
-    <string name="nav_settings">Settings</string>
-
-    <!-- Home Screen -->
-    <string name="home_title">💊 PillMate</string>
-    <string name="home_subtitle">Seguimiento Personal</string>
-    <string name="stats_taken_today">Tomadas Hoy</string>
-    <string name="stats_this_week">Esta Semana</string>
-    <string name="stats_adherence">Adherencia</string>
-
-    <!-- Medications -->
-    <string name="medications_title">Mis Medicamentos</string>
-    <string name="medications_subtitle">Presiona para registrar</string>
-    <string name="add_medication">Agregar Medicamento</string>
+    <!-- Time periods (History and Statistics filters) -->
+    <string name="period_today">Today</string>
+    <string name="period_yesterday">Yesterday</string>
+    <string name="period_7_days">7 days</string>
+    <string name="period_30_days">30 days</string>
+    <string name="period_all">All</string>
 
     <!-- History -->
-    <string name="history_title">Historial Reciente</string>
-    <string name="history_taken">Tomada</string>
-
-    <!-- Settings -->
-    <string name="settings_notifications">Notificaciones</string>
-    <string name="settings_data">Datos</string>
-    <string name="settings_info">Información</string>
+    <string name="history_title">History</string>
+    <string name="history_search_open">Search notes</string>
+    <string name="history_search_close">Close search</string>
+    <string name="history_search_clear">Clear search</string>
+    <string name="history_search_placeholder">Search history notes…</string>
+    <string name="history_search_hint">Type to filter by note content</string>
+    <plurals name="history_search_results">
+        <item quantity="one">%1$d result in notes</item>
+        <item quantity="other">%1$d results in notes</item>
+    </plurals>
+    <string name="history_no_matching_notes">No notes match \"%1$s\"</string>
+    <string name="history_empty_filter">No entries for this filter</string>
+    <string name="history_remove_day_filter">Remove day filter</string>
+    <!-- %1$s: the selected period in lowercase ("today", "7 days") or a date -->
+    <string name="history_rhythm_title">Your rhythm · %1$s</string>
+    <string name="history_rhythm_caption">Each mark is a logged dose, not a goal.</string>
+    <string name="history_view_stats">View statistics</string>
+    <string name="history_stats_summary">Today: %1$d • 7 days: %2$d</string>
 </resources>
