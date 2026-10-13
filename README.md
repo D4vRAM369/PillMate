@@ -152,7 +152,7 @@ Si envías cambios: que `./gradlew :app:testDebugUnitTest` pase, y nada de datos
 
 ## Apoyar el proyecto
 
-PillMate es gratis y lo seguirá siendo, sin anuncios ni compras. Si te resulta útil y quieres invitarme a un café:
+PillMate es gratis, sin anuncios ni compras. Si te resulta útil y quieres invitarme a un café:
 
 <a href="https://www.buymeacoffee.com/D4vRAM369"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy Me a Coffee"></a>
 
