@@ -526,8 +526,8 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         SettingsItem(
-                            title = "Cambiar PIN",
-                            description = "Actualizar código de acceso",
+                            title = stringResource(R.string.settings_change_pin),
+                            description = stringResource(R.string.settings_change_pin_desc),
                             icon = Icons.Default.Lock,
                             onClick = { showPinChangeDialog = true }
                         )
@@ -543,12 +543,12 @@ fun SettingsScreen(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Desbloquear con huella",
+                                        text = stringResource(R.string.settings_fingerprint),
                                         style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = if (securitySettings.biometricEnabled) "Activado" else "Desactivado",
+                                        text = stringResource(if (securitySettings.biometricEnabled) R.string.settings_on else R.string.settings_off),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -565,7 +565,7 @@ fun SettingsScreen(
                         } else {
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
-                                text = "Tu dispositivo no soporta autenticación biométrica fuerte.",
+                                text = stringResource(R.string.settings_no_biometrics),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -574,7 +574,7 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.height(12.dp))
                         val timeoutLabel = lockTimeoutLabel(securitySettings.autoLockDurationMs)
                         SettingsItem(
-                            title = "Tiempo antes de bloquear",
+                            title = stringResource(R.string.settings_lock_timeout),
                             description = timeoutLabel,
                             icon = Icons.Default.Schedule,
                             onClick = { showTimeoutPicker = true }
@@ -582,8 +582,8 @@ fun SettingsScreen(
                     } else if (!securitySettings.isPinConfigured) {
                         Spacer(modifier = Modifier.height(8.dp))
                         SettingsItem(
-                            title = "Configurar PIN",
-                            description = "Define un código para proteger tu información",
+                            title = stringResource(R.string.settings_setup_pin),
+                            description = stringResource(R.string.settings_setup_pin_desc),
                             icon = Icons.Default.Security,
                             onClick = { showPinSetupDialog = true }
                         )
@@ -592,7 +592,7 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection(title = "🔔 Notificaciones") {
+                SettingsSection(title = stringResource(R.string.settings_notifications)) {
                     // Estado del permiso de notificaciones
                     if (!hasNotificationPermission) {
                         Card(
@@ -610,12 +610,12 @@ fun SettingsScreen(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Permiso requerido",
+                                        text = stringResource(R.string.settings_permission_required),
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = "Permite notificaciones para recibir recordatorios",
+                                        text = stringResource(R.string.settings_permission_required_desc),
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 }
@@ -626,7 +626,7 @@ fun SettingsScreen(
                                         }
                                     }
                                 ) {
-                                    Text("Activar")
+                                    Text(stringResource(R.string.action_enable))
                                 }
                             }
                         }
@@ -649,12 +649,12 @@ fun SettingsScreen(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Alarmas exactas desactivadas",
+                                        text = stringResource(R.string.settings_exact_alarms_off),
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold
                                     )
                                     Text(
-                                        text = "Sin este permiso los recordatorios pueden retrasarse",
+                                        text = stringResource(R.string.settings_exact_alarms_off_desc),
                                         style = MaterialTheme.typography.bodySmall
                                     )
                                 }
@@ -663,7 +663,7 @@ fun SettingsScreen(
                                         NotificationHelper.openExactAlarmSettings(context)
                                     }
                                 ) {
-                                    Text("Permitir")
+                                    Text(stringResource(R.string.action_allow))
                                 }
                             }
                         }
@@ -671,11 +671,11 @@ fun SettingsScreen(
                     }
 
                     SettingsItem(
-                        title = "Recordatorios",
+                        title = stringResource(R.string.settings_reminders),
                         description = when {
-                            !hasNotificationPermission -> "Activa el permiso de notificaciones primero"
-                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasExactAlarmPermission -> "Permite alarmas exactas para máxima precisión"
-                            else -> "Los recordatorios se configuran en cada medicamento"
+                            !hasNotificationPermission -> stringResource(R.string.settings_reminders_need_permission)
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasExactAlarmPermission -> stringResource(R.string.settings_reminders_need_exact)
+                            else -> stringResource(R.string.settings_reminders_per_medication)
                         },
                         icon = Icons.Default.Notifications,
                         onClick = {
@@ -684,17 +684,17 @@ fun SettingsScreen(
                             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasExactAlarmPermission) {
                                 NotificationHelper.openExactAlarmSettings(context)
                             } else {
-                                snackbarMessage = "Configura recordatorios en cada medicamento individual"
+                                snackbarMessage = context.getString(R.string.settings_reminders_hint)
                             }
                         }
                     )
 
                     SettingsItem(
-                        title = "Notificación de toma rápida",
+                        title = stringResource(R.string.settings_quick_notification),
                         description = if (quickTakeNotificationEnabled)
-                            "Notificación siempre presente para registrar una toma con un toque"
+                            stringResource(R.string.settings_quick_notification_on)
                         else
-                            "Añade una notificación fija para registrar tomas sin abrir la app",
+                            stringResource(R.string.settings_quick_notification_off),
                         hasSwitch = true,
                         checked = quickTakeNotificationEnabled,
                         icon = Icons.Default.Bolt,
@@ -714,8 +714,8 @@ fun SettingsScreen(
                     )
 
                     SettingsItem(
-                        title = "Sonido",
-                        description = "Configurar tono de notificación",
+                        title = stringResource(R.string.settings_sound),
+                        description = stringResource(R.string.settings_sound_desc),
                         icon = Icons.AutoMirrored.Filled.VolumeUp,
                         onClick = {
                             // Abrir ajustes de notificación de la app
@@ -730,20 +730,20 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection(title = "📊 Datos") {
+                SettingsSection(title = stringResource(R.string.settings_data)) {
                     // 📄 Exportar CSV (sin fotos)
                     SettingsItem(
-                        title = "Exportar CSV",
-                        description = "Crear archivo CSV con medicamentos e historial",
+                        title = stringResource(R.string.export_csv),
+                        description = stringResource(R.string.settings_export_csv_desc),
                         icon = Icons.Default.FileDownload,
                         onClick = {
                             scope.launch {
                                 try {
                                     val file = createExportFile(context, repository)
                                     shareFile(context, file)
-                                    snackbarMessage = "✅ CSV exportado: ${file.name}"
+                                    snackbarMessage = context.getString(R.string.settings_csv_exported, file.name)
                                 } catch (e: Exception) {
-                                    snackbarMessage = "❌ Error al exportar: ${e.message}"
+                                    snackbarMessage = context.getString(R.string.settings_export_failed, e.message.orEmpty())
                                 }
                             }
                         }
@@ -751,16 +751,16 @@ fun SettingsScreen(
 
                     // 📑 Exportar PDF (reporte visual)
                     SettingsItem(
-                        title = "Exportar PDF",
-                        description = "Generar reporte visual para médico o archivo",
+                        title = stringResource(R.string.export_pdf),
+                        description = stringResource(R.string.settings_export_pdf_desc),
                         icon = Icons.Default.PictureAsPdf,
                         onClick = onNavigateToPdfExport
                     )
 
                     // 🎙️ Exportar historial con audios
                     SettingsItem(
-                        title = "Exportar historial con audios",
-                        description = "Exportar historial completo con notas de voz encriptadas",
+                        title = stringResource(R.string.settings_export_audio),
+                        description = stringResource(R.string.settings_export_audio_desc),
                         icon = Icons.Default.Mic,
                         onClick = {
                             showHistoryExportDialog = true
@@ -769,8 +769,8 @@ fun SettingsScreen(
 
                     // 🔄 Restaurar Backup (importar ZIP con fotos)
                     SettingsItem(
-                        title = "Restaurar Backup",
-                        description = "Importar desde archivo .zip (incluye fotos)",
+                        title = stringResource(R.string.settings_restore_backup),
+                        description = stringResource(R.string.settings_restore_backup_hint),
                         icon = Icons.Default.Restore,
                         onClick = {
                             zipBackupLauncher.launch("*/*")
@@ -780,7 +780,7 @@ fun SettingsScreen(
                     // 📥 Importar CSV (sin fotos)
                     SettingsItem(
                         title = context.getString(R.string.settings_import_csv_title),
-                        description = "Cargar datos desde archivo .csv (sin fotos)",
+                        description = stringResource(R.string.settings_import_csv_hint),
                         icon = Icons.Default.FileUpload,
                         onClick = {
                             csvImportLauncher.launch("*/*")
@@ -789,8 +789,8 @@ fun SettingsScreen(
 
                     // 🗑️ Limpiar todos los datos
                     SettingsItem(
-                        title = "Limpiar todos los datos",
-                        description = "Eliminar todos los medicamentos y entradas",
+                        title = stringResource(R.string.settings_clear_all),
+                        description = stringResource(R.string.settings_clear_all_desc),
                         icon = Icons.Default.Delete,
                         onClick = {
                             showClearAllDialog = true
@@ -799,8 +799,8 @@ fun SettingsScreen(
 
                     // 💾 Crear Backup Manual con SAF
                     SettingsItem(
-                        title = "Crear Backup",
-                        description = "Elegir dónde guardar backup completo",
+                        title = stringResource(R.string.settings_create_backup),
+                        description = stringResource(R.string.settings_create_backup_desc),
                         icon = Icons.Default.Save,
                         onClick = {
                             val timestamp = System.currentTimeMillis()
@@ -810,7 +810,7 @@ fun SettingsScreen(
 
                     // 📁 Configurar carpeta de auto-backup
                     SettingsItem(
-                        title = "Carpeta de auto-backup",
+                        title = stringResource(R.string.settings_autobackup_folder),
                         description = autoBackupFolderText,
                         icon = Icons.Default.FolderOpen,
                         onClick = {
@@ -821,15 +821,15 @@ fun SettingsScreen(
                     // 🧹 Limpiar configuración (solo si hay carpeta configurada)
                     if (autoBackupFolderName != null) {
                         SettingsItem(
-                            title = "Limpiar configuración de carpeta",
-                            description = "Resetear carpeta de auto-backup",
+                            title = stringResource(R.string.settings_clear_folder),
+                            description = stringResource(R.string.settings_clear_folder_desc),
                             icon = Icons.Default.Clear,
                             onClick = {
                                 scope.launch {
                                     backupSafManager.clearAutoBackupFolder()
                                     backupManager.setAutoBackupEnabled(false)
                                     BackupScheduler.refresh(context.applicationContext)
-                                    snackbarMessage = "✅ Configuración limpiada. Configura nuevamente."
+                                    snackbarMessage = context.getString(R.string.settings_folder_cleared)
                                 }
                             }
                         )
@@ -837,7 +837,7 @@ fun SettingsScreen(
 
                     // 💾 Info de último backup automático
                     SettingsItem(
-                        title = "Último auto-backup",
+                        title = stringResource(R.string.settings_last_autobackup),
                         description = lastBackupText,
                         icon = Icons.Default.Info,
                         onClick = {}
@@ -845,31 +845,31 @@ fun SettingsScreen(
 
                     // 🚀 Crear auto-backup ahora
                     SettingsItem(
-                        title = "Auto-backup",
-                        description = if (autoBackupEnabled) "Activado cada ${formatInterval(autoBackupIntervalHours)}" else "Desactivado",
+                        title = stringResource(R.string.settings_autobackup),
+                        description = if (autoBackupEnabled) stringResource(R.string.settings_autobackup_on_every, formatInterval(autoBackupIntervalHours)) else stringResource(R.string.settings_off),
                         icon = Icons.Default.Autorenew,
                         hasSwitch = true,
                         checked = autoBackupEnabled,
                         onCheckedChange = { enabled ->
                             scope.launch {
                                 if (enabled && autoBackupFolderName == null) {
-                                    snackbarMessage = "⚠️ Configura primero una carpeta de auto-backup"
+                                    snackbarMessage = context.getString(R.string.settings_choose_folder_first)
                                     return@launch
                                 }
                                 backupManager.setAutoBackupEnabled(enabled)
                                 BackupScheduler.refresh(context.applicationContext)
                                 snackbarMessage = if (enabled) {
-                                    "✅ Auto-backup activado"
+                                    context.getString(R.string.settings_autobackup_enabled)
                                 } else {
-                                    "Auto-backup desactivado"
+                                    context.getString(R.string.settings_autobackup_disabled)
                                 }
                             }
                         }
                     )
 
                     SettingsItem(
-                        title = "Frecuencia de auto-backup",
-                        description = "Cada ${formatInterval(autoBackupIntervalHours)}",
+                        title = stringResource(R.string.settings_autobackup_frequency),
+                        description = stringResource(R.string.settings_every, formatInterval(autoBackupIntervalHours)),
                         icon = Icons.Default.Schedule,
                         onClick = {
                             showAutoBackupIntervalDialog = true
@@ -877,8 +877,8 @@ fun SettingsScreen(
                     )
 
                     SettingsItem(
-                        title = "Crear backup de seguridad ahora",
-                        description = "Guardar backup en carpeta configurada",
+                        title = stringResource(R.string.settings_backup_now),
+                        description = stringResource(R.string.settings_backup_now_desc),
                         icon = Icons.Default.Backup,
                         onClick = {
                             scope.launch {
@@ -886,12 +886,12 @@ fun SettingsScreen(
                                     val success = backupSafManager.createAutoBackupToFolder(force = true)
                                     if (success) {
                                         BackupScheduler.refresh(context.applicationContext)
-                                        snackbarMessage = "✅ Backup creado en carpeta configurada"
+                                        snackbarMessage = context.getString(R.string.settings_backup_in_folder)
                                     } else {
-                                        snackbarMessage = "⚠️ Configura primero una carpeta de auto-backup"
+                                        snackbarMessage = context.getString(R.string.settings_choose_folder_first)
                                     }
                                 } catch (e: Exception) {
-                                    snackbarMessage = "❌ Error al crear backup: ${e.message}"
+                                    snackbarMessage = context.getString(R.string.settings_backup_failed, e.message.orEmpty())
                                 }
                             }
                         }
@@ -899,8 +899,8 @@ fun SettingsScreen(
 
                     // 📦 Exportar Backup (con opción de cifrado AES-256)
                     SettingsItem(
-                        title = "Exportar Backup",
-                        description = "Compartir backup completo con fotos (con/sin cifrado)",
+                        title = stringResource(R.string.settings_export_backup),
+                        description = stringResource(R.string.settings_export_backup_desc),
                         icon = Icons.Default.Lock,
                         onClick = {
                             showBackupExportDialog = true
@@ -909,8 +909,8 @@ fun SettingsScreen(
 
                     // 📁 Ver carpeta de backups
                     SettingsItem(
-                        title = "Ver carpeta de backups",
-                        description = "Abrir ubicación de copias de seguridad",
+                        title = stringResource(R.string.settings_view_backups),
+                        description = stringResource(R.string.settings_view_backups_desc),
                         icon = Icons.Default.Folder,
                         onClick = {
                             openBackupsFolder(context, scope, backupSafManager)
@@ -1441,7 +1441,7 @@ private fun PinSetupDialog(
 
     AlertDialog(
         onDismissRequest = { if (!isSubmitting) onDismiss() },
-        title = { Text("Configurar PIN") },
+        title = { Text(stringResource(R.string.settings_setup_pin)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -1520,7 +1520,7 @@ private fun PinChangeDialog(
 
     AlertDialog(
         onDismissRequest = { if (!isSubmitting) onDismiss() },
-        title = { Text("Cambiar PIN") },
+        title = { Text(stringResource(R.string.settings_change_pin)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
@@ -1604,7 +1604,7 @@ private fun LockTimeoutDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Tiempo antes de bloquear") },
+        title = { Text(stringResource(R.string.settings_lock_timeout)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 lockTimeoutOptions.forEach { (duration, label) ->
@@ -2499,7 +2499,7 @@ private fun AutoBackupIntervalDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Frecuencia de auto-backup") },
+        title = { Text(stringResource(R.string.settings_autobackup_frequency)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 options.forEach { (hours, label) ->
