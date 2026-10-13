@@ -1,5 +1,9 @@
 package com.d4vram.pillmate2.ui.onboarding
 
+import androidx.annotation.StringRes
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
@@ -105,7 +109,7 @@ fun MainOnboardingScreen(onFinish: () -> Unit) {
                 // En la última página "Saltar" no aporta nada, pero se conserva su hueco
                 // para que la cabecera no salte.
                 TextButton(onClick = onFinish, enabled = !isLast, modifier = Modifier.alpha(if (isLast) 0f else 1f)) {
-                    Text("Saltar")
+                    Text(stringResource(R.string.onboarding_skip))
                 }
             }
 
@@ -118,33 +122,30 @@ fun MainOnboardingScreen(onFinish: () -> Unit) {
                 val isCurrent = pagerState.currentPage == page
                 when (page) {
                     0 -> OnboardingPage(
-                        eyebrow = "REGISTRAR",
-                        title = "Apunta la toma cuando la tomas",
-                        body = "PillMate es para la medicación a demanda: la que tomas cuando la necesitas. " +
-                            "No hay horarios que cumplir ni alarmas que te persigan.",
-                        note = "Un toque basta. También desde el widget y desde la notificación, sin abrir la app."
+                        eyebrow = stringResource(R.string.onboarding_log_eyebrow),
+                        title = stringResource(R.string.onboarding_log_title),
+                        body = stringResource(R.string.onboarding_log_body),
+                        note = stringResource(R.string.onboarding_log_note)
                     ) { side -> TapDemo(side) }
 
                     1 -> OnboardingPage(
-                        eyebrow = "EL RELOJ",
-                        title = "Tu día en un reloj de 24 horas",
-                        body = "Cada punto es una toma, colocada en su hora y con el color de su medicamento. " +
-                            "Las 00 están arriba y gira como un reloj normal.",
-                        note = "Pruébalo: toca un punto para ver qué fue."
+                        eyebrow = stringResource(R.string.onboarding_clock_eyebrow),
+                        title = stringResource(R.string.onboarding_clock_title),
+                        body = stringResource(R.string.onboarding_clock_body),
+                        note = stringResource(R.string.onboarding_clock_note)
                     ) { side -> DayClockDemo(side, isCurrent) }
 
                     2 -> OnboardingPage(
-                        eyebrow = "TU RITMO",
-                        title = "Con más días aparece tu patrón",
-                        body = "Al juntar varios días, los puntos se convierten en barras: cuanto más larga, " +
-                            "más tomas a esa hora. PillMate calcula tu hora más activa y cada cuánto sueles tomar.",
-                        note = "Describe, no juzga: sin puntuaciones, sin objetivos y sin consejo médico."
+                        eyebrow = stringResource(R.string.onboarding_rhythm_eyebrow),
+                        title = stringResource(R.string.onboarding_rhythm_title),
+                        body = stringResource(R.string.onboarding_rhythm_body),
+                        note = stringResource(R.string.onboarding_rhythm_note)
                     ) { side -> WeekClockDemo(side, isCurrent) }
 
                     else -> OnboardingPage(
-                        eyebrow = "PRIVACIDAD",
-                        title = "Lo que apuntas no sale de tu móvil",
-                        body = "Sin cuentas, sin anuncios y sin analítica. Tus datos son tuyos y se quedan contigo.",
+                        eyebrow = stringResource(R.string.onboarding_privacy_eyebrow),
+                        title = stringResource(R.string.onboarding_privacy_title),
+                        body = stringResource(R.string.onboarding_privacy_body),
                         note = null
                     ) { PrivacyDemo(isCurrent) }
                 }
@@ -158,7 +159,7 @@ fun MainOnboardingScreen(onFinish: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
                 shape = RoundedCornerShape(18.dp)
             ) {
-                Text(if (isLast) "Empezar" else "Siguiente")
+                Text(stringResource(if (isLast) R.string.onboarding_start else R.string.onboarding_next))
             }
         }
     }
@@ -286,7 +287,7 @@ private fun TapDemo(side: Dp) {
     )
     val undoAlpha by animateFloatAsState(if (count > 0) 1f else 0f, label = "undo")
     val tile = (side * 0.42f).coerceIn(96.dp, 136.dp)
-    val medication = SampleMeds[0]
+    val medication = sampleMeds()[0]
 
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         // El margen deja sitio al halo, que crece más allá de la casilla.
@@ -327,11 +328,8 @@ private fun TapDemo(side: Dp) {
             }
         }
         Text(
-            text = when (count) {
-                0 -> "Toca la casilla"
-                1 -> "Hoy: 1 toma"
-                else -> "Hoy: $count tomas"
-            },
+            text = if (count == 0) stringResource(R.string.onboarding_tap_hint)
+            else pluralStringResource(R.plurals.onboarding_today_doses, count, count),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurface
@@ -346,12 +344,12 @@ private fun TapDemo(side: Dp) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "Toma registrada",
+                stringResource(R.string.onboarding_dose_logged),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.inverseOnSurface
             )
             TextButton(onClick = { count-- }, enabled = count > 0) {
-                Text("Deshacer", color = MaterialTheme.colorScheme.inversePrimary)
+                Text(stringResource(R.string.action_undo), color = MaterialTheme.colorScheme.inversePrimary)
             }
         }
     }
@@ -361,14 +359,16 @@ private fun TapDemo(side: Dp) {
 
 @Composable
 private fun DayClockDemo(side: Dp, isCurrent: Boolean) {
-    val entries = remember { sampleDay() }
+    val meds = sampleMeds()
+    val entries = remember(meds) { sampleDay(meds) }
     val shown = revealedCount(total = entries.size, isCurrent = isCurrent, stepMillis = 340)
     RhythmClock(entries = entries.take(shown), diameter = clockDiameter(side))
 }
 
 @Composable
 private fun WeekClockDemo(side: Dp, isCurrent: Boolean) {
-    val entries = remember { sampleWeek() }
+    val meds = sampleMeds()
+    val entries = remember(meds) { sampleWeek(meds) }
     val today = remember { LocalDate.now() }
     // Día a día: con un solo día el reloj pinta puntos; desde el segundo, barras.
     val days = revealedCount(total = SAMPLE_DAYS, isCurrent = isCurrent, stepMillis = 520)
@@ -376,7 +376,7 @@ private fun WeekClockDemo(side: Dp, isCurrent: Boolean) {
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = if (days <= 1) "1 día" else "$days días",
+            text = pluralStringResource(R.plurals.onboarding_days, days.coerceAtLeast(1), days.coerceAtLeast(1)),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary
         )
@@ -404,12 +404,12 @@ private fun revealedCount(total: Int, isCurrent: Boolean, stepMillis: Long): Int
 
 // ── Página 4: tres hechos que entran uno a uno ───────────────────────────────
 
-private data class PrivacyFact(val icon: ImageVector, val title: String, val text: String)
+private data class PrivacyFact(val icon: ImageVector, @StringRes val title: Int, @StringRes val text: Int)
 
 private val PrivacyFacts = listOf(
-    PrivacyFact(Icons.Default.WifiOff, "Sin internet", "La app no tiene permiso de red: no puede enviar nada."),
-    PrivacyFact(Icons.Default.Inventory2, "Copias cuando tú quieras", "Copia completa en ZIP y exportación a CSV o PDF."),
-    PrivacyFact(Icons.Default.Fingerprint, "Bloqueo opcional", "Protege la app con tu huella.")
+    PrivacyFact(Icons.Default.WifiOff, R.string.onboarding_fact_offline_title, R.string.onboarding_fact_offline_text),
+    PrivacyFact(Icons.Default.Inventory2, R.string.onboarding_fact_backup_title, R.string.onboarding_fact_backup_text),
+    PrivacyFact(Icons.Default.Fingerprint, R.string.onboarding_fact_lock_title, R.string.onboarding_fact_lock_text)
 )
 
 @Composable
@@ -438,13 +438,13 @@ private fun PrivacyDemo(isCurrent: Boolean) {
                         }
                         Column {
                             Text(
-                                fact.title,
+                                stringResource(fact.title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                fact.text,
+                                stringResource(fact.text),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -460,10 +460,11 @@ private fun PrivacyDemo(isCurrent: Boolean) {
 
 private data class SampleMed(val name: String, val emoji: String, val color: Color)
 
-private val SampleMeds = listOf(
-    SampleMed("Analgésico", "💊", Color(0xFF0F9D8A)),
-    SampleMed("Antihistamínico", "🌿", Color(0xFF6C63D9)),
-    SampleMed("Vitamina", "🍊", Color(0xFFE08A2E))
+@Composable
+private fun sampleMeds() = listOf(
+    SampleMed(stringResource(R.string.onboarding_sample_painkiller), "💊", Color(0xFF0F9D8A)),
+    SampleMed(stringResource(R.string.onboarding_sample_antihistamine), "🌿", Color(0xFF6C63D9)),
+    SampleMed(stringResource(R.string.onboarding_sample_vitamin), "🍊", Color(0xFFE08A2E))
 )
 
 private const val SAMPLE_DAYS = 7
@@ -479,24 +480,24 @@ private fun sampleEntry(at: LocalDateTime, medication: SampleMed) = HistoryEntry
     timestamp = at
 )
 
-private fun sampleDay(): List<HistoryEntry> {
+private fun sampleDay(meds: List<SampleMed>): List<HistoryEntry> {
     val today = LocalDate.now()
     return listOf(
-        sampleEntry(today.atTime(8, 10), SampleMeds[2]),
-        sampleEntry(today.atTime(11, 40), SampleMeds[1]),
-        sampleEntry(today.atTime(15, 5), SampleMeds[0]),
-        sampleEntry(today.atTime(19, 30), SampleMeds[1]),
-        sampleEntry(today.atTime(22, 50), SampleMeds[0])
+        sampleEntry(today.atTime(8, 10), meds[2]),
+        sampleEntry(today.atTime(11, 40), meds[1]),
+        sampleEntry(today.atTime(15, 5), meds[0]),
+        sampleEntry(today.atTime(19, 30), meds[1]),
+        sampleEntry(today.atTime(22, 50), meds[0])
     )
 }
 
 /** Una semana con un patrón reconocible: mañana, sobremesa y, sobre todo, noche. */
-private fun sampleWeek(): List<HistoryEntry> {
+private fun sampleWeek(meds: List<SampleMed>): List<HistoryEntry> {
     val today = LocalDate.now()
     val pattern = listOf(7 to 2, 8 to 2, 9 to 1, 13 to 0, 14 to 0, 16 to 1, 21 to 0, 22 to 0, 22 to 1, 23 to 0)
     return (0 until SAMPLE_DAYS).flatMap { day ->
         pattern
             .filterIndexed { index, _ -> index >= 6 || (index + day) % 2 == 0 }
-            .map { (hour, med) -> sampleEntry(today.minusDays(day.toLong()).atTime(hour, (day * 7) % 60), SampleMeds[med]) }
+            .map { (hour, med) -> sampleEntry(today.minusDays(day.toLong()).atTime(hour, (day * 7) % 60), meds[med]) }
     }
 }

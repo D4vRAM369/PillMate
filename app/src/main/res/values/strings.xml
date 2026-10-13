@@ -63,4 +63,44 @@
     <string name="voice_note_delete_audio">Delete audio</string>
     <string name="voice_note_play">Play</string>
     <string name="voice_note_pause">Pause</string>
+
+    <!-- Onboarding (the four intro pages) -->
+    <string name="action_undo">Undo</string>
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_start">Get started</string>
+    <string name="onboarding_log_eyebrow">LOG</string>
+    <string name="onboarding_log_title">Log the dose when you take it</string>
+    <string name="onboarding_log_body">PillMate is for as-needed medication: the kind you take when you need it. There are no schedules to keep and no alarms chasing you.</string>
+    <string name="onboarding_log_note">One tap is enough. Also from the widget and from the notification, without opening the app.</string>
+    <string name="onboarding_clock_eyebrow">THE CLOCK</string>
+    <string name="onboarding_clock_title">Your day on a 24-hour clock</string>
+    <string name="onboarding_clock_body">Each dot is a dose, placed at its time and in the colour of its medication. 00 is at the top and it turns like a normal clock.</string>
+    <string name="onboarding_clock_note">Try it: tap a dot to see what it was.</string>
+    <string name="onboarding_rhythm_eyebrow">YOUR RHYTHM</string>
+    <string name="onboarding_rhythm_title">With more days, your pattern shows up</string>
+    <string name="onboarding_rhythm_body">Put several days together and the dots turn into bars: the longer the bar, the more doses at that hour. PillMate works out your most active hour and how often you usually take a dose.</string>
+    <string name="onboarding_rhythm_note">It describes, it doesn\'t judge: no scores, no goals and no medical advice.</string>
+    <string name="onboarding_privacy_eyebrow">PRIVACY</string>
+    <string name="onboarding_privacy_title">What you log never leaves your phone</string>
+    <string name="onboarding_privacy_body">No accounts, no ads and no analytics. Your data is yours and stays with you.</string>
+    <string name="onboarding_tap_hint">Tap the tile</string>
+    <plurals name="onboarding_today_doses">
+        <item quantity="one">Today: %1$d dose</item>
+        <item quantity="other">Today: %1$d doses</item>
+    </plurals>
+    <string name="onboarding_dose_logged">Dose logged</string>
+    <plurals name="onboarding_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="onboarding_fact_offline_title">No internet</string>
+    <string name="onboarding_fact_offline_text">The app has no network permission: it can\'t send anything.</string>
+    <string name="onboarding_fact_backup_title">Backups whenever you want</string>
+    <string name="onboarding_fact_backup_text">Full backup as a ZIP and export to CSV or PDF.</string>
+    <string name="onboarding_fact_lock_title">Optional lock</string>
+    <string name="onboarding_fact_lock_text">Protect the app with your fingerprint.</string>
+    <string name="onboarding_sample_painkiller">Painkiller</string>
+    <string name="onboarding_sample_antihistamine">Antihistamine</string>
+    <string name="onboarding_sample_vitamin">Vitamin</string>
 </resources>

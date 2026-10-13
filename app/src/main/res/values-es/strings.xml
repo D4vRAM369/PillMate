@@ -61,4 +61,44 @@
     <string name="voice_note_delete_audio">Eliminar audio</string>
     <string name="voice_note_play">Reproducir</string>
     <string name="voice_note_pause">Pausar</string>
+
+    <!-- Introducción (las cuatro páginas) -->
+    <string name="action_undo">Deshacer</string>
+    <string name="onboarding_skip">Saltar</string>
+    <string name="onboarding_next">Siguiente</string>
+    <string name="onboarding_start">Empezar</string>
+    <string name="onboarding_log_eyebrow">REGISTRAR</string>
+    <string name="onboarding_log_title">Apunta la toma cuando la tomas</string>
+    <string name="onboarding_log_body">PillMate es para la medicación a demanda: la que tomas cuando la necesitas. No hay horarios que cumplir ni alarmas que te persigan.</string>
+    <string name="onboarding_log_note">Un toque basta. También desde el widget y desde la notificación, sin abrir la app.</string>
+    <string name="onboarding_clock_eyebrow">EL RELOJ</string>
+    <string name="onboarding_clock_title">Tu día en un reloj de 24 horas</string>
+    <string name="onboarding_clock_body">Cada punto es una toma, colocada en su hora y con el color de su medicamento. Las 00 están arriba y gira como un reloj normal.</string>
+    <string name="onboarding_clock_note">Pruébalo: toca un punto para ver qué fue.</string>
+    <string name="onboarding_rhythm_eyebrow">TU RITMO</string>
+    <string name="onboarding_rhythm_title">Con más días aparece tu patrón</string>
+    <string name="onboarding_rhythm_body">Al juntar varios días, los puntos se convierten en barras: cuanto más larga, más tomas a esa hora. PillMate calcula tu hora más activa y cada cuánto sueles tomar.</string>
+    <string name="onboarding_rhythm_note">Describe, no juzga: sin puntuaciones, sin objetivos y sin consejo médico.</string>
+    <string name="onboarding_privacy_eyebrow">PRIVACIDAD</string>
+    <string name="onboarding_privacy_title">Lo que apuntas no sale de tu móvil</string>
+    <string name="onboarding_privacy_body">Sin cuentas, sin anuncios y sin analítica. Tus datos son tuyos y se quedan contigo.</string>
+    <string name="onboarding_tap_hint">Toca la casilla</string>
+    <plurals name="onboarding_today_doses">
+        <item quantity="one">Hoy: %1$d toma</item>
+        <item quantity="other">Hoy: %1$d tomas</item>
+    </plurals>
+    <string name="onboarding_dose_logged">Toma registrada</string>
+    <plurals name="onboarding_days">
+        <item quantity="one">%1$d día</item>
+        <item quantity="other">%1$d días</item>
+    </plurals>
+    <string name="onboarding_fact_offline_title">Sin internet</string>
+    <string name="onboarding_fact_offline_text">La app no tiene permiso de red: no puede enviar nada.</string>
+    <string name="onboarding_fact_backup_title">Copias cuando tú quieras</string>
+    <string name="onboarding_fact_backup_text">Copia completa en ZIP y exportación a CSV o PDF.</string>
+    <string name="onboarding_fact_lock_title">Bloqueo opcional</string>
+    <string name="onboarding_fact_lock_text">Protege la app con tu huella.</string>
+    <string name="onboarding_sample_painkiller">Analgésico</string>
+    <string name="onboarding_sample_antihistamine">Antihistamínico</string>
+    <string name="onboarding_sample_vitamin">Vitamina</string>
 </resources>
