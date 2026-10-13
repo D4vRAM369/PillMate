@@ -41,7 +41,7 @@ Se apoya en tres ideas, y ninguna es negociable:
 2. **Registrar cuesta un toque.** Si apuntar es más lento que no apuntar, nadie apunta.
 3. **Describe, no juzga.** Cuenta lo que hay. No puntúa, no fija objetivos, no aconseja.
 
-> **Estado:** `2.0.0-beta.1`. Funciona y se usa a diario, pero solo se ha probado en unos pocos dispositivos: si algo falla, abre un *issue*. Aún no está en Google Play ni hay APK publicado.
+> **Estado:** `2.0.0-beta.1`. Funciona y se usa a diario, pero solo se ha probado en unos pocos dispositivos: si algo falla, abre un *issue*. El APK está en [Releases](https://github.com/D4vRAM369/PillMate/releases/latest); aún no está en Google Play.
 
 ## Qué hace
 
@@ -91,7 +91,15 @@ PillMate describe lo que registras; **no da consejo médico**. No calcula dosis 
 
 ## Instalar
 
-Todavía no hay versión publicada. Cuando la haya, el APK estará en [Releases](https://github.com/D4vRAM369/PillMate/releases). Mientras tanto, se compila desde el código.
+1. Descarga el APK de la [última versión](https://github.com/D4vRAM369/PillMate/releases/latest).
+2. Ábrelo en el móvil. Android te pedirá permiso para instalar apps desde ese origen (el navegador o el gestor de archivos): acéptalo.
+3. Abre PillMate. La introducción te enseña lo básico en un minuto.
+
+Requiere Android 8.0 o superior.
+
+**Actualizaciones.** La app no tiene internet, así que no puede avisarte de versiones nuevas. Puedes mirar [Releases](https://github.com/D4vRAM369/PillMate/releases) de vez en cuando o usar [Obtainium](https://github.com/ImranR98/Obtainium), que vigila este repositorio por ti. Al actualizar, tus datos se conservan.
+
+**Antes de actualizar o cambiar de móvil**, haz una copia de seguridad en Ajustes → Datos.
 
 ## Compilar
 
