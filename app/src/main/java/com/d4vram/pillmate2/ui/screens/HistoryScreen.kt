@@ -76,6 +76,7 @@ import androidx.navigation.NavController
 import com.d4vram.pillmate2.R
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.HistoryEntry
+import com.d4vram.pillmate2.model.MedicationType
 import com.d4vram.pillmate2.ui.components.HistoryItem
 import com.d4vram.pillmate2.ui.components.NotesModal
 import com.d4vram.pillmate2.ui.theme.AppUiStyle
@@ -121,7 +122,14 @@ fun HistoryScreen(
     initialDay: LocalDate? = null // Si llega (desde el detalle de un día en Estadísticas), se abre mostrando solo ese día.
 ) {
     val historyEntries by repository.historyEntries.collectAsState()
+    val medications by repository.medications.collectAsState()
     val stats by repository.stats.collectAsState()
+    val dropMedicationIds = remember(medications) {
+        medications.asSequence()
+            .filter { MedicationType.fromStored(it.type) == MedicationType.DROPS }
+            .map { it.id }
+            .toSet()
+    }
 
     val astra = LocalAppDesign.current == AppDesign.Astra
     // Re-evaluate calendar filters while the screen stays open across midnight.
@@ -387,6 +395,7 @@ fun HistoryScreen(
                         SwipeableHistoryItem(
                         modifier = Modifier.weight(1f),
                         historyEntry = entry,
+                        isDrops = entry.medicationId in dropMedicationIds,
                         onEntryClick = { selectedHistoryEntry = it },
                         onEdit = { selectedHistoryEntry = it },
                         onDelete = repository::deleteHistoryEntry,
@@ -439,6 +448,7 @@ fun HistoryScreen(
 @Composable
 private fun SwipeableHistoryItem(
     historyEntry: HistoryEntry,
+    isDrops: Boolean,
     onEntryClick: (HistoryEntry) -> Unit,
     onEdit: (HistoryEntry) -> Unit,
     onDelete: (String) -> Unit,
@@ -556,6 +566,7 @@ private fun SwipeableHistoryItem(
         ) {
             HistoryItem(
                 historyEntry = historyEntry,
+                isDrops = isDrops,
                 showNotesIndicator = historyEntry.notes.isNotEmpty(),
                 hasAudioNote = !historyEntry.audioNoteUri.isNullOrBlank(),
                 onShowStats = onShowStats

@@ -43,6 +43,10 @@
 
     <!-- History entry and its notes dialog -->
     <string name="entry_taken">Taken</string>
+    <plurals name="history_drops_accessibility">
+        <item quantity="one">%1$d drop</item>
+        <item quantity="other">%1$d drops</item>
+    </plurals>
     <string name="entry_quantity_logged">Logged quantity: x%1$d</string>
     <string name="entry_time_section">⏰ Time of the dose</string>
     <string name="entry_date">Date</string>

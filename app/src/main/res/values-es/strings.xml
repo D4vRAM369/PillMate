@@ -41,6 +41,10 @@
 
     <!-- Fila del historial y su diálogo de notas -->
     <string name="entry_taken">Tomada</string>
+    <plurals name="history_drops_accessibility">
+        <item quantity="one">%1$d gota</item>
+        <item quantity="other">%1$d gotas</item>
+    </plurals>
     <string name="entry_quantity_logged">Cantidad registrada: x%1$d</string>
     <string name="entry_time_section">⏰ Momento de la toma</string>
     <string name="entry_date">Fecha</string>
