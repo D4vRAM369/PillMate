@@ -71,7 +71,11 @@ cd PillMate
 ./gradlew :app:installDebug         # instala en un dispositivo conectado
 ```
 
-La variante `debug` se instala como **PillMate Dev** (`dev.d4vram.pillmate2`), una app aparte con su propia base de datos: puedes probar cambios sin tocar tus datos reales.
+Si ya usas PillMate en ese dispositivo y solo quieres probar cambios, añade `-Pdev`: la build se instala como **PillMate Dev** (`dev.d4vram.pillmate2`), una app aparte con su propia base de datos, y tus datos reales no se tocan.
+
+```bash
+./gradlew :app:installDebug -Pdev
+```
 
 Para compilar `release` hace falta un `keystore.properties` en la raíz (no se versiona) con `storeFile`, `storePassword`, `keyAlias` y `keyPassword`.
 

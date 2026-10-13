@@ -22,6 +22,7 @@ android {
 
     defaultConfig {
         applicationId = "com.d4vram.pillmate"
+        manifestPlaceholders["appLabel"] = "@string/app_name"
         minSdk = 26
         targetSdk = 35
         versionCode = 10
@@ -58,9 +59,15 @@ android {
         }
     }
 
-    // La build debug se instala como app aparte: convive con la app real y no toca su base de datos.
-    androidComponents {
-        onVariants(selector().withBuildType("debug")) { it.applicationId.set("dev.d4vram.pillmate2") }
+    // Con -Pdev, la build debug se instala como app aparte ("PillMate Dev") para probar cambios
+    // sin tocar la app de uso diario ni su base de datos:  ./gradlew :app:assembleDebug -Pdev
+    if (project.hasProperty("dev")) {
+        androidComponents {
+            onVariants(selector().withBuildType("debug")) {
+                it.applicationId.set("dev.d4vram.pillmate2")
+                it.manifestPlaceholders.put("appLabel", "PillMate Dev")
+            }
+        }
     }
 
     compileOptions {
