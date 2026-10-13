@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.theme
 
+import androidx.annotation.StringRes
+import com.d4vram.pillmate2.R
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.datastore.core.DataStore
@@ -16,10 +18,10 @@ import android.content.Context
 import android.util.Log
 import com.d4vram.pillmate2.model.SortMode
 
-enum class QuickTakeWidgetShape(val storageValue: String, val title: String) {
-    Rounded("rounded", "Redondeada"),
-    Circle("circle", "Circular"),
-    Square("square", "Cuadrada");
+enum class QuickTakeWidgetShape(val storageValue: String, @StringRes val titleRes: Int) {
+    Rounded("rounded", R.string.widget_shape_rounded),
+    Circle("circle", R.string.widget_shape_circle),
+    Square("square", R.string.widget_shape_square);
 
     companion object {
         fun fromStorage(value: String?): QuickTakeWidgetShape =
@@ -51,7 +53,7 @@ enum class QuickTakeWidgetColor(
 
 enum class QuickTakeWidgetSize(
     val storageValue: String,
-    val title: String,
+    @StringRes val titleRes: Int,
     val paddingDp: Int,
     val gapDp: Int,
     val textSp: Int,
@@ -59,9 +61,9 @@ enum class QuickTakeWidgetSize(
 ) {
     // Las celdas ya no tienen alto fijo: se reparten el espacio del widget.
     // El preset solo decide la densidad (márgenes, texto y si hay título).
-    Compact("compact", "Compacto", 6, 4, 11, false),
-    Normal("normal",   "Normal",   10, 6, 13, true),
-    Large("large",     "Grande",   12, 8, 15, true);
+    Compact("compact", R.string.widget_size_compact, 6, 4, 11, false),
+    Normal("normal",   R.string.widget_size_normal,   10, 6, 13, true),
+    Large("large",     R.string.widget_size_large,   12, 8, 15, true);
 
     companion object {
         fun fromStorage(value: String?): QuickTakeWidgetSize =
@@ -93,9 +95,9 @@ object QuickTakeSettings {
     }
 }
 
-enum class AppUiStyle(val storageValue: String, val title: String, val description: String) {
-    Default("default", "Clásico", "Estilo actual de PillMate"),
-    MaterialYou("material_you", "Material You", "Componentes nativos de Material Design 3");
+enum class AppUiStyle(val storageValue: String, @StringRes val titleRes: Int, @StringRes val descriptionRes: Int) {
+    Default("default", R.string.ui_style_classic, R.string.ui_style_classic_desc),
+    MaterialYou("material_you", R.string.ui_style_material_you, R.string.ui_style_material_you_desc);
 
     companion object {
         fun fromStorage(value: String?): AppUiStyle =
@@ -103,12 +105,12 @@ enum class AppUiStyle(val storageValue: String, val title: String, val descripti
     }
 }
 
-enum class ChipCountPeriod(val storageValue: String, val title: String, val description: String) {
-    Daily("daily", "Diario", "Mostrar tomas de hoy"),
-    Weekly("weekly", "Semanal", "Mostrar tomas de esta semana"),
-    Monthly("monthly", "Mensual", "Mostrar tomas de este mes"),
-    Total("total", "Total", "Mostrar todas las tomas registradas"),
-    Hidden("hidden", "No mostrar", "Ocultar el chip de recuento");
+enum class ChipCountPeriod(val storageValue: String, @StringRes val titleRes: Int, @StringRes val descriptionRes: Int) {
+    Daily("daily", R.string.chip_period_daily, R.string.chip_period_daily_desc),
+    Weekly("weekly", R.string.chip_period_weekly, R.string.chip_period_weekly_desc),
+    Monthly("monthly", R.string.chip_period_monthly, R.string.chip_period_monthly_desc),
+    Total("total", R.string.chip_period_total, R.string.chip_period_total_desc),
+    Hidden("hidden", R.string.chip_period_hidden, R.string.chip_period_hidden_desc);
 
     companion object {
         fun fromStorage(value: String?): ChipCountPeriod =

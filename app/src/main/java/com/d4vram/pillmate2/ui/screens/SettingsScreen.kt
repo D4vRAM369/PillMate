@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.screens
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -153,9 +155,9 @@ fun SettingsScreen(
         hasNotificationPermission = isGranted
         hasExactAlarmPermission = NotificationHelper.hasExactAlarmPermission(context)
         if (isGranted) {
-            snackbarMessage = "✅ Notificaciones activadas"
+            snackbarMessage = context.getString(R.string.settings_notifications_on)
         } else {
-            snackbarMessage = "❌ Permiso denegado. Actívalo en Ajustes del sistema."
+            snackbarMessage = context.getString(R.string.settings_notifications_denied)
         }
     }
 
@@ -178,13 +180,16 @@ fun SettingsScreen(
     val autoBackupIntervalHours by backupManager.autoBackupIntervalHoursFlow.collectAsState(initial = 24)
     val autoBackupFolderName by backupSafManager.autoBackupFolderUri.collectAsState(initial = null)
     val voiceNoteSecurityManager = rememberVoiceNoteSecurityManager()
-    val lastBackupText = remember(lastBackupMillis) {
+    val noBackupsText = stringResource(R.string.settings_no_backups)
+    val configuredText = stringResource(R.string.settings_configured)
+    val notConfiguredText = stringResource(R.string.settings_not_configured)
+    val lastBackupText = remember(lastBackupMillis, noBackupsText) {
         lastBackupMillis?.let { millis ->
             DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(millis))
-        } ?: "Sin copias"
+        } ?: noBackupsText
     }
-    val autoBackupFolderText = remember(autoBackupFolderName) {
-        if (autoBackupFolderName != null) "Configurada" else "No configurada"
+    val autoBackupFolderText = remember(autoBackupFolderName, configuredText, notConfiguredText) {
+        if (autoBackupFolderName != null) configuredText else notConfiguredText
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -214,12 +219,12 @@ fun SettingsScreen(
                 try {
                     val success = backupSafManager.createManualBackupToUri(it)
                     if (success) {
-                        snackbarMessage = "✅ Backup creado correctamente"
+                        snackbarMessage = context.getString(R.string.settings_backup_created)
                     } else {
-                        snackbarMessage = "❌ Error al crear backup"
+                        snackbarMessage = context.getString(R.string.settings_backup_create_failed)
                     }
                 } catch (e: Exception) {
-                    snackbarMessage = "❌ Error: ${e.message}"
+                    snackbarMessage = context.getString(R.string.settings_error_with_message, e.message.orEmpty())
                 }
             }
         }
@@ -234,9 +239,9 @@ fun SettingsScreen(
                 try {
                     backupSafManager.saveAutoBackupFolderUri(it)
                     BackupScheduler.refresh(context.applicationContext)
-                    snackbarMessage = "✅ Carpeta de auto-backup configurada"
+                    snackbarMessage = context.getString(R.string.settings_autobackup_folder_set)
                 } catch (e: Exception) {
-                    snackbarMessage = "❌ Error al configurar carpeta: ${e.message}"
+                    snackbarMessage = context.getString(R.string.settings_autobackup_folder_failed, e.message.orEmpty())
                 }
             }
         }
@@ -252,7 +257,7 @@ fun SettingsScreen(
                     // Validar que sea un archivo .zip
                     val fileName = getFileNameFromUri(context, it) ?: ""
                     if (!fileName.endsWith(".zip", ignoreCase = true)) {
-                        snackbarMessage = "⚠️ Por favor selecciona un archivo .zip"
+                        snackbarMessage = context.getString(R.string.settings_pick_zip)
                         return@launch
                     }
 
@@ -283,14 +288,14 @@ fun SettingsScreen(
                         showBackupPasswordDialog = true
                     } else {
                         pendingRestore = PendingRestore(
-                            title = "Restaurar backup",
-                            description = "Se reemplazarán tus datos actuales por el contenido del backup seleccionado. Antes se creará una copia local de seguridad.",
+                            title = context.getString(R.string.settings_restore_backup_title),
+                            description = context.getString(R.string.settings_restore_backup_desc),
                             zipFile = tempFile
                         )
                         snackbarMessage = null
                     }
                 } catch (e: Exception) {
-                    snackbarMessage = "❌ Error al restaurar backup: ${e.message}"
+                    snackbarMessage = context.getString(R.string.settings_restore_failed, e.message.orEmpty())
                 }
             }
         }
@@ -306,20 +311,20 @@ fun SettingsScreen(
                     // Validar que sea un archivo .csv
                     val fileName = getFileNameFromUri(context, it) ?: ""
                     if (!fileName.endsWith(".csv", ignoreCase = true)) {
-                        snackbarMessage = "⚠️ Por favor selecciona un archivo .csv"
+                        snackbarMessage = context.getString(R.string.settings_pick_csv)
                         return@launch
                     }
 
                     val csvContent = readTextFromUri(context, it)
                     val parsed = CsvUtils.parseCsv(csvContent)
                     pendingRestore = PendingRestore(
-                        title = "Importar CSV",
-                        description = "Se reemplazarán tus datos actuales por ${parsed.medications.size} medicamentos y ${parsed.history.size} entradas de historial. Antes se creará una copia local de seguridad.",
+                        title = context.getString(R.string.settings_import_csv_title),
+                        description = context.getString(R.string.settings_import_csv_desc, parsed.medications.size, parsed.history.size),
                         medications = parsed.medications,
                         history = parsed.history
                     )
                 } catch (e: Exception) {
-                    snackbarMessage = "❌ Error al importar CSV: ${e.message}"
+                    snackbarMessage = context.getString(R.string.settings_import_csv_failed, e.message.orEmpty())
                 }
             }
         }
@@ -330,7 +335,7 @@ fun SettingsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "⚙️ Configuración",
+                        text = stringResource(R.string.settings_title),
                         style = MaterialTheme.typography.headlineMedium.copy(
                             fontWeight = FontWeight.Bold
                         )
@@ -353,7 +358,7 @@ fun SettingsScreen(
             
             // Sección de Apariencia
             item {
-                SettingsSection(title = "🎨 Apariencia") {
+                SettingsSection(title = stringResource(R.string.settings_appearance)) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -365,14 +370,14 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Text(
-                                text = "Modo oscuro",
+                                text = stringResource(R.string.settings_dark_mode),
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     fontWeight = FontWeight.Medium
                                 ),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = if (isDarkMode) "Activado" else "Desactivado",
+                                text = stringResource(if (isDarkMode) R.string.settings_on else R.string.settings_off),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -390,7 +395,7 @@ fun SettingsScreen(
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-                    Text("Diseño de pantallas", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.settings_screen_design), style = MaterialTheme.typography.titleMedium)
                     AppDesign.entries.forEach { design ->
                         Row(
                             modifier = Modifier.fillMaxWidth().selectable(
@@ -405,10 +410,9 @@ fun SettingsScreen(
                                 onClick = null
                             )
                             Column(Modifier.weight(1f)) {
-                                Text(design.title)
+                                Text(stringResource(design.titleRes))
                                 Text(
-                                    if (design == AppDesign.Astra) "Accesos rápidos y reloj de 24 horas"
-                                    else "Las pantallas de siempre",
+                                    stringResource(if (design == AppDesign.Astra) R.string.settings_design_rhythm_desc else R.string.settings_design_classic_desc),
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
@@ -417,8 +421,8 @@ fun SettingsScreen(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                     SettingsItem(
-                        title = "Estilo de interfaz",
-                        description = "Actual: ${uiStyle.title}",
+                        title = stringResource(R.string.settings_ui_style),
+                        description = stringResource(R.string.settings_current, stringResource(uiStyle.titleRes)),
                         icon = Icons.Default.Palette,
                         onClick = { showUiDialog = true }
                     )
@@ -426,8 +430,8 @@ fun SettingsScreen(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                     SettingsItem(
-                        title = "Chips de recuento",
-                        description = "Período: ${chipCountPeriod.title}",
+                        title = stringResource(R.string.settings_chip_count),
+                        description = stringResource(R.string.settings_chip_period, stringResource(chipCountPeriod.titleRes)),
                         icon = Icons.Default.Tag,
                         onClick = { showChipPeriodDialog = true }
                     )
@@ -463,10 +467,10 @@ fun SettingsScreen(
 
             // Sección de Ordenamiento
             item {
-                SettingsSection(title = "🔢 Ordenamiento") {
+                SettingsSection(title = stringResource(R.string.settings_sorting)) {
                     SettingsItem(
-                        title = "Ordenar medicamentos por",
-                        description = "Actual: ${sortMode.title}",
+                        title = stringResource(R.string.settings_sort_by),
+                        description = stringResource(R.string.settings_current, stringResource(sortMode.titleRes)),
                         icon = Icons.AutoMirrored.Filled.Sort,
                         onClick = { showSortModeDialog = true }
                     )
@@ -474,7 +478,7 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection(title = "🔒 Seguridad") {
+                SettingsSection(title = stringResource(R.string.settings_security)) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -484,12 +488,12 @@ fun SettingsScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Bloqueo de la app",
+                                text = stringResource(R.string.settings_app_lock),
                                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = if (securitySettings.lockEnabled) "Activado" else "Desactivado",
+                                text = stringResource(if (securitySettings.lockEnabled) R.string.settings_on else R.string.settings_off),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -502,7 +506,7 @@ fun SettingsScreen(
                                         if (!securitySettings.isPinConfigured) {
                                             pendingEnableLock = true
                                             showPinSetupDialog = true
-                                            snackbarMessage = "Configura un PIN para activar el bloqueo"
+                                            snackbarMessage = context.getString(R.string.settings_set_pin_first)
                                         } else {
                                             securityManager.setLockEnabled(true)
                                             securityManager.recordUnlock()
@@ -775,7 +779,7 @@ fun SettingsScreen(
 
                     // 📥 Importar CSV (sin fotos)
                     SettingsItem(
-                        title = "Importar CSV",
+                        title = context.getString(R.string.settings_import_csv_title),
                         description = "Cargar datos desde archivo .csv (sin fotos)",
                         icon = Icons.Default.FileUpload,
                         onClick = {
@@ -999,11 +1003,11 @@ fun SettingsScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = style.title,
+                                    text = stringResource(style.titleRes),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
                                 )
                                 Text(
-                                    text = style.description,
+                                    text = stringResource(style.descriptionRes),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1048,11 +1052,11 @@ fun SettingsScreen(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = period.title,
+                                    text = stringResource(period.titleRes),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
                                 )
                                 Text(
-                                    text = period.description,
+                                    text = stringResource(period.descriptionRes),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1083,7 +1087,7 @@ fun SettingsScreen(
                                 .clickable {
                                     showSortModeDialog = false
                                     scope.launch { themeManager.setSortMode(mode) }
-                                    snackbarMessage = "Ordenamiento cambiado a: ${mode.title}"
+                                    snackbarMessage = context.getString(R.string.settings_sort_changed, context.getString(mode.titleRes))
                                 }
                                 .padding(vertical = 12.dp, horizontal = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
@@ -1093,17 +1097,17 @@ fun SettingsScreen(
                                 onClick = {
                                     showSortModeDialog = false
                                     scope.launch { themeManager.setSortMode(mode) }
-                                    snackbarMessage = "Ordenamiento cambiado a: ${mode.title}"
+                                    snackbarMessage = context.getString(R.string.settings_sort_changed, context.getString(mode.titleRes))
                                 }
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
-                                    text = mode.title,
+                                    text = stringResource(mode.titleRes),
                                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
                                 )
                                 Text(
-                                    text = mode.description,
+                                    text = stringResource(mode.descriptionRes),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1824,7 +1828,7 @@ private fun WidgetCustomizationCard(
                     FilterChip(
                         selected = preset == size,
                         onClick = { onSizeChange(preset) },
-                        label = { Text(preset.title) }
+                        label = { Text(stringResource(preset.titleRes)) }
                     )
                 }
             }
@@ -1847,7 +1851,7 @@ private fun WidgetCustomizationCard(
                         selected = s == shape,
                         onClick = { onShapeChange(s) },
                         label = {
-                            Text(s.title, style = MaterialTheme.typography.labelMedium, maxLines = 1, softWrap = false)
+                            Text(stringResource(s.titleRes), style = MaterialTheme.typography.labelMedium, maxLines = 1, softWrap = false)
                         }
                     )
                 }

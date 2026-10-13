@@ -337,4 +337,78 @@
         <item quantity="one">Backup exportado: %1$d nota</item>
         <item quantity="other">Backup exportado: %1$d notas</item>
     </plurals>
+
+    <!-- Ajustes: nombres de los enums (diseño, estilo, período, orden, widget) -->
+    <string name="design_rhythm">Ritmo</string>
+    <string name="design_classic">Clásico</string>
+    <string name="ui_style_classic">Clásico</string>
+    <string name="ui_style_classic_desc">Estilo actual de PillMate</string>
+    <string name="ui_style_material_you">Material You</string>
+    <string name="ui_style_material_you_desc">Componentes nativos de Material Design 3</string>
+    <string name="chip_period_daily">Diario</string>
+    <string name="chip_period_daily_desc">Mostrar tomas de hoy</string>
+    <string name="chip_period_weekly">Semanal</string>
+    <string name="chip_period_weekly_desc">Mostrar tomas de esta semana</string>
+    <string name="chip_period_monthly">Mensual</string>
+    <string name="chip_period_monthly_desc">Mostrar tomas de este mes</string>
+    <string name="chip_period_total">Total</string>
+    <string name="chip_period_total_desc">Mostrar todas las tomas registradas</string>
+    <string name="chip_period_hidden">No mostrar</string>
+    <string name="chip_period_hidden_desc">Ocultar el chip de recuento</string>
+    <string name="sort_manual">Orden Manual</string>
+    <string name="sort_manual_desc">Arrastra para reordenar. El orden se guardará automáticamente</string>
+    <string name="sort_last_taken">Por Última Toma</string>
+    <string name="sort_last_taken_desc">Los tomados recientemente aparecen primero</string>
+    <string name="sort_most_used">Más Usados (Semana)</string>
+    <string name="sort_most_used_desc">Los más utilizados en los últimos 7 días primero</string>
+    <string name="sort_alphabetical">Orden Alfabético</string>
+    <string name="sort_alphabetical_desc">Ordenados de A a Z por nombre</string>
+    <string name="sort_creation">Por Orden de Creación</string>
+    <string name="sort_creation_desc">Los medicamentos más antiguos aparecen primero</string>
+    <string name="widget_shape_rounded">Redondeada</string>
+    <string name="widget_shape_circle">Circular</string>
+    <string name="widget_shape_square">Cuadrada</string>
+    <string name="widget_size_compact">Compacto</string>
+    <string name="widget_size_normal">Normal</string>
+    <string name="widget_size_large">Grande</string>
+
+    <!-- Ajustes: parte superior -->
+    <string name="settings_title">⚙️ Configuración</string>
+    <string name="settings_notifications_on">✅ Notificaciones activadas</string>
+    <string name="settings_notifications_denied">❌ Permiso denegado. Actívalo en Ajustes del sistema.</string>
+    <string name="settings_no_backups">Sin copias</string>
+    <string name="settings_configured">Configurada</string>
+    <string name="settings_not_configured">No configurada</string>
+    <string name="settings_backup_created">✅ Backup creado correctamente</string>
+    <string name="settings_backup_create_failed">❌ Error al crear backup</string>
+    <string name="settings_error_with_message">❌ Error: %1$s</string>
+    <string name="settings_autobackup_folder_set">✅ Carpeta de auto-backup configurada</string>
+    <string name="settings_autobackup_folder_failed">❌ Error al configurar carpeta: %1$s</string>
+    <string name="settings_pick_zip">⚠️ Por favor selecciona un archivo .zip</string>
+    <string name="settings_restore_backup_title">Restaurar backup</string>
+    <string name="settings_restore_backup_desc">Se reemplazarán tus datos actuales por el contenido del backup seleccionado. Antes se creará una copia local de seguridad.</string>
+    <string name="settings_restore_failed">❌ Error al restaurar backup: %1$s</string>
+    <string name="settings_pick_csv">⚠️ Por favor selecciona un archivo .csv</string>
+    <string name="settings_import_csv_title">Importar CSV</string>
+    <string name="settings_import_csv_desc">Se reemplazarán tus datos actuales por %1$d medicamentos y %2$d entradas de historial. Antes se creará una copia local de seguridad.</string>
+    <string name="settings_import_csv_failed">❌ Error al importar CSV: %1$s</string>
+
+    <!-- Ajustes: apariencia, orden, seguridad (cabecera) -->
+    <string name="settings_appearance">🎨 Apariencia</string>
+    <string name="settings_dark_mode">Modo oscuro</string>
+    <string name="settings_on">Activado</string>
+    <string name="settings_off">Desactivado</string>
+    <string name="settings_screen_design">Diseño de pantallas</string>
+    <string name="settings_design_rhythm_desc">Accesos rápidos y reloj de 24 horas</string>
+    <string name="settings_design_classic_desc">Las pantallas de siempre</string>
+    <string name="settings_ui_style">Estilo de interfaz</string>
+    <string name="settings_current">Actual: %1$s</string>
+    <string name="settings_chip_count">Chips de recuento</string>
+    <string name="settings_chip_period">Período: %1$s</string>
+    <string name="settings_sorting">🔢 Ordenamiento</string>
+    <string name="settings_sort_by">Ordenar medicamentos por</string>
+    <string name="settings_sort_changed">Ordenamiento cambiado a: %1$s</string>
+    <string name="settings_security">🔒 Seguridad</string>
+    <string name="settings_app_lock">Bloqueo de la app</string>
+    <string name="settings_set_pin_first">Configura un PIN para activar el bloqueo</string>
 </resources>

@@ -339,4 +339,78 @@
         <item quantity="one">Backup exported: %1$d note</item>
         <item quantity="other">Backup exported: %1$d notes</item>
     </plurals>
+
+    <!-- Settings: enum labels (design, style, chip period, sort mode, widget) -->
+    <string name="design_rhythm">Rhythm</string>
+    <string name="design_classic">Classic</string>
+    <string name="ui_style_classic">Classic</string>
+    <string name="ui_style_classic_desc">PillMate\'s current style</string>
+    <string name="ui_style_material_you">Material You</string>
+    <string name="ui_style_material_you_desc">Native Material Design 3 components</string>
+    <string name="chip_period_daily">Daily</string>
+    <string name="chip_period_daily_desc">Show today\'s doses</string>
+    <string name="chip_period_weekly">Weekly</string>
+    <string name="chip_period_weekly_desc">Show this week\'s doses</string>
+    <string name="chip_period_monthly">Monthly</string>
+    <string name="chip_period_monthly_desc">Show this month\'s doses</string>
+    <string name="chip_period_total">Total</string>
+    <string name="chip_period_total_desc">Show every logged dose</string>
+    <string name="chip_period_hidden">Don\'t show</string>
+    <string name="chip_period_hidden_desc">Hide the count chip</string>
+    <string name="sort_manual">Manual order</string>
+    <string name="sort_manual_desc">Drag to reorder. The order is saved automatically</string>
+    <string name="sort_last_taken">By last dose</string>
+    <string name="sort_last_taken_desc">Recently taken ones come first</string>
+    <string name="sort_most_used">Most used (week)</string>
+    <string name="sort_most_used_desc">Most used in the last 7 days first</string>
+    <string name="sort_alphabetical">Alphabetical</string>
+    <string name="sort_alphabetical_desc">Sorted A to Z by name</string>
+    <string name="sort_creation">By creation order</string>
+    <string name="sort_creation_desc">Oldest medications first</string>
+    <string name="widget_shape_rounded">Rounded</string>
+    <string name="widget_shape_circle">Circle</string>
+    <string name="widget_shape_square">Square</string>
+    <string name="widget_size_compact">Compact</string>
+    <string name="widget_size_normal">Normal</string>
+    <string name="widget_size_large">Large</string>
+
+    <!-- Settings: top of the screen -->
+    <string name="settings_title">⚙️ Settings</string>
+    <string name="settings_notifications_on">✅ Notifications enabled</string>
+    <string name="settings_notifications_denied">❌ Permission denied. Enable it in the system settings.</string>
+    <string name="settings_no_backups">No backups</string>
+    <string name="settings_configured">Set up</string>
+    <string name="settings_not_configured">Not set up</string>
+    <string name="settings_backup_created">✅ Backup created successfully</string>
+    <string name="settings_backup_create_failed">❌ Couldn\'t create the backup</string>
+    <string name="settings_error_with_message">❌ Error: %1$s</string>
+    <string name="settings_autobackup_folder_set">✅ Auto-backup folder set</string>
+    <string name="settings_autobackup_folder_failed">❌ Couldn\'t set the folder: %1$s</string>
+    <string name="settings_pick_zip">⚠️ Please pick a .zip file</string>
+    <string name="settings_restore_backup_title">Restore backup</string>
+    <string name="settings_restore_backup_desc">Your current data will be replaced by the contents of the selected backup. A local safety copy is made first.</string>
+    <string name="settings_restore_failed">❌ Couldn\'t restore the backup: %1$s</string>
+    <string name="settings_pick_csv">⚠️ Please pick a .csv file</string>
+    <string name="settings_import_csv_title">Import CSV</string>
+    <string name="settings_import_csv_desc">Your current data will be replaced by %1$d medications and %2$d history entries. A local safety copy is made first.</string>
+    <string name="settings_import_csv_failed">❌ Couldn\'t import the CSV: %1$s</string>
+
+    <!-- Settings: appearance, sorting, security (header) -->
+    <string name="settings_appearance">🎨 Appearance</string>
+    <string name="settings_dark_mode">Dark mode</string>
+    <string name="settings_on">On</string>
+    <string name="settings_off">Off</string>
+    <string name="settings_screen_design">Screen design</string>
+    <string name="settings_design_rhythm_desc">Quick access and 24-hour clock</string>
+    <string name="settings_design_classic_desc">The classic screens</string>
+    <string name="settings_ui_style">Interface style</string>
+    <string name="settings_current">Current: %1$s</string>
+    <string name="settings_chip_count">Count chips</string>
+    <string name="settings_chip_period">Period: %1$s</string>
+    <string name="settings_sorting">🔢 Sorting</string>
+    <string name="settings_sort_by">Sort medications by</string>
+    <string name="settings_sort_changed">Sorting changed to: %1$s</string>
+    <string name="settings_security">🔒 Security</string>
+    <string name="settings_app_lock">App lock</string>
+    <string name="settings_set_pin_first">Set up a PIN to turn the lock on</string>
 </resources>

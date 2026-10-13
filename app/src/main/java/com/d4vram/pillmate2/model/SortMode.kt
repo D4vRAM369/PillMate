@@ -1,17 +1,20 @@
 package com.d4vram.pillmate2.model
 
+import androidx.annotation.StringRes
+import com.d4vram.pillmate2.R
+
 /**
  * 🔢 Modos de ordenamiento de medicamentos
  * Define cómo se ordenarán los medicamentos en la interfaz
  */
-enum class SortMode(val title: String, val description: String) {
+enum class SortMode(@StringRes val titleRes: Int, @StringRes val descriptionRes: Int) {
     /**
      * Orden manual definido por el usuario mediante drag-and-drop
      * Este orden persiste hasta que el usuario lo cambie manualmente
      */
     MANUAL(
-        title = "Orden Manual",
-        description = "Arrastra para reordenar. El orden se guardará automáticamente"
+        titleRes = R.string.sort_manual,
+        descriptionRes = R.string.sort_manual_desc
     ),
 
     /**
@@ -19,8 +22,8 @@ enum class SortMode(val title: String, val description: String) {
      * Los medicamentos nunca tomados aparecen al final
      */
     LAST_TAKEN(
-        title = "Por Última Toma",
-        description = "Los tomados recientemente aparecen primero"
+        titleRes = R.string.sort_last_taken,
+        descriptionRes = R.string.sort_last_taken_desc
     ),
 
     /**
@@ -28,16 +31,16 @@ enum class SortMode(val title: String, val description: String) {
      * Se cuenta el número total de tomas en la última semana
      */
     MOST_USED_WEEK(
-        title = "Más Usados (Semana)",
-        description = "Los más utilizados en los últimos 7 días primero"
+        titleRes = R.string.sort_most_used,
+        descriptionRes = R.string.sort_most_used_desc
     ),
 
     /**
      * Orden alfabético por nombre del medicamento (A-Z)
      */
     ALPHABETICAL(
-        title = "Orden Alfabético",
-        description = "Ordenados de A a Z por nombre"
+        titleRes = R.string.sort_alphabetical,
+        descriptionRes = R.string.sort_alphabetical_desc
     ),
 
     /**
@@ -45,7 +48,7 @@ enum class SortMode(val title: String, val description: String) {
      * Usa el timestamp de cuando se añadió el medicamento
      */
     CREATION_ORDER(
-        title = "Por Orden de Creación",
-        description = "Los medicamentos más antiguos aparecen primero"
+        titleRes = R.string.sort_creation,
+        descriptionRes = R.string.sort_creation_desc
     );
 }
