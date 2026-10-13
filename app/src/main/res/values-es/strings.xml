@@ -101,4 +101,65 @@
     <string name="onboarding_sample_painkiller">Analgésico</string>
     <string name="onboarding_sample_antihistamine">Antihistamínico</string>
     <string name="onboarding_sample_vitamin">Vitamina</string>
+
+    <!-- Acciones comunes (2) -->
+    <string name="action_back">Volver</string>
+    <string name="action_add">Añadir</string>
+    <string name="action_save">Guardar</string>
+    <string name="action_update">Actualizar</string>
+
+    <!-- Días de la semana abreviados -->
+    <string name="day_short_mon">Lun</string>
+    <string name="day_short_tue">Mar</string>
+    <string name="day_short_wed">Mié</string>
+    <string name="day_short_thu">Jue</string>
+    <string name="day_short_fri">Vie</string>
+    <string name="day_short_sat">Sáb</string>
+    <string name="day_short_sun">Dom</string>
+
+    <!-- Añadir / editar medicamento -->
+    <string name="med_form_title_add">Agregar Medicamento</string>
+    <string name="med_form_title_edit">Editar Medicamento</string>
+    <string name="med_form_preview">Vista previa</string>
+    <string name="med_form_preview_hint">Así se verá en tu lista de medicamentos</string>
+    <string name="med_form_name">Nombre del medicamento</string>
+    <string name="med_form_dose">Dosis</string>
+    <string name="med_form_type">Tipo (ej: Comprimido, Cápsula, Jarabe, Gotas)</string>
+    <string name="med_form_type_placeholder">Comprimido</string>
+    <string name="med_form_color">Color del medicamento</string>
+    <string name="med_form_color_hint">Elige uno de la paleta o agrega un tono personalizado</string>
+    <string name="med_form_color_custom">Color personalizado</string>
+    <string name="med_form_color_new">Nuevo color personalizado</string>
+    <string name="med_form_emoji">Emoji (opcional)</string>
+    <string name="med_form_emoji_hint">Te ayudará a identificar rápidamente el medicamento</string>
+    <string name="med_form_emoji_more">Buscar más emojis</string>
+    <string name="med_form_emoji_search">Buscar emoji</string>
+    <string name="med_form_emoji_search_hint">Busca: pastilla, corazón, sol…</string>
+    <string name="med_form_emoji_none">No encontramos emojis que coincidan con tu búsqueda.</string>
+    <string name="med_form_combine">Combinar medicamento</string>
+    <string name="med_form_combine_hint">Vincular a otro para agrupar en estadísticas (ej: distintas dosis de Ibuprofeno)</string>
+    <string name="med_form_linked_to">Vinculado a: %1$s</string>
+    <string name="med_form_not_linked">Sin vincular (Independiente)</string>
+    <string name="med_form_pick_parent">Selecciona medicamento principal</string>
+    <string name="med_form_no_link">No vincular (Mantener separado)</string>
+    <string name="med_form_schedule">Planificación</string>
+    <string name="med_form_schedule_hint">Configura la hora de toma y la frecuencia</string>
+    <string name="med_form_reminders">Activar recordatorios</string>
+    <string name="med_form_reminders_hint">Recibir notificación a la hora programada</string>
+    <string name="med_form_hour">Hora</string>
+    <string name="med_form_minute">Minuto</string>
+    <string name="med_form_days">Días de toma</string>
+    <string name="med_form_times_per_day">Veces por día</string>
+
+    <!-- Foto del medicamento -->
+    <string name="photo_title">Fotografía del medicamento</string>
+    <string name="photo_subtitle">Opcional - Ayuda a identificarlo visualmente</string>
+    <string name="photo_description">Foto del medicamento</string>
+    <string name="photo_delete">Eliminar foto</string>
+    <string name="photo_use_as_id">Usar foto como identificador</string>
+    <string name="photo_use_on">Se mostrará la foto en lugar del emoji</string>
+    <string name="photo_use_off">Se seguirá mostrando emoji y color</string>
+    <string name="photo_camera">Cámara</string>
+    <string name="photo_gallery">Galería</string>
+    <string name="photo_resize_note">La imagen se redimensionará automáticamente para optimizar espacio</string>
 </resources>

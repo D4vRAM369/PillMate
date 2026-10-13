@@ -2,6 +2,8 @@
 
 package com.d4vram.pillmate2.ui.screens
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -134,7 +136,7 @@ fun AddEditMedicationScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = if (isEditing) "Editar Medicamento" else "Agregar Medicamento",
+                        text = stringResource(if (isEditing) R.string.med_form_title_edit else R.string.med_form_title_add),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -143,7 +145,7 @@ fun AddEditMedicationScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = stringResource(R.string.action_back)
                         )
                     }
                 }
@@ -207,7 +209,7 @@ fun AddEditMedicationScreen(
                 },
                 text = {
                     Text(
-                        text = if (isEditing) "Actualizar" else "Guardar",
+                        text = stringResource(if (isEditing) R.string.action_update else R.string.action_save),
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -245,8 +247,8 @@ fun AddEditMedicationScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             SectionCard(
-                title = "Vista previa",
-                subtitle = "Así se verá en tu lista de medicamentos"
+                title = stringResource(R.string.med_form_preview),
+                subtitle = stringResource(R.string.med_form_preview_hint)
             ) {
                 MedicationPreviewCard(
                     name = name,
@@ -260,7 +262,7 @@ fun AddEditMedicationScreen(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Nombre del medicamento") },
+                    label = { Text(stringResource(R.string.med_form_name)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -268,7 +270,7 @@ fun AddEditMedicationScreen(
                 OutlinedTextField(
                     value = dose,
                     onValueChange = { dose = it },
-                    label = { Text("Dosis") },
+                    label = { Text(stringResource(R.string.med_form_dose)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -276,16 +278,16 @@ fun AddEditMedicationScreen(
                 OutlinedTextField(
                     value = type,
                     onValueChange = { type = it },
-                    label = { Text("Tipo (ej: Comprimido, Cápsula, Jarabe, Gotas)") },
+                    label = { Text(stringResource(R.string.med_form_type)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    placeholder = { Text("Comprimido") }
+                    placeholder = { Text(stringResource(R.string.med_form_type_placeholder)) }
                 )
             }
 
             SectionCard(
-                title = "Color del medicamento",
-                subtitle = "Elige uno de la paleta o agrega un tono personalizado"
+                title = stringResource(R.string.med_form_color),
+                subtitle = stringResource(R.string.med_form_color_hint)
             ) {
                 ColorPaletteSection(
                     colors = paletteColors,
@@ -295,7 +297,7 @@ fun AddEditMedicationScreen(
 
                 AssistChip(
                     onClick = { showCustomColorDialog = true },
-                    label = { Text("Color personalizado") },
+                    label = { Text(stringResource(R.string.med_form_color_custom)) },
                     leadingIcon = {
                         Icon(imageVector = Icons.Default.Add, contentDescription = null)
                     }
@@ -303,8 +305,8 @@ fun AddEditMedicationScreen(
             }
 
             SectionCard(
-                title = "Emoji (opcional)",
-                subtitle = "Te ayudará a identificar rápidamente el medicamento"
+                title = stringResource(R.string.med_form_emoji),
+                subtitle = stringResource(R.string.med_form_emoji_hint)
             ) {
                 EmojiQuickPickGrid(
                     emojis = quickEmojiOptions,
@@ -321,7 +323,7 @@ fun AddEditMedicationScreen(
                         contentDescription = null
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Buscar más emojis")
+                    Text(stringResource(R.string.med_form_emoji_more))
                 }
             }
 
@@ -373,8 +375,8 @@ fun AddEditMedicationScreen(
             }
 
             SectionCard(
-                title = "Combinar medicamento",
-                subtitle = "Vincular a otro para agrupar en estadísticas (ej: distintas dosis de Ibuprofeno)"
+                title = stringResource(R.string.med_form_combine),
+                subtitle = stringResource(R.string.med_form_combine_hint)
             ) {
                 val selectedParent = otherMedications.find { it.id == parentMedicationId }
                 
@@ -389,7 +391,7 @@ fun AddEditMedicationScreen(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
-                            text = if (selectedParent != null) "Viculado a: ${selectedParent.name}" else "Sin vincular (Independiente)",
+                            text = if (selectedParent != null) stringResource(R.string.med_form_linked_to, selectedParent.name) else stringResource(R.string.med_form_not_linked),
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.weight(1f)
                         )
@@ -400,7 +402,7 @@ fun AddEditMedicationScreen(
                 if (expandedCombine) {
                     AlertDialog(
                         onDismissRequest = { expandedCombine = false },
-                        title = { Text("Selecciona medicamento principal") },
+                        title = { Text(stringResource(R.string.med_form_pick_parent)) },
                         text = {
                             Box(modifier = Modifier.heightIn(max = 320.dp)) {
                             Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
@@ -417,7 +419,7 @@ fun AddEditMedicationScreen(
                                 ) {
                                     RadioButton(selected = parentMedicationId == null, onClick = null)
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text("No vincular (Mantener separado)")
+                                    Text(stringResource(R.string.med_form_no_link))
                                 }
                                 
                                 otherMedications.forEach { med ->
@@ -441,7 +443,7 @@ fun AddEditMedicationScreen(
                         },
                         confirmButton = {
                             TextButton(onClick = { expandedCombine = false }) {
-                                Text("Cerrar")
+                                Text(stringResource(R.string.action_close))
                             }
                         }
                     )
@@ -449,8 +451,8 @@ fun AddEditMedicationScreen(
             }
 
             SectionCard(
-                title = "Planificación",
-                subtitle = "Configura la hora de toma y la frecuencia"
+                title = stringResource(R.string.med_form_schedule),
+                subtitle = stringResource(R.string.med_form_schedule_hint)
             ) {
                 // Switch para activar recordatorios
                 Row(
@@ -460,12 +462,12 @@ fun AddEditMedicationScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Activar recordatorios",
+                            text = stringResource(R.string.med_form_reminders),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = "Recibir notificación a la hora programada",
+                            text = stringResource(R.string.med_form_reminders_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -483,7 +485,7 @@ fun AddEditMedicationScreen(
                     OutlinedTextField(
                         value = hour,
                         onValueChange = { if (it.length <= 2) hour = it },
-                        label = { Text("Hora") },
+                        label = { Text(stringResource(R.string.med_form_hour)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f)
                     )
@@ -491,7 +493,7 @@ fun AddEditMedicationScreen(
                     OutlinedTextField(
                         value = minute,
                         onValueChange = { if (it.length <= 2) minute = it },
-                        label = { Text("Minuto") },
+                        label = { Text(stringResource(R.string.med_form_minute)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f)
                     )
@@ -499,7 +501,7 @@ fun AddEditMedicationScreen(
 
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Días de toma",
+                        text = stringResource(R.string.med_form_days),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -517,7 +519,7 @@ fun AddEditMedicationScreen(
                                     selectedDays + day.first
                                 }
                             },
-                            label = { Text(day.second) },
+                            label = { Text(stringResource(day.second)) },
                             selected = selectedDays.contains(day.first)
                         )
                     }
@@ -526,7 +528,7 @@ fun AddEditMedicationScreen(
                 OutlinedTextField(
                     value = dailyGoal,
                     onValueChange = { dailyGoal = it },
-                    label = { Text("Veces por día") },
+                    label = { Text(stringResource(R.string.med_form_times_per_day)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -712,10 +714,10 @@ private fun EmojiPickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cerrar")
+                Text(stringResource(R.string.action_close))
             }
         },
-        title = { Text("Buscar emoji") },
+        title = { Text(stringResource(R.string.med_form_emoji_search)) },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth()
@@ -723,7 +725,7 @@ private fun EmojiPickerDialog(
                 OutlinedTextField(
                     value = query,
                     onValueChange = onQueryChange,
-                    placeholder = { Text("Busca: pastilla, corazón, sol...") },
+                    placeholder = { Text(stringResource(R.string.med_form_emoji_search_hint)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -732,7 +734,7 @@ private fun EmojiPickerDialog(
 
                 if (filteredEmojis.isEmpty()) {
                     Text(
-                        text = "No encontramos emojis que coincidan con tu búsqueda.",
+                        text = stringResource(R.string.med_form_emoji_none),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 } else {
@@ -809,45 +811,6 @@ private fun SectionCard(
 }
 
 @Composable
-private fun ConstructionPlaceholder() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondaryContainer)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Build,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSecondaryContainer
-            )
-            Column {
-                Text(
-                    text = "Funcionalidad en desarrollo",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                Text(
-                    text = "La planificación de horarios estará disponible pronto.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun CustomColorPickerDialog(
     onDismiss: () -> Unit,
     onConfirm: (Color) -> Unit
@@ -862,15 +825,15 @@ private fun CustomColorPickerDialog(
                     onConfirm(controller.selectedColor.value)
                 }
             ) {
-                Text("Añadir")
+                Text(stringResource(R.string.action_add))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancelar")
+                Text(stringResource(R.string.action_cancel))
             }
         },
-        title = { Text("Nuevo color personalizado") },
+        title = { Text(stringResource(R.string.med_form_color_new)) },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -940,7 +903,7 @@ private fun MedicationPreviewCard(
             }
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    text = name.ifBlank { "Nombre del medicamento" },
+                    text = name.ifBlank { stringResource(R.string.med_form_name) },
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = if (name.isBlank())
                         MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
@@ -1037,64 +1000,64 @@ private fun getAllSystemEmojis(): List<EmojiOption> {
 }
 
 private val emojiLibrary = listOf(
-    EmojiOption("💊", listOf("medicina", "pastilla", "pill", "remedio")),
-    EmojiOption("⚕️", listOf("médico", "salud", "cruz")),
-    EmojiOption("🩹", listOf("curita", "vendaje", "herida")),
-    EmojiOption("🫀", listOf("corazón", "órgano", "cardio")),
-    EmojiOption("🧠", listOf("cerebro", "mente")),
-    EmojiOption("🩸", listOf("sangre", "donación")),
-    EmojiOption("🧪", listOf("laboratorio", "prueba", "química")),
-    EmojiOption("🛌", listOf("descanso", "reposo", "cama")),
-    EmojiOption("🌡️", listOf("termómetro", "fiebre")),
-    EmojiOption("💤", listOf("descanso", "sueño")),
-    EmojiOption("💯", listOf("logro", "meta", "perfecto")),
-    EmojiOption("⭐", listOf("estrella", "destacado")),
-    EmojiOption("🟢", listOf("círculo", "verde")),
-    EmojiOption("🔵", listOf("círculo", "azul")),
-    EmojiOption("🟡", listOf("círculo", "amarillo")),
-    EmojiOption("🟣", listOf("círculo", "morado")),
-    EmojiOption("🟠", listOf("círculo", "naranja")),
-    EmojiOption("🟤", listOf("círculo", "marrón")),
-    EmojiOption("⚫", listOf("círculo", "negro")),
-    EmojiOption("⚪", listOf("círculo", "blanco")),
-    EmojiOption("🔺", listOf("triángulo", "alerta")),
-    EmojiOption("🔻", listOf("triángulo", "bajar")),
-    EmojiOption("🔸", listOf("rombo", "destacado")),
-    EmojiOption("🔹", listOf("rombo", "info")),
-    EmojiOption("☀️", listOf("sol", "día", "energía")),
-    EmojiOption("🌀", listOf("disperso", "viento", "high")),
-    EmojiOption("🌙", listOf("luna", "noche", "descanso")),
-    EmojiOption("⏰", listOf("alarma", "hora")),
-    EmojiOption("📅", listOf("calendario", "agenda")),
-    EmojiOption("✅", listOf("completado", "listo")),
-    EmojiOption("⚠️", listOf("alerta", "precaución")),
-    EmojiOption("🎯", listOf("objetivo", "meta")),
-    EmojiOption("🧘", listOf("relax", "meditación")),
-    EmojiOption("🚶", listOf("caminar", "actividad")),
-    EmojiOption("🏃", listOf("correr", "ejercicio")),
-    EmojiOption("💪", listOf("fuerza", "ánimo")),
-    EmojiOption("😴", listOf("dormir", "descanso")),
-    EmojiOption("🤧", listOf("alergia", "resfriado")),
-    EmojiOption("🧞", listOf("genio", "deseo")),
+    EmojiOption("💊", listOf("medicina", "pastilla", "pill", "remedio", "medicine", "tablet", "remedy")),
+    EmojiOption("⚕️", listOf("médico", "salud", "cruz", "doctor", "health", "cross")),
+    EmojiOption("🩹", listOf("curita", "vendaje", "herida", "plaster", "bandage", "wound")),
+    EmojiOption("🫀", listOf("corazón", "órgano", "cardio", "heart", "organ")),
+    EmojiOption("🧠", listOf("cerebro", "mente", "brain", "mind")),
+    EmojiOption("🩸", listOf("sangre", "donación", "blood", "donation")),
+    EmojiOption("🧪", listOf("laboratorio", "prueba", "química", "lab", "test", "chemistry")),
+    EmojiOption("🛌", listOf("descanso", "reposo", "cama", "rest", "bed")),
+    EmojiOption("🌡️", listOf("termómetro", "fiebre", "thermometer", "fever")),
+    EmojiOption("💤", listOf("descanso", "sueño", "rest", "sleep")),
+    EmojiOption("💯", listOf("logro", "meta", "perfecto", "achievement", "goal", "perfect")),
+    EmojiOption("⭐", listOf("estrella", "destacado", "star", "highlight")),
+    EmojiOption("🟢", listOf("círculo", "verde", "circle", "green")),
+    EmojiOption("🔵", listOf("círculo", "azul", "circle", "blue")),
+    EmojiOption("🟡", listOf("círculo", "amarillo", "circle", "yellow")),
+    EmojiOption("🟣", listOf("círculo", "morado", "circle", "purple")),
+    EmojiOption("🟠", listOf("círculo", "naranja", "circle", "orange")),
+    EmojiOption("🟤", listOf("círculo", "marrón", "circle", "brown")),
+    EmojiOption("⚫", listOf("círculo", "negro", "circle", "black")),
+    EmojiOption("⚪", listOf("círculo", "blanco", "circle", "white")),
+    EmojiOption("🔺", listOf("triángulo", "alerta", "triangle", "alert")),
+    EmojiOption("🔻", listOf("triángulo", "bajar", "triangle", "down")),
+    EmojiOption("🔸", listOf("rombo", "destacado", "diamond", "highlight")),
+    EmojiOption("🔹", listOf("rombo", "info", "diamond")),
+    EmojiOption("☀️", listOf("sol", "día", "energía", "sun", "day", "energy")),
+    EmojiOption("🌀", listOf("disperso", "viento", "high", "scattered", "wind")),
+    EmojiOption("🌙", listOf("luna", "noche", "descanso", "moon", "night", "rest")),
+    EmojiOption("⏰", listOf("alarma", "hora", "alarm", "time")),
+    EmojiOption("📅", listOf("calendario", "agenda", "calendar")),
+    EmojiOption("✅", listOf("completado", "listo", "done", "ready")),
+    EmojiOption("⚠️", listOf("alerta", "precaución", "alert", "caution")),
+    EmojiOption("🎯", listOf("objetivo", "meta", "target", "goal")),
+    EmojiOption("🧘", listOf("relax", "meditación", "meditation")),
+    EmojiOption("🚶", listOf("caminar", "actividad", "walk", "activity")),
+    EmojiOption("🏃", listOf("correr", "ejercicio", "run", "exercise")),
+    EmojiOption("💪", listOf("fuerza", "ánimo", "strength", "mood")),
+    EmojiOption("😴", listOf("dormir", "descanso", "sleep", "rest")),
+    EmojiOption("🤧", listOf("alergia", "resfriado", "allergy", "cold")),
+    EmojiOption("🧞", listOf("genio", "deseo", "genie", "wish")),
     EmojiOption("⍉", listOf("null", "symbol")),
-    EmojiOption("◕", listOf("3/4", "tres cuartos")),
-    EmojiOption("◒", listOf("1/2", "media")),
-    EmojiOption("◔", listOf("1/4", "un cuarto")),
-    EmojiOption("𝧤", listOf("retroceso", "vuelta")),
-    EmojiOption("◔", listOf("1/4", "un cuarto")),
-    EmojiOption("◔", listOf("1/4", "un cuarto")),
-    EmojiOption("𓀚", listOf("viajero", "caminante")),
+    EmojiOption("◕", listOf("3/4", "tres cuartos", "three quarters")),
+    EmojiOption("◒", listOf("1/2", "media", "half")),
+    EmojiOption("◔", listOf("1/4", "un cuarto", "quarter")),
+    EmojiOption("𝧤", listOf("retroceso", "vuelta", "back", "return")),
+    EmojiOption("◔", listOf("1/4", "un cuarto", "quarter")),
+    EmojiOption("◔", listOf("1/4", "un cuarto", "quarter")),
+    EmojiOption("𓀚", listOf("viajero", "caminante", "traveller", "walker")),
     EmojiOption("☢", listOf("nuke", "bomb")), ///⌬ ⚛ ︎⚕  ☢
 )
 
 private val featuredEmojis = emojiLibrary.map { it.symbol }.distinct().take(20)
 
 private val daysOfWeek = mapOf(
-    "L" to "Lun",
-    "M" to "Mar",
-    "X" to "Mié",
-    "J" to "Jue",
-    "V" to "Vie",
-    "S" to "Sáb",
-    "D" to "Dom"
+    "L" to R.string.day_short_mon,
+    "M" to R.string.day_short_tue,
+    "X" to R.string.day_short_wed,
+    "J" to R.string.day_short_thu,
+    "V" to R.string.day_short_fri,
+    "S" to R.string.day_short_sat,
+    "D" to R.string.day_short_sun
 )

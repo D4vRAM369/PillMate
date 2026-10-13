@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.components
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import android.Manifest
 import android.net.Uri
 import android.os.Build
@@ -130,12 +132,12 @@ fun ImagePickerSection(
             ) {
                 Column {
                     Text(
-                        text = "Fotografía del medicamento",
+                        text = stringResource(R.string.photo_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Opcional - Ayuda a identificarlo visualmente",
+                        text = stringResource(R.string.photo_subtitle),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -153,7 +155,7 @@ fun ImagePickerSection(
                 ) {
                     AsyncImage(
                         model = currentPhotoPath,
-                        contentDescription = "Foto del medicamento",
+                        contentDescription = stringResource(R.string.photo_description),
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
                     )
@@ -171,7 +173,7 @@ fun ImagePickerSection(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Eliminar foto",
+                            contentDescription = stringResource(R.string.photo_delete),
                             tint = MaterialTheme.colorScheme.onErrorContainer
                         )
                     }
@@ -189,12 +191,12 @@ fun ImagePickerSection(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Usar foto como identificador",
+                            text = stringResource(R.string.photo_use_as_id),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = if (usePhotoInstead) "Se mostrará la foto en lugar del emoji" else "Se seguirá mostrando emoji y color",
+                            text = stringResource(if (usePhotoInstead) R.string.photo_use_on else R.string.photo_use_off),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -223,7 +225,7 @@ fun ImagePickerSection(
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Cámara")
+                    Text(stringResource(R.string.photo_camera))
                 }
 
                 // Botón de galería
@@ -238,7 +240,7 @@ fun ImagePickerSection(
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Galería")
+                    Text(stringResource(R.string.photo_gallery))
                 }
             }
 
@@ -255,7 +257,7 @@ fun ImagePickerSection(
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Text(
-                    text = "La imagen se redimensionará automáticamente para optimizar espacio",
+                    text = stringResource(R.string.photo_resize_note),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
