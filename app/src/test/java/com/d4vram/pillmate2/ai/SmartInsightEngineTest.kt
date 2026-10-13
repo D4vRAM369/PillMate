@@ -1,13 +1,29 @@
 package com.d4vram.pillmate2.ai
 
 import androidx.compose.ui.graphics.Color
+import com.d4vram.pillmate2.R
 import com.d4vram.pillmate2.model.HistoryEntry
 import java.time.LocalDateTime
+import java.util.Locale
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SmartInsightEngineTest {
+
+    // Sustituto de los recursos de Android: las frases en español, tal como están en values-es.
+    private val spanish = mapOf(
+        R.string.insight_peak_title to "Hora más activa",
+        R.string.insight_share to "%1\$d de %2\$d tomas (%3\$d %%)",
+        R.string.insight_gap_title to "Intervalo habitual entre tomas",
+        R.string.insight_gap_detail to "Mediana de %1\$d intervalos · el más corto: %2\$s",
+        R.string.insight_top_title to "Más registrado",
+        R.string.insight_day_title to "Día con más tomas",
+        R.string.insight_day_detail to "%1\$d tomas · media de %2\$s en los %3\$d días con registro"
+    )
+    private val es = Locale.forLanguageTag("es")
+    private fun insights(entries: List<HistoryEntry>) =
+        SmartInsightEngine.insights(entries, es) { id, args -> spanish.getValue(id).format(*args) }
 
     private fun entry(medication: String, day: Int, hour: Int, minute: Int = 0) = HistoryEntry(
         id = "$medication-$day-$hour-$minute", medicationId = medication, medicationName = medication,
@@ -17,8 +33,8 @@ class SmartInsightEngineTest {
 
     @Test
     fun `needs at least two takes to say anything`() {
-        assertTrue(SmartInsightEngine.insights(emptyList()).isEmpty())
-        assertTrue(SmartInsightEngine.insights(listOf(entry("A", 12, 8))).isEmpty())
+        assertTrue(insights(emptyList()).isEmpty())
+        assertTrue(insights(listOf(entry("A", 12, 8))).isEmpty())
     }
 
     @Test
@@ -28,7 +44,7 @@ class SmartInsightEngineTest {
             entry("A", 11, 8), entry("A", 12, 8, 10), entry("A", 12, 8, 40),
             entry("B", 12, 12, 40), entry("A", 12, 22, 40)
         )
-        val insights = SmartInsightEngine.insights(entries.shuffled()).associateBy { it.title }
+        val insights = insights(entries.shuffled()).associateBy { it.title }
 
         assertEquals("08:00–09:00", insights.getValue("Hora más activa").value)
         assertEquals("3 de 5 tomas (60 %)", insights.getValue("Hora más activa").detail)
@@ -42,7 +58,7 @@ class SmartInsightEngineTest {
 
     @Test
     fun `single medication on a single day skips the comparisons that need more`() {
-        val titles = SmartInsightEngine.insights(listOf(entry("A", 12, 8), entry("A", 12, 9))).map { it.title }
+        val titles = insights(listOf(entry("A", 12, 8), entry("A", 12, 9))).map { it.title }
         assertEquals(listOf("Hora más activa", "Intervalo habitual entre tomas"), titles)
     }
 

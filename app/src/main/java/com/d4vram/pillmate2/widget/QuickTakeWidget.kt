@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.widget
 
+import com.d4vram.pillmate2.R
 import android.content.Context
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -229,7 +230,7 @@ private fun QuickTakeWidgetContent(data: QuickTakeWidgetData) {
     ) {
         if (showHeader) {
             Text(
-                text = "Toma rápida",
+                text = LocalContext.current.getString(R.string.quick_take_title),
                 style = TextStyle(
                     color = ColorProvider(Color(data.color.accentArgb)),
                     fontWeight = FontWeight.Bold,

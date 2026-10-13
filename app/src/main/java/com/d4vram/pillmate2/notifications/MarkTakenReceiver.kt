@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.notifications
 
+import com.d4vram.pillmate2.R
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -72,9 +73,9 @@ class MarkTakenReceiver : BroadcastReceiver() {
 object ToastNotifier {
     fun showTakeConfirmation(context: Context, medicationName: String) {
         val text = if (medicationName.isBlank()) {
-            "Toma registrada ✓"
+            context.getString(R.string.notif_dose_logged)
         } else {
-            "Toma registrada ✓ · $medicationName"
+            context.getString(R.string.notif_dose_logged_named, medicationName)
         }
         Handler(Looper.getMainLooper()).post {
             Toast.makeText(context.applicationContext, text, Toast.LENGTH_SHORT).show()

@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.ai
 
+import com.d4vram.pillmate2.R
 import com.d4vram.pillmate2.model.HistoryEntry
 import java.time.Duration
 import java.time.format.DateTimeFormatter
@@ -15,33 +16,42 @@ data class Insight(val title: String, val value: String, val detail: String)
  */
 object SmartInsightEngine {
 
-    fun insights(entries: List<HistoryEntry>): List<Insight> {
+    /**
+     * [text] escribe las frases a partir del id de un texto y sus datos: la app le pasa los recursos
+     * (así salen en el idioma del móvil) y los tests un sustituto, sin necesidad de Android.
+     */
+    fun insights(
+        entries: List<HistoryEntry>,
+        locale: Locale = Locale.getDefault(),
+        text: (Int, Array<out Any>) -> String
+    ): List<Insight> {
         if (entries.size < 2) return emptyList()
+        fun t(id: Int, vararg args: Any) = text(id, args)
         val sorted = entries.sortedBy { it.timestamp }
         val total = sorted.size
         val result = mutableListOf<Insight>()
 
         val (peakHour, peakCount) = sorted.groupingBy { it.timestamp.hour }.eachCount().maxBy { it.value }
         result += Insight(
-            "Hora más activa",
+            t(R.string.insight_peak_title),
             "%02d:00–%02d:00".format(peakHour, (peakHour + 1) % 24),
-            "$peakCount de $total tomas (${percent(peakCount, total)} %)"
+            t(R.string.insight_share, peakCount, total, percent(peakCount, total))
         )
 
         val gaps = sorted.zipWithNext { a, b -> Duration.between(a.timestamp, b.timestamp).toMinutes() }.sorted()
         result += Insight(
-            "Intervalo habitual entre tomas",
+            t(R.string.insight_gap_title),
             formatMinutes(gaps[gaps.size / 2]),
-            "Mediana de ${gaps.size} intervalos · el más corto: ${formatMinutes(gaps.first())}"
+            t(R.string.insight_gap_detail, gaps.size, formatMinutes(gaps.first()))
         )
 
         val byMedication = sorted.groupBy { it.medicationId }
         if (byMedication.size > 1) {
             val top = byMedication.values.maxBy { it.size }
             result += Insight(
-                "Más registrado",
+                t(R.string.insight_top_title),
                 top.first().medicationName,
-                "${top.size} de $total tomas (${percent(top.size, total)} %)"
+                t(R.string.insight_share, top.size, total, percent(top.size, total))
             )
         }
 
@@ -49,10 +59,9 @@ object SmartInsightEngine {
         if (byDay.size > 1) {
             val (day, dayEntries) = byDay.maxBy { it.value.size }
             result += Insight(
-                "Día con más tomas",
-                day.format(DateTimeFormatter.ofPattern("EEE d/M", Locale("es"))),
-                "${dayEntries.size} tomas · media de %.1f en los ${byDay.size} días con registro"
-                    .format(Locale("es"), total.toFloat() / byDay.size)
+                t(R.string.insight_day_title),
+                day.format(DateTimeFormatter.ofPattern("EEE d/M", locale)),
+                t(R.string.insight_day_detail, dayEntries.size, "%.1f".format(locale, total.toFloat() / byDay.size), byDay.size)
             )
         }
         return result

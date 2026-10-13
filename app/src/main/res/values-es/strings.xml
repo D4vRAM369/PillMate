@@ -786,4 +786,22 @@
     <string name="csv_col_total">Dosis Totales Registradas</string>
     <string name="csv_col_type">Tipo</string>
     <string name="csv_regular">Regular</string>
+
+    <!-- Datos calculados sobre las tomas registradas -->
+    <string name="insight_peak_title">Hora más activa</string>
+    <string name="insight_share">%1$d de %2$d tomas (%3$d %%)</string>
+    <string name="insight_gap_title">Intervalo habitual entre tomas</string>
+    <string name="insight_gap_detail">Mediana de %1$d intervalos · el más corto: %2$s</string>
+    <string name="insight_top_title">Más registrado</string>
+    <string name="insight_day_title">Día con más tomas</string>
+    <string name="insight_day_detail">%1$d tomas · media de %2$s en los %3$d días con registro</string>
+
+    <!-- Notificaciones y avisos -->
+    <string name="notif_channel_reminders">Recordatorios de Medicamentos</string>
+    <string name="notif_channel_reminders_desc">Notificaciones para recordarte tomar tus medicamentos</string>
+    <string name="notif_quick_take_text">Toca para registrar una toma</string>
+    <string name="notif_reminder_title">%1$s Es hora de tomar %2$s</string>
+    <string name="notif_take_now">Tomar ahora</string>
+    <string name="notif_dose_logged">Toma registrada ✓</string>
+    <string name="notif_dose_logged_named">Toma registrada ✓ · %1$s</string>
 </resources>

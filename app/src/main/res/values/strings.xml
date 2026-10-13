@@ -788,4 +788,22 @@
     <string name="csv_col_total">Total doses logged</string>
     <string name="csv_col_type">Type</string>
     <string name="csv_regular">Regular</string>
+
+    <!-- Insights computed from the logged doses -->
+    <string name="insight_peak_title">Most active hour</string>
+    <string name="insight_share">%1$d of %2$d doses (%3$d %%)</string>
+    <string name="insight_gap_title">Usual interval between doses</string>
+    <string name="insight_gap_detail">Median of %1$d intervals · shortest: %2$s</string>
+    <string name="insight_top_title">Most logged</string>
+    <string name="insight_day_title">Day with most doses</string>
+    <string name="insight_day_detail">%1$d doses · average of %2$s over the %3$d days with entries</string>
+
+    <!-- Notifications and toasts -->
+    <string name="notif_channel_reminders">Medication reminders</string>
+    <string name="notif_channel_reminders_desc">Notifications that remind you to take your medications</string>
+    <string name="notif_quick_take_text">Tap to log a dose</string>
+    <string name="notif_reminder_title">%1$s Time to take %2$s</string>
+    <string name="notif_take_now">Take now</string>
+    <string name="notif_dose_logged">Dose logged ✓</string>
+    <string name="notif_dose_logged_named">Dose logged ✓ · %1$s</string>
 </resources>

@@ -775,7 +775,12 @@ fun FilterButtons(
  */
 @Composable
 fun RhythmSection(entries: List<com.d4vram.pillmate2.model.HistoryEntry>) {
-    val insights = remember(entries) { SmartInsightEngine.insights(entries) }
+    // El motor no sabe de idiomas: se le pasa quién escribe las frases.
+    val context = LocalContext.current
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val insights = remember(entries, locale) {
+        SmartInsightEngine.insights(entries, locale) { id, args -> context.getString(id, *args) }
+    }
     ElevatedCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
