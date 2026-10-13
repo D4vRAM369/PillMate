@@ -57,7 +57,7 @@ class AstraHomeTest {
         var slot = -1
         compose.setContent { MaterialTheme { Column(Modifier.verticalScroll(rememberScrollState())) { QuickTapPulseBar(List(4) { null }, false, {}, {}, { slot = it }) } } }
         for (index in 0..3) {
-            compose.onNodeWithContentDescription("Configurar casilla ${index + 1}").performScrollTo().performClick()
+            compose.onNodeWithContentDescription("Configurar acceso rápido ${index + 1}").performScrollTo().performClick()
             compose.runOnIdle { assertEquals(index, slot) }
         }
     }
