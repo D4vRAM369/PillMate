@@ -603,4 +603,36 @@
     <string name="settings_bp_export">Export encrypted</string>
     <string name="settings_bi_title">🔐 Encrypted backup</string>
     <string name="settings_bi_body">This backup is protected with AES-256 encryption. Enter the password to decrypt it:</string>
+
+    <!-- Bottom navigation bar -->
+    <string name="nav_home">Home</string>
+    <string name="nav_meds">Meds</string>
+    <string name="nav_history">History</string>
+    <string name="nav_notes">Notes</string>
+    <string name="nav_settings">Settings</string>
+
+    <!-- 24-hour clock -->
+    <string name="clock_description">24-hour clock. %1$d entries. %2$s</string>
+    <string name="clock_now_suffix">Now: %1$s.</string>
+    <plurals name="clock_units">
+        <item quantity="one">%1$d unit</item>
+        <item quantity="other">%1$d units</item>
+    </plurals>
+    <string name="clock_doses_label">doses</string>
+    <string name="clock_empty">No entries in this period.</string>
+    <string name="clock_hint_bar">Tap a bar to see what was taken at that hour.</string>
+    <string name="clock_hint_dot">Tap a dot to see the dose.</string>
+    <string name="clock_legend_more">+%1$d more</string>
+    <string name="clock_hour_range">%1$02d:00–%2$02d:00 · %3$d doses</string>
+    <string name="clock_chip">%1$s · %2$s · %3$s</string>
+
+    <!-- Quick access bar and quick-take sheet -->
+    <string name="quick_take_for">Quick take for %1$s</string>
+    <string name="quick_take_configure_quick">Set up quick access %1$d</string>
+    <string name="quick_take_log_label">Log dose</string>
+    <string name="quick_take_configure_label">Set up slot</string>
+    <string name="quick_take_adjust_label">Adjust amount or date</string>
+    <string name="quick_sheet_title">Take medication</string>
+    <string name="quick_sheet_subtitle">Your most taken</string>
+    <string name="quick_sheet_empty">You don\'t have any medications yet.</string>
 </resources>

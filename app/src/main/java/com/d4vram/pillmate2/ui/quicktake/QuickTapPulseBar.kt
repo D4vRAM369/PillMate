@@ -1,5 +1,7 @@
 package com.d4vram.pillmate2.ui.quicktake
 
+import com.d4vram.pillmate2.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -34,6 +36,9 @@ internal fun QuickTapPulseBar(
     ) {
         repeat(4) { index ->
             val medication = slots.getOrNull(index)
+            // semantics { } no es @Composable: la descripción se pide antes.
+            val description = if (medication != null) stringResource(R.string.quick_take_for, medication.name)
+            else stringResource(R.string.quick_take_configure_quick, index + 1)
             Surface(
                 modifier = Modifier
                     .weight(1f)
@@ -46,12 +51,12 @@ internal fun QuickTapPulseBar(
                     modifier = Modifier
                         .fillMaxSize()
                         .semantics {
-                            contentDescription = medication?.let { "Toma rápida para ${it.name}" } ?: "Configurar acceso rápido ${index + 1}"
+                            contentDescription = description
                         }
                         .combinedClickable(
                             enabled = !busy,
-                            onClickLabel = if (medication != null) "Registrar toma" else "Configurar casilla",
-                            onLongClickLabel = if (medication != null) "Ajustar cantidad o fecha" else null,
+                            onClickLabel = stringResource(if (medication != null) R.string.quick_take_log_label else R.string.quick_take_configure_label),
+                            onLongClickLabel = if (medication != null) stringResource(R.string.quick_take_adjust_label) else null,
                             onClick = {
                                 if (medication != null) {
                                     onQuickTake(medication)
@@ -90,7 +95,7 @@ internal fun QuickTapPulseBar(
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Add,
-                                contentDescription = "Configurar ${index + 1}",
+                                contentDescription = stringResource(R.string.quick_take_slot_configure, index + 1),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(18.dp)
                             )

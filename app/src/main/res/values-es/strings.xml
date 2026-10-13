@@ -601,4 +601,36 @@
     <string name="settings_bp_export">Exportar cifrado</string>
     <string name="settings_bi_title">🔐 Backup cifrado</string>
     <string name="settings_bi_body">Este backup está protegido con cifrado AES-256. Introduce la contraseña para descifrarlo:</string>
+
+    <!-- Barra de navegación inferior -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_meds">Meds</string>
+    <string name="nav_history">Historial</string>
+    <string name="nav_notes">Notas</string>
+    <string name="nav_settings">Ajustes</string>
+
+    <!-- Reloj de 24 horas -->
+    <string name="clock_description">Reloj de 24 horas. %1$d registros. %2$s</string>
+    <string name="clock_now_suffix">Ahora: %1$s.</string>
+    <plurals name="clock_units">
+        <item quantity="one">%1$d unidad</item>
+        <item quantity="other">%1$d unidades</item>
+    </plurals>
+    <string name="clock_doses_label">tomas</string>
+    <string name="clock_empty">Sin registros en este periodo.</string>
+    <string name="clock_hint_bar">Toca una barra para ver qué se tomó a esa hora.</string>
+    <string name="clock_hint_dot">Toca un punto para ver la toma.</string>
+    <string name="clock_legend_more">+%1$d más</string>
+    <string name="clock_hour_range">%1$02d:00–%2$02d:00 · %3$d tomas</string>
+    <string name="clock_chip">%1$s · %2$s · %3$s</string>
+
+    <!-- Barra de accesos rápidos y hoja de toma rápida -->
+    <string name="quick_take_for">Toma rápida para %1$s</string>
+    <string name="quick_take_configure_quick">Configurar acceso rápido %1$d</string>
+    <string name="quick_take_log_label">Registrar toma</string>
+    <string name="quick_take_configure_label">Configurar casilla</string>
+    <string name="quick_take_adjust_label">Ajustar cantidad o fecha</string>
+    <string name="quick_sheet_title">Tomar medicamento</string>
+    <string name="quick_sheet_subtitle">Tus más tomados</string>
+    <string name="quick_sheet_empty">Aún no tienes medicamentos.</string>
 </resources>
