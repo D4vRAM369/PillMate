@@ -12,7 +12,7 @@ plugins {
 
 android {
     namespace = "com.d4vram.pillmate2"
-    compileSdk = 35
+    compileSdk = 36
 
     val keystorePropertiesFile = rootProject.file("keystore.properties")
     val keystoreProperties = Properties()
@@ -24,7 +24,7 @@ android {
         applicationId = "com.d4vram.pillmate"
         manifestPlaceholders["appLabel"] = "@string/app_name"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 13
         versionName = "2.0.0-beta.3"
 
