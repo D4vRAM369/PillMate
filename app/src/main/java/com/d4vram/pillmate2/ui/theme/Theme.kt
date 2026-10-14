@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.ui.theme
 
+import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -14,8 +15,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import androidx.compose.ui.unit.dp
 
 private val LightColorScheme = lightColorScheme(
@@ -147,6 +151,18 @@ fun PillMateTheme(
 
     val shapes = if (uiStyle == AppUiStyle.MaterialYou) MaterialYouShapes else ClassicShapes
     val typography = if (uiStyle == AppUiStyle.MaterialYou) MaterialYouTypography else Typography
+
+    // El modo oscuro es de la app, no del sistema: el color de los iconos de las barras lo sigue a él.
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as? Activity)?.window ?: return@SideEffect
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !isDarkMode
+                isAppearanceLightNavigationBars = !isDarkMode
+            }
+        }
+    }
 
     CompositionLocalProvider(LocalUiStyle provides uiStyle, LocalAppDesign provides appDesign) {
         MaterialTheme(
