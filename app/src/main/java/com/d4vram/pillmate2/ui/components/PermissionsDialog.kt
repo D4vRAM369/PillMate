@@ -3,7 +3,6 @@ package com.d4vram.pillmate2.ui.components
 import com.d4vram.pillmate2.R
 import androidx.compose.ui.res.stringResource
 import android.Manifest
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,17 +56,7 @@ fun PermissionsRequestDialog(
     onDismiss: () -> Unit
 ) {
     val permissions = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            listOf(
-                Manifest.permission.CAMERA,
-                Manifest.permission.READ_MEDIA_IMAGES
-            )
-        } else {
-            listOf(
-                Manifest.permission.CAMERA,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-        }
+        listOf(Manifest.permission.CAMERA)
     }
 
     val multiplePermissionsState = rememberMultiplePermissionsState(permissions)

@@ -25,7 +25,7 @@ android {
         manifestPlaceholders["appLabel"] = "@string/app_name"
         minSdk = 26
         targetSdk = 36
-        versionCode = 13
+        versionCode = 14
         versionName = "2.0.0-beta.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

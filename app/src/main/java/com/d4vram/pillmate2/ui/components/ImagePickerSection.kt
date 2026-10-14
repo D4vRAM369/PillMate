@@ -4,7 +4,6 @@ import com.d4vram.pillmate2.R
 import androidx.compose.ui.res.stringResource
 import android.Manifest
 import android.net.Uri
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -54,11 +53,6 @@ fun ImagePickerSection(
 
     // Permisos necesarios
     val cameraPermission = rememberPermissionState(Manifest.permission.CAMERA)
-    val storagePermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        rememberPermissionState(Manifest.permission.READ_MEDIA_IMAGES)
-    } else {
-        rememberPermissionState(Manifest.permission.READ_EXTERNAL_STORAGE)
-    }
 
     // URI temporal para foto de cámara
     var capturedImageUri by remember { mutableStateOf<Uri?>(null) }
@@ -100,13 +94,9 @@ fun ImagePickerSection(
         }
     }
 
-    // Función para lanzar galería
+    // Galería: GetContent abre el selector del sistema, no necesita permiso de almacenamiento
     val launchGallery = {
-        if (storagePermission.status.isGranted) {
-            galleryLauncher.launch("image/*")
-        } else {
-            storagePermission.launchPermissionRequest()
-        }
+        galleryLauncher.launch("image/*")
     }
 
     // Diálogo de selección

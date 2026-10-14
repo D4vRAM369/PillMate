@@ -3,7 +3,6 @@ package com.d4vram.pillmate2.ui.permissions
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -60,19 +59,7 @@ class PermissionsManager(private val context: Context) {
      * Obtiene la lista de permisos requeridos según la versión de Android
      */
     fun getRequiredPermissions(): List<String> {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            // Android 13+ - Permisos granulares
-            listOf(
-                Manifest.permission.CAMERA,
-                Manifest.permission.READ_MEDIA_IMAGES
-            )
-        } else {
-            // Android 12 o menor
-            listOf(
-                Manifest.permission.CAMERA,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-        }
+        return listOf(Manifest.permission.CAMERA)
     }
 
     /**
@@ -114,19 +101,4 @@ class PermissionsManager(private val context: Context) {
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    /**
-     * Verifica si el permiso de lectura de imágenes está concedido
-     */
-    fun isReadImagesPermissionGranted(): Boolean {
-        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            Manifest.permission.READ_MEDIA_IMAGES
-        } else {
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        }
-
-        return ContextCompat.checkSelfPermission(
-            context,
-            permission
-        ) == PackageManager.PERMISSION_GRANTED
-    }
 }
