@@ -3,6 +3,7 @@ package com.d4vram.pillmate2.ui.navigation
 import androidx.annotation.StringRes
 import com.d4vram.pillmate2.R
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.icons.Icons
@@ -160,6 +161,8 @@ fun PillMateNavigation(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                // Las pantallas tienen su propio Scaffold: sin esto vuelven a sumar la barra de estado.
+                .consumeWindowInsets(innerPadding)
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(
