@@ -118,9 +118,10 @@ fun ArchivedMedicationsSheet(
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
-                                medication.lastTaken?.let {
+                                if (medication.lastTaken != null || medication.lastTakenTimestamp != null) {
                                     Text(
-                                        text = stringResource(R.string.archived_last_taken, it),
+                                        // lastTakenLabel usa el idioma del móvil; medication.lastTaken va siempre en español
+                                        text = stringResource(R.string.archived_last_taken, lastTakenLabel(medication)),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )

@@ -301,7 +301,7 @@ fun MedicationCard(
  * el repositorio ([Medication.lastTaken]) está siempre en español y solo se usa si no hay fecha.
  */
 @Composable
-private fun lastTakenLabel(medication: Medication): String {
+internal fun lastTakenLabel(medication: Medication): String {
     val millis = medication.lastTakenTimestamp ?: return medication.lastTaken.orEmpty()
     val at = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDateTime()
     return "${com.d4vram.pillmate2.utils.relativeDayLabel(at.toLocalDate())} ${at.format(DateTimeFormatter.ofPattern("HH:mm"))}"
