@@ -37,8 +37,8 @@ class PdfExportMetricsTest {
                 CoroutineScope(scopeJob + Dispatchers.IO)
             )
             val now = LocalDateTime.now().withSecond(0).withNano(0)
-            repository.recordMedicationTaken("valium", quantity = 2, customTimestamp = now)
-            repository.recordMedicationTaken("noctamid", quantity = 9, customTimestamp = now.plusMinutes(5))
+            repository.recordMedicationTaken("valium", quantity = 2.0, customTimestamp = now)
+            repository.recordMedicationTaken("noctamid", quantity = 9.0, customTimestamp = now.plusMinutes(5))
             withTimeout(5_000) { repository.medications.first { it.size == 2 } }
 
             val data = PdfExportViewModel(repository).reportDataForTesting(
@@ -58,6 +58,6 @@ class PdfExportMetricsTest {
 
     private fun medication(id: String, name: String, dose: String, type: String) = MedicationEntity(
         id = id, name = name, dose = dose, type = type, colorArgb = 0, emoji = "💊",
-        takenToday = 0, dailyGoal = 0, lastTaken = null, sortOrder = 0
+        takenToday = 0.0, dailyGoal = 0, lastTaken = null, sortOrder = 0
     )
 }

@@ -178,7 +178,7 @@ fun HomeScreen(
                         slots = quickTakeSlots,
                         availableMedications = medications,
                         onQuickTake = { medicationId ->
-                            repository.takeMedication(medicationId, quantity = 1, customTimestamp = null)
+                            repository.takeMedication(medicationId, quantity = 1.0, customTimestamp = null)
                             scope.launch {
                                 QuickTakeWidget().updateAll(context.applicationContext)
                             }

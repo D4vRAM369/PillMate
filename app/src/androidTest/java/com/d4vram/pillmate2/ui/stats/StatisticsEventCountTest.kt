@@ -36,7 +36,7 @@ class StatisticsEventCountTest {
                     type = "Pastilla",
                     colorArgb = 0,
                     emoji = "💊",
-                    takenToday = 0,
+                    takenToday = 0.0,
                     dailyGoal = 0,
                     lastTaken = null,
                     sortOrder = 0
@@ -50,7 +50,7 @@ class StatisticsEventCountTest {
                     type = "Gota",
                     colorArgb = 0,
                     emoji = "💧",
-                    takenToday = 0,
+                    takenToday = 0.0,
                     dailyGoal = 0,
                     lastTaken = null,
                     sortOrder = 1
@@ -58,8 +58,8 @@ class StatisticsEventCountTest {
             )
             val repository = MedicationRepository(database, medicationDao, historyDao, scope)
             val now = LocalDateTime.now().withSecond(0).withNano(0)
-            repository.recordMedicationTaken("valium", quantity = 2, customTimestamp = now)
-            repository.recordMedicationTaken("noctamid", quantity = 9, customTimestamp = now.plusMinutes(5))
+            repository.recordMedicationTaken("valium", quantity = 2.0, customTimestamp = now)
+            repository.recordMedicationTaken("noctamid", quantity = 9.0, customTimestamp = now.plusMinutes(5))
             withTimeout(5_000) {
                 repository.medications.first { it.size == 2 }
             }

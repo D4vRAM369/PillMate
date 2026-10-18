@@ -187,7 +187,7 @@ class StatisticsViewModel(
                 val entryValue = when (entryUnit) {
                     "mg" -> {
                         val doseValue = entryMed?.dose?.let { extractDoseValue(it) } ?: 1f
-                        entry.quantity * doseValue
+                        (entry.quantity * doseValue).toFloat()
                     }
                     else -> entry.quantity.toFloat()
                 }

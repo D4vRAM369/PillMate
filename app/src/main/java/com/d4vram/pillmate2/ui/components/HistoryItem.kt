@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.ui.components
 
+import com.d4vram.pillmate2.utils.formatQuantity
 import com.d4vram.pillmate2.R
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -38,8 +39,8 @@ fun HistoryItem(
     val dropQuantityDescription = if (isDrops) {
         pluralStringResource(
             R.plurals.history_drops_accessibility,
-            historyEntry.quantity,
-            historyEntry.quantity
+            if (historyEntry.quantity == 1.0) 1 else 2,
+            formatQuantity(historyEntry.quantity)
         )
     } else {
         null
@@ -93,7 +94,7 @@ fun HistoryItem(
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (isDrops || historyEntry.quantity > 1) {
+            if (isDrops || historyEntry.quantity != 1.0) {
                 val quantityModifier = Modifier
                     .padding(horizontal = 8.dp, vertical = 4.dp)
                     .then(

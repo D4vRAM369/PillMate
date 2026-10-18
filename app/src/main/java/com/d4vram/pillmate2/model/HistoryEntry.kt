@@ -14,7 +14,7 @@ data class HistoryEntry(
     val date: String,
     val color: Color,
     val emoji: String,
-    val quantity: Int = 1,
+    val quantity: Double = 1.0,
     val notes: String = "",
     val timestamp: LocalDateTime = LocalDateTime.now(),
     val dose: String? = null,

@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.ui.screens
 
+import com.d4vram.pillmate2.utils.formatQuantity
 import com.d4vram.pillmate2.R
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -27,12 +28,12 @@ internal fun AstraDoseSheet(
     medication: Medication,
     busy: Boolean,
     onDismiss: () -> Unit,
-    onConfirm: (Int, LocalDateTime?) -> Unit,
+    onConfirm: (Double, LocalDateTime?) -> Unit,
     error: String? = null,
     family: List<Medication> = emptyList(),
     onSelectMedication: (Medication) -> Unit = {}
 ) {
-    var quantity by rememberSaveable(medication.id) { mutableIntStateOf(1) }
+    var quantity by rememberSaveable(medication.id) { mutableDoubleStateOf(1.0) }
     var selectedTime by rememberSaveable(medication.id) { mutableStateOf<String?>(null) }
     val timestamp = selectedTime?.let(LocalDateTime::parse)
     val context = LocalContext.current
@@ -53,9 +54,9 @@ internal fun AstraDoseSheet(
             }
             Text(stringResource(R.string.dose_sheet_units))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                FilledIconButton(onClick = { quantity-- }, enabled = !busy && quantity > 1, modifier = Modifier.size(48.dp).semantics { contentDescription = decreaseLabel }) { Text("−") }
-                Text("$quantity", style = MaterialTheme.typography.displaySmall)
-                FilledIconButton(onClick = { quantity++ }, enabled = !busy && quantity < 999, modifier = Modifier.size(48.dp).semantics { contentDescription = increaseLabel }) { Text("+") }
+                FilledIconButton(onClick = { quantity = (quantity - 0.25).coerceAtLeast(0.25) }, enabled = !busy && quantity > 0.25, modifier = Modifier.size(48.dp).semantics { contentDescription = decreaseLabel }) { Text("−") }
+                Text(formatQuantity(quantity), style = MaterialTheme.typography.displaySmall)
+                FilledIconButton(onClick = { quantity = (quantity + 0.25).coerceAtMost(999.0) }, enabled = !busy && quantity < 999, modifier = Modifier.size(48.dp).semantics { contentDescription = increaseLabel }) { Text("+") }
             }
             Text(timestamp?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm")) ?: stringResource(R.string.dose_now), style = MaterialTheme.typography.titleMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -72,7 +73,7 @@ internal fun AstraDoseSheet(
             if (future) Text(stringResource(R.string.dose_future_error), color = MaterialTheme.colorScheme.error)
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Button(onClick = { onConfirm(quantity, timestamp) }, enabled = !busy && !future, modifier = Modifier.fillMaxWidth()) {
-                Text(if (busy) stringResource(R.string.dose_saving) else pluralStringResource(R.plurals.dose_log_units, quantity, quantity))
+                Text(if (busy) stringResource(R.string.dose_saving) else pluralStringResource(R.plurals.dose_log_units, if (quantity == 1.0) 1 else 2, formatQuantity(quantity)))
             }
             TextButton(onClick = onDismiss, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.action_cancel)) }
         }

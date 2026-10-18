@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.ui.components
 
+import com.d4vram.pillmate2.utils.formatQuantity
 import com.d4vram.pillmate2.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.*
@@ -56,7 +57,7 @@ fun MedicationCard(
     medication: Medication,
     repository: com.d4vram.pillmate2.data.MedicationRepository,
     chipCountPeriod: com.d4vram.pillmate2.ui.theme.ChipCountPeriod,
-    onTakeMedication: (String, Int, LocalDateTime?) -> Unit,  // Añadido: timestamp opcional
+    onTakeMedication: (String, Double, LocalDateTime?) -> Unit,  // Añadido: timestamp opcional
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {},
     enabled: Boolean = true,
@@ -422,7 +423,7 @@ internal fun TakeMedicationDialog(
     medication: Medication,
     family: List<Medication>,
     onDismiss: () -> Unit,
-    onConfirm: (String, Int, LocalDateTime?) -> Unit,
+    onConfirm: (String, Double, LocalDateTime?) -> Unit,
     busy: Boolean = false  // Shared save state prevents accepting a discarded confirmation.
 ) {
     if (com.d4vram.pillmate2.ui.theme.LocalAppDesign.current == com.d4vram.pillmate2.ui.theme.AppDesign.Astra) {
@@ -438,7 +439,7 @@ internal fun TakeMedicationDialog(
         return
     }
     var selectedMedication by remember { mutableStateOf(medication) }
-    var quantity by remember { mutableStateOf(1) }
+    var quantity by remember { mutableStateOf(1.0) }
 
     // Estado para el selector de hora
     var useCurrentTime by remember { mutableStateOf(true) }
@@ -622,7 +623,7 @@ internal fun TakeMedicationDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         FilledIconButton(
-                            onClick = { if (quantity > 1) quantity-- },
+                            onClick = { if (quantity > 0.25) quantity = (quantity - 0.25).coerceAtLeast(0.25) },
                             modifier = Modifier.size(48.dp),
                             colors = IconButtonDefaults.filledIconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -633,13 +634,13 @@ internal fun TakeMedicationDialog(
                         }
 
                         Text(
-                            text = quantity.toString(),
+                            text = formatQuantity(quantity),
                             style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
                         FilledIconButton(
-                            onClick = { quantity = (quantity + 1).coerceAtMost(999) },
+                            onClick = { quantity = (quantity + 0.25).coerceAtMost(999.0) },
                             modifier = Modifier.size(48.dp),
                             colors = IconButtonDefaults.filledIconButtonColors(
                                 containerColor = selectedMedication.color.copy(alpha = 0.8f),
@@ -656,7 +657,7 @@ internal fun TakeMedicationDialog(
                     ) {
                         listOf(1, 2, 5).forEach { quick ->
                             SuggestionChip(
-                                onClick = { quantity = (quantity + quick).coerceAtMost(999) },
+                                onClick = { quantity = (quantity + quick).coerceAtMost(999.0) },
                                 label = { Text("+${quick}") },
                                 colors = SuggestionChipDefaults.suggestionChipColors(
                                     labelColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -684,7 +685,7 @@ internal fun TakeMedicationDialog(
                             .withSecond(0)
                             .withNano(0)
                     }
-                    onConfirm(selectedMedication.id, quantity.coerceAtLeast(1), timestamp)
+                    onConfirm(selectedMedication.id, quantity.coerceAtLeast(0.25), timestamp)
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = buttonColor,

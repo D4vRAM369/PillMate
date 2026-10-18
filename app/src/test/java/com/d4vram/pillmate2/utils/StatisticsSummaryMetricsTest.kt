@@ -45,7 +45,7 @@ class StatisticsSummaryMetricsTest {
         date = "2026-10-13",
         color = Color.Green,
         emoji = "💊",
-        quantity = quantity,
+        quantity = quantity.toDouble(),
         timestamp = LocalDateTime.of(2026, 10, 13, 10, 0)
     )
 }

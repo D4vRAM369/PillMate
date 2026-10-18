@@ -74,7 +74,7 @@ class QuickTakeSheetActivity : AppCompatActivity() {
                 QuickTakeSheet(
                     repository = repository,
                     onTake = { medication ->
-                        repository.takeMedication(medication.id, quantity = 1, customTimestamp = null)
+                        repository.takeMedication(medication.id, quantity = 1.0, customTimestamp = null)
                         ToastNotifier.showTakeConfirmation(applicationContext, medication.name)
                         lifecycleScope.launch {
                             // Refresca el ranking de la notif y el widget tras la toma.

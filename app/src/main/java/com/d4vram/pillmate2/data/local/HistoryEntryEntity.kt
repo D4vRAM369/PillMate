@@ -12,7 +12,7 @@ data class HistoryEntryEntity(
     val date: String,
     val colorArgb: Int,
     val emoji: String,
-    val quantity: Int,
+    val quantity: Double,
     val notes: String,
     val timestampIso: String,
     val dose: String?,

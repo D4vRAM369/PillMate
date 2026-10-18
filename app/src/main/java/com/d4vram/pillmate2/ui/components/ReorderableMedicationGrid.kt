@@ -40,7 +40,7 @@ fun ReorderableMedicationGrid(
     medications: List<Medication>,
     repository: com.d4vram.pillmate2.data.MedicationRepository,
     chipCountPeriod: com.d4vram.pillmate2.ui.theme.ChipCountPeriod,
-    onTakeMedication: (String, Int, LocalDateTime?) -> Unit,
+    onTakeMedication: (String, Double, LocalDateTime?) -> Unit,
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {},
     onAddMedication: () -> Unit,

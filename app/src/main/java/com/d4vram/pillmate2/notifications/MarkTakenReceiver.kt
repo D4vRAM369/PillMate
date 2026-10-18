@@ -49,7 +49,7 @@ class MarkTakenReceiver : BroadcastReceiver() {
                     database = database,
                     medicationDao = database.medicationDao(),
                     historyDao = database.historyDao()
-                ).recordMedicationTaken(medicationId, quantity = 1, customTimestamp = null)
+                ).recordMedicationTaken(medicationId, quantity = 1.0, customTimestamp = null)
 
                 // Cerrar la notificación que disparó esta acción.
                 NotificationHelper.cancelNotification(appContext, medicationId)

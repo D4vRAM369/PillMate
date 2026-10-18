@@ -21,7 +21,7 @@ class HistoryItemTest {
     fun dropQuantityShowsAmountAndLocalizedAccessibleDescription() {
         compose.setContent {
             MaterialTheme {
-                HistoryItem(historyEntry = entry(quantity = 9), isDrops = true, onShowStats = {})
+                HistoryItem(historyEntry = entry(quantity = 9.0), isDrops = true, onShowStats = {})
             }
         }
 
@@ -38,7 +38,7 @@ class HistoryItemTest {
     fun oneDropStillShowsItsQuantity() {
         compose.setContent {
             MaterialTheme {
-                HistoryItem(historyEntry = entry(quantity = 1), isDrops = true, onShowStats = {})
+                HistoryItem(historyEntry = entry(quantity = 1.0), isDrops = true, onShowStats = {})
             }
         }
 
@@ -49,14 +49,14 @@ class HistoryItemTest {
     fun nonDropQuantityKeepsTheMultiplierBadge() {
         compose.setContent {
             MaterialTheme {
-                HistoryItem(historyEntry = entry(quantity = 2), onShowStats = {})
+                HistoryItem(historyEntry = entry(quantity = 2.0), onShowStats = {})
             }
         }
 
         compose.onNodeWithText("x2").assertIsDisplayed()
     }
 
-    private fun entry(quantity: Int) = HistoryEntry(
+    private fun entry(quantity: Double) = HistoryEntry(
         id = "history-$quantity",
         medicationId = "noctamid",
         medicationName = "Noctamid",

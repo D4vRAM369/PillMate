@@ -13,7 +13,7 @@ data class Medication(
     val type: String,
     val color: Color,
     val emoji: String,
-    val takenToday: Int = 0,
+    val takenToday: Double = 0.0,
     val dailyGoal: Int = 1,
     val lastTaken: String? = null,
     val sortOrder: Int = 0, // Orden manual en la cuadrícula

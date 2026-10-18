@@ -12,7 +12,7 @@ class DoseMetricsTest {
     @Test
     fun oneEntryWithTwoTabletsIsOneTakeAndTenMilligrams() {
         val valium = medication(id = "valium", dose = "5 mg", type = "Pastilla")
-        val entries = listOf(entry(medicationId = "valium", quantity = 2))
+        val entries = listOf(entry(medicationId = "valium", quantity = 2.0))
 
         assertEquals(1, countTakeEvents(entries))
         assertEquals(MedicationAmount(10f, "mg"), amountForMedication(valium, entries))
@@ -21,7 +21,7 @@ class DoseMetricsTest {
     @Test
     fun oneEntryWithNineDropsIsOneTakeAndNineDrops() {
         val noctamid = medication(id = "noctamid", dose = "1 mg", type = "Gota")
-        val entries = listOf(entry(medicationId = "noctamid", quantity = 9))
+        val entries = listOf(entry(medicationId = "noctamid", quantity = 9.0))
 
         assertEquals(1, countTakeEvents(entries))
         assertEquals(MedicationAmount(9f, "gotas"), amountForMedication(noctamid, entries))
@@ -30,7 +30,7 @@ class DoseMetricsTest {
     @Test
     fun customMedicationQuantityRemainsUnitsSeparateFromTakeCount() {
         val custom = medication(id = "custom", dose = "", type = "Otra")
-        val entries = listOf(entry(medicationId = "custom", quantity = 2))
+        val entries = listOf(entry(medicationId = "custom", quantity = 2.0))
 
         assertEquals(1, countTakeEvents(entries))
         assertEquals(MedicationAmount(2f, "units"), amountForMedication(custom, entries))
@@ -39,8 +39,8 @@ class DoseMetricsTest {
     @Test
     fun twoSeparateEntriesAreTwoTakesEvenWhenBothHaveQuantityTwo() {
         val entries = listOf(
-            entry(medicationId = "valium", quantity = 2),
-            entry(medicationId = "valium", quantity = 2)
+            entry(medicationId = "valium", quantity = 2.0),
+            entry(medicationId = "valium", quantity = 2.0)
         )
 
         assertEquals(2, countTakeEvents(entries))
@@ -51,8 +51,8 @@ class DoseMetricsTest {
         val fiveMg = medication(id = "valium-5", dose = "5 mg", type = "Pastilla")
         val tenMg = medication(id = "valium-10", dose = "10 mg", type = "Pastilla")
         val entries = listOf(
-            entry(medicationId = "valium-5", quantity = 2),
-            entry(medicationId = "valium-10", quantity = 1)
+            entry(medicationId = "valium-5", quantity = 2.0),
+            entry(medicationId = "valium-10", quantity = 1.0)
         )
 
         assertEquals(2, countTakeEvents(entries))
@@ -64,7 +64,7 @@ class DoseMetricsTest {
     @Test
     fun dailyChartMetricsSeparateTakeCountFromConsumedAmount() {
         val valium = medication(id = "valium", dose = "5 mg", type = "Pastilla")
-        val entries = listOf(entry(medicationId = "valium", quantity = 2))
+        val entries = listOf(entry(medicationId = "valium", quantity = 2.0))
 
         val metrics = dailyDoseMetrics(entries, mapOf("valium" to valium), "mg")
 
@@ -74,7 +74,7 @@ class DoseMetricsTest {
 
     @Test
     fun averageUsesEntriesRatherThanRecordedUnits() {
-        val entries = listOf(entry(medicationId = "valium", quantity = 2))
+        val entries = listOf(entry(medicationId = "valium", quantity = 2.0))
 
         assertEquals(0.5f, averageTakeEvents(entries, 2), 0.001f)
     }
@@ -82,6 +82,15 @@ class DoseMetricsTest {
     @Test
     fun averageWithNoDaysIsZero() {
         assertEquals(0f, averageTakeEvents(emptyList(), 0), 0.001f)
+    }
+
+    @Test
+    fun fractionalQuantityPreservesEventCountAndStrength() {
+        val medication = medication("tablet", "20 mg", "Pastilla")
+        val entries = listOf(entry("tablet", 0.5), entry("tablet", 0.25))
+        assertEquals(2, countTakeEvents(entries))
+        assertEquals(15f, amountForMedication(medication, entries).value, 0.001f)
+        assertEquals(15f, dailyDoseMetrics(entries, mapOf("tablet" to medication), "mg").amount, 0.001f)
     }
 
     private fun medication(id: String, dose: String, type: String) = Medication(
@@ -93,7 +102,7 @@ class DoseMetricsTest {
         emoji = "💊"
     )
 
-    private fun entry(medicationId: String, quantity: Int) = HistoryEntry(
+    private fun entry(medicationId: String, quantity: Double) = HistoryEntry(
         id = UUID.randomUUID().toString(),
         medicationId = medicationId,
         medicationName = medicationId,

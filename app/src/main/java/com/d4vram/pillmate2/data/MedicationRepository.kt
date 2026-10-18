@@ -163,7 +163,7 @@ class MedicationRepository(
      */
     fun takeMedication(
         medicationId: String,
-        quantity: Int = 1,
+        quantity: Double = 1.0,
         customTimestamp: LocalDateTime? = null
     ) {
         scope.launch {
@@ -173,13 +173,14 @@ class MedicationRepository(
 
     suspend fun recordMedicationTaken(
         medicationId: String,
-        quantity: Int = 1,
+        quantity: Double = 1.0,
         customTimestamp: LocalDateTime? = null
     ): String? {
         return database.withTransaction {
             val medication = medicationDao.getMedicationById(medicationId) ?: return@withTransaction null
             val entryId = UUID.randomUUID().toString()
-            val safeQuantity = quantity.coerceAtLeast(1)
+            require(quantity.isFinite() && quantity > 0.0) { "Quantity must be finite and positive" }
+            val safeQuantity = quantity
             val now = (customTimestamp ?: LocalDateTime.now()).withSecond(0).withNano(0)
             val updated = medication.copy(
                 takenToday = medication.takenToday + safeQuantity,
@@ -221,7 +222,7 @@ class MedicationRepository(
                 .maxOrNull()
             medicationDao.upsertMedication(medication.copy(
                 // This legacy field stores cumulative quantity (CSV: totalTaken).
-                takenToday = (medication.takenToday - entry.quantity).coerceAtLeast(0),
+                takenToday = (medication.takenToday - entry.quantity).coerceAtLeast(0.0),
                 lastTaken = latest?.let(::formatDateTime)
             ))
         }
@@ -643,11 +644,11 @@ class MedicationRepository(
         val dayInMillis = 24 * 60 * 60 * 1000L
 
         return listOf(
-            Medication(id = "1", name = "Omeprazol", dose = "20mg", type = "Cápsula", color = Color(0xFF8B5CF6), emoji = "💊", takenToday = 2, dailyGoal = 1, lastTaken = "08:15", sortOrder = 0, scheduleTime = "08:00", scheduleDays = listOf("L", "M", "X", "J", "V"), createdAt = now - (30 * dayInMillis)),
-            Medication(id = "2", name = "Aspirina", dose = "100mg", type = "Pastilla", color = Color(0xFFF59E0B), emoji = "💊", takenToday = 0, dailyGoal = 2, lastTaken = "Ayer 19:30", sortOrder = 1, scheduleTime = "19:00", scheduleDays = listOf("L", "M", "X", "J", "V"), createdAt = now - (25 * dayInMillis)),
-            Medication(id = "3", name = "Vitamina D", dose = "1000 IU", type = "Gota", color = Color(0xFF10B981), emoji = "💧", takenToday = 1, dailyGoal = 1, lastTaken = "12:45", sortOrder = 2, scheduleTime = "12:30", scheduleDays = listOf("L", "M", "X", "J", "V", "S"), createdAt = now - (20 * dayInMillis)),
-            Medication(id = "4", name = "Melatonina", dose = "3mg", type = "Pastilla", color = Color(0xFF6366F1), emoji = "🌙", takenToday = 0, dailyGoal = 1, lastTaken = "Ayer 21:00", sortOrder = 3, scheduleTime = "22:00", scheduleDays = listOf("L", "M", "X", "J", "V", "S", "D"), createdAt = now - (15 * dayInMillis)),
-            Medication(id = "5", name = "Ibuprofeno", dose = "400mg", type = "Pastilla", color = Color(0xFFEF4444), emoji = "💊", takenToday = 0, dailyGoal = 1, lastTaken = "Hace 3 días", sortOrder = 4, scheduleTime = null, scheduleDays = emptyList(), createdAt = now - (10 * dayInMillis))
+            Medication(id = "1", name = "Omeprazol", dose = "20mg", type = "Cápsula", color = Color(0xFF8B5CF6), emoji = "💊", takenToday = 2.0, dailyGoal = 1, lastTaken = "08:15", sortOrder = 0, scheduleTime = "08:00", scheduleDays = listOf("L", "M", "X", "J", "V"), createdAt = now - (30 * dayInMillis)),
+            Medication(id = "2", name = "Aspirina", dose = "100mg", type = "Pastilla", color = Color(0xFFF59E0B), emoji = "💊", takenToday = 0.0, dailyGoal = 2, lastTaken = "Ayer 19:30", sortOrder = 1, scheduleTime = "19:00", scheduleDays = listOf("L", "M", "X", "J", "V"), createdAt = now - (25 * dayInMillis)),
+            Medication(id = "3", name = "Vitamina D", dose = "1000 IU", type = "Gota", color = Color(0xFF10B981), emoji = "💧", takenToday = 1.0, dailyGoal = 1, lastTaken = "12:45", sortOrder = 2, scheduleTime = "12:30", scheduleDays = listOf("L", "M", "X", "J", "V", "S"), createdAt = now - (20 * dayInMillis)),
+            Medication(id = "4", name = "Melatonina", dose = "3mg", type = "Pastilla", color = Color(0xFF6366F1), emoji = "🌙", takenToday = 0.0, dailyGoal = 1, lastTaken = "Ayer 21:00", sortOrder = 3, scheduleTime = "22:00", scheduleDays = listOf("L", "M", "X", "J", "V", "S", "D"), createdAt = now - (15 * dayInMillis)),
+            Medication(id = "5", name = "Ibuprofeno", dose = "400mg", type = "Pastilla", color = Color(0xFFEF4444), emoji = "💊", takenToday = 0.0, dailyGoal = 1, lastTaken = "Hace 3 días", sortOrder = 4, scheduleTime = null, scheduleDays = emptyList(), createdAt = now - (10 * dayInMillis))
         )
     }
 

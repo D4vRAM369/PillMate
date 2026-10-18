@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.ui.export
 
+import com.d4vram.pillmate2.utils.formatQuantity
 import androidx.annotation.StringRes
 import com.d4vram.pillmate2.R
 import android.content.Context
@@ -589,9 +590,9 @@ class PdfGenerator(private val context: Context) {
 
             val med = data.medications.find { it.id == entry.medicationId }
             val doseText = if (med != null) {
-                "${entry.quantity}x ${med.dose}"
+                "${formatQuantity(entry.quantity)}x ${med.dose}"
             } else {
-                "${entry.quantity}x"
+                "${formatQuantity(entry.quantity)}x"
             }
 
             val bodyLeft = bodyPaint()
@@ -710,7 +711,7 @@ class PdfGenerator(private val context: Context) {
 
             val displayName = truncateText("$medName ($dose)", maxNameWidth, body)
             canvas.drawText(displayName, leftMargin, yPosition + style.bodySize, body)
-            canvas.drawText(doses(count), rightMargin, yPosition + style.bodySize, valueRight)
+            canvas.drawText(context.resources.getQuantityString(R.plurals.clock_units, if (count == 1.0) 1 else 2, formatQuantity(count)), rightMargin, yPosition + style.bodySize, valueRight)
 
             yPosition += style.bodySize + style.lineSpacing
         }

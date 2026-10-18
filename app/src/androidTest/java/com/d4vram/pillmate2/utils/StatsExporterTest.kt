@@ -54,6 +54,6 @@ class StatsExporterTest {
     private fun entry(medication: Medication, quantity: Int) = HistoryEntry(
         id = medication.id, medicationId = medication.id, medicationName = medication.name,
         time = "10:00", date = "2026-10-13", color = Color.Green, emoji = "💊",
-        quantity = quantity, timestamp = LocalDateTime.of(2026, 10, 13, 10, 0)
+        quantity = quantity.toDouble(), timestamp = LocalDateTime.of(2026, 10, 13, 10, 0)
     )
 }

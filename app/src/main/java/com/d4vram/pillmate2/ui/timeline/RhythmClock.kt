@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.ui.timeline
 
+import com.d4vram.pillmate2.utils.formatQuantity
 import com.d4vram.pillmate2.R
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -158,7 +159,7 @@ fun RhythmClock(
     val summary = remember(entries, resources) {
         entries.sortedBy { it.timestamp }.take(12).joinToString("; ") {
             "${it.timestamp.format(timeFormat)} ${it.medicationName}, " +
-                resources.getQuantityString(R.plurals.clock_units, it.quantity, it.quantity)
+                resources.getQuantityString(R.plurals.clock_units, if (it.quantity == 1.0) 1 else 2, formatQuantity(it.quantity))
         }
     }
     val nowSuffix = if (showNow && !byHour) " " + stringResource(R.string.clock_now_suffix, now.format(timeFormat)) else ""
@@ -275,7 +276,7 @@ fun RhythmClock(
                     }
                 }
                 else -> dots[index].entry.let {
-                    ClockChip(stringResource(R.string.clock_chip, it.timestamp.format(timeFormat), it.clockLabel(), pluralStringResource(R.plurals.clock_units, it.quantity, it.quantity)), it.color)
+                    ClockChip(stringResource(R.string.clock_chip, it.timestamp.format(timeFormat), it.clockLabel(), pluralStringResource(R.plurals.clock_units, if (it.quantity == 1.0) 1 else 2, formatQuantity(it.quantity))), it.color)
                 }
             }
         }

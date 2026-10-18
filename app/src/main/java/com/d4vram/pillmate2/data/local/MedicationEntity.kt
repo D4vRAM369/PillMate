@@ -12,7 +12,7 @@ data class MedicationEntity(
     val type: String,
     val colorArgb: Int,
     val emoji: String,
-    val takenToday: Int,
+    val takenToday: Double,
     val dailyGoal: Int,
     val lastTaken: String?,
     val sortOrder: Int,

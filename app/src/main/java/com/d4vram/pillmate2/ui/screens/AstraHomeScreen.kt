@@ -75,7 +75,7 @@ internal fun AstraHomeScreen(
         catch (cancelled: CancellationException) { throw cancelled }
         catch (failure: Exception) { Log.w("AstraHome", "Widget refresh failed", failure) }
     }
-    fun record(id: String, quantity: Int, timestamp: LocalDateTime?) {
+    fun record(id: String, quantity: Double, timestamp: LocalDateTime?) {
         if (busy) return
         busy = true
         error = null
@@ -128,7 +128,7 @@ internal fun AstraHomeScreen(
                 Column(Modifier.padding(horizontal = 24.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     error?.let { Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall) }
                     Text(stringResource(R.string.home_quick_access), style = MaterialTheme.typography.titleMedium)
-                    QuickTapPulseBar(slots, busy, { record(it.id, 1, null) }, { error = null; adjusting = it }, { configuring = it },
+                    QuickTapPulseBar(slots, busy, { record(it.id, 1.0, null) }, { error = null; adjusting = it }, { configuring = it },
                         lastTakes = history.groupBy { it.medicationId }.mapValues { (_, entries) -> entries.maxOf { it.timestamp } })
                 }
             }

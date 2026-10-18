@@ -5,13 +5,15 @@ import androidx.compose.ui.graphics.toArgb
 import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.model.Medication
 import java.io.File
+import java.math.BigDecimal
 import java.time.LocalDateTime
 
 enum class CsvImportError {
     INVALID_FORMAT,
     MEDICATIONS_SECTION_MISSING,
     MEDICATION_ROW_INCOMPLETE,
-    HISTORY_SECTION_MISSING
+    HISTORY_SECTION_MISSING,
+    INVALID_QUANTITY
 }
 
 class CsvImportException(val reason: CsvImportError) : IllegalArgumentException()
@@ -34,7 +36,7 @@ object CsvUtils {
         val builder = StringBuilder()
         builder.appendLine(HEADER)
         builder.appendLine(SECTION_MEDICATIONS)
-        builder.appendLine("id,name,dose,type,colorArgb,emoji,totalTaken,dailyGoal,lastTaken,sortOrder,scheduleTime,scheduleDays,photoPath,usePhotoInstead")
+        builder.appendLine("id,name,dose,type,colorArgb,emoji,totalTaken,dailyGoal,lastTaken,sortOrder,scheduleTime,scheduleDays,photoPath,usePhotoInstead,reminderEnabled,createdAt,parentMedicationId")
         medications.forEach { medication ->
             builder.appendLine(
                 listOf(
@@ -44,14 +46,17 @@ object CsvUtils {
                     medication.type,
                     medication.color.toArgb().toString(),
                     medication.emoji,
-                    medication.takenToday.toString(),
+                    quantityText(medication.takenToday),
                     medication.dailyGoal.toString(),
                     medication.lastTaken ?: "",
                     medication.sortOrder.toString(),
                     medication.scheduleTime ?: "",
                     medication.scheduleDays.joinToString("|"),
                     medication.photoPath?.let { File(it).name } ?: "", // 📸 Solo el nombre del archivo
-                    medication.usePhotoInstead.toString() // 🖼️ Preferencia de visualización
+                    medication.usePhotoInstead.toString(), // 🖼️ Preferencia de visualización
+                    medication.reminderEnabled.toString(),
+                    medication.createdAt.toString(),
+                    medication.parentMedicationId.orEmpty()
                 ).joinToCsv()
             )
         }
@@ -70,7 +75,7 @@ object CsvUtils {
                     entry.date,
                     entry.color.toArgb().toString(),
                     entry.emoji,
-                    entry.quantity.toString(),
+                    quantityText(entry.quantity),
                     entry.notes.replace("\n", "\\n"),
                     entry.timestamp.toString(),
                     entry.audioNoteUri?.let { File(it).name } ?: "" // 🎤 Solo el nombre del archivo
@@ -116,14 +121,17 @@ object CsvUtils {
                     type = tokens[3],
                     color = Color(tokens[4].toInt()),
                     emoji = tokens[5],
-                    takenToday = tokens[6].toIntOrNull() ?: 0,
+                    takenToday = parseQuantity(tokens[6], allowZero = true),
                     dailyGoal = tokens[7].toIntOrNull() ?: 1,
                     lastTaken = tokens[8].ifBlank { null },
                     sortOrder = tokens[9 + legacyOffset].toIntOrNull() ?: 0,
                     scheduleTime = if (hasSchedule) tokens[10 + legacyOffset].ifBlank { null } else null,
                     scheduleDays = if (hasSchedule) tokens[11 + legacyOffset].split('|').mapNotNull { it.trim().takeIf { value -> value.isNotEmpty() } } else emptyList(),
                     photoPath = if (hasPhotoFields) tokens[12 + legacyOffset].ifBlank { null } else null, // 📸 Será reconstruida al restaurar
-                    usePhotoInstead = if (hasPhotoFields) tokens[13 + legacyOffset].toBooleanStrictOrNull() ?: false else false // 🖼️ Preferencia
+                    usePhotoInstead = if (hasPhotoFields) tokens[13 + legacyOffset].toBooleanStrictOrNull() ?: false else false, // 🖼️ Preferencia
+                    reminderEnabled = tokens.getOrNull(14 + legacyOffset)?.toBooleanStrictOrNull() ?: false,
+                    createdAt = tokens.getOrNull(15 + legacyOffset)?.toLongOrNull() ?: 0L,
+                    parentMedicationId = tokens.getOrNull(16 + legacyOffset)?.ifBlank { null }
                 )
             )
             index++
@@ -156,7 +164,8 @@ object CsvUtils {
             val date = tokens.getOrNull(5 + offset) ?: ""
             val colorArgb = tokens.getOrNull(6 + offset)?.toIntOrNull() ?: 0
             val emoji = tokens.getOrNull(7 + offset) ?: ""
-            val quantity = tokens.getOrNull(8 + offset)?.toIntOrNull() ?: 1
+            val quantityToken = tokens.getOrNull(8 + offset)
+            val quantity = if (quantityToken.isNullOrBlank()) 1.0 else parseQuantity(quantityToken)
             val notes = tokens.getOrNull(9 + offset)?.replace("\\n", "\n") ?: ""
             val timestampStr = tokens.getOrNull(10 + offset)
             val timestamp = timestampStr?.let { runCatching { LocalDateTime.parse(it) }.getOrNull() } ?: LocalDateTime.now()
@@ -188,6 +197,14 @@ object CsvUtils {
         val medications: List<Medication>,
         val history: List<HistoryEntry>
     )
+
+    private fun quantityText(value: Double): String =
+        BigDecimal.valueOf(value).stripTrailingZeros().toPlainString()
+
+    private fun parseQuantity(raw: String, allowZero: Boolean = false): Double =
+        raw.replace(',', '.').toDoubleOrNull()
+            ?.takeIf { it.isFinite() && (it > 0.0 || allowZero && it == 0.0) }
+            ?: throw CsvImportException(CsvImportError.INVALID_QUANTITY)
 
     private fun List<String>.joinToCsv(): String = buildString {
         this@joinToCsv.forEachIndexed { i, value ->

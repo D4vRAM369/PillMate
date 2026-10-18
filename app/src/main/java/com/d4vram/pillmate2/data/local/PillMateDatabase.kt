@@ -10,7 +10,7 @@ import java.util.Locale
 
 @Database(
     entities = [MedicationEntity::class, HistoryEntryEntity::class, VoiceNoteEntity::class],
-    version = 15,
+    version = 16,
     exportSchema = true
 )
 abstract class PillMateDatabase : RoomDatabase() {
@@ -41,7 +41,8 @@ abstract class PillMateDatabase : RoomDatabase() {
                     MIGRATION_11_12,
                     MIGRATION_12_13,
                     MIGRATION_13_14,
-                    MIGRATION_14_15
+                    MIGRATION_14_15,
+                    MIGRATION_15_16
                 ).build().also { INSTANCE = it }
             }
         }
@@ -176,6 +177,20 @@ abstract class PillMateDatabase : RoomDatabase() {
                         "createdAt, photoPath, usePhotoInstead, parentMedicationId" +
                         " FROM medications"
                 )
+                database.execSQL("DROP TABLE medications")
+                database.execSQL("ALTER TABLE medications_new RENAME TO medications")
+            }
+        }
+
+        val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // Rebuild tables so Room and SQLite agree on fractional quantity affinity.
+                database.execSQL("CREATE TABLE history_new (id TEXT NOT NULL PRIMARY KEY, medicationId TEXT NOT NULL, medicationName TEXT NOT NULL, time TEXT NOT NULL, date TEXT NOT NULL, colorArgb INTEGER NOT NULL, emoji TEXT NOT NULL, quantity REAL NOT NULL, notes TEXT NOT NULL, timestampIso TEXT NOT NULL, dose TEXT, audioNoteUri TEXT)")
+                database.execSQL("INSERT INTO history_new SELECT id, medicationId, medicationName, time, date, colorArgb, emoji, CAST(quantity AS REAL), notes, timestampIso, dose, audioNoteUri FROM history")
+                database.execSQL("DROP TABLE history")
+                database.execSQL("ALTER TABLE history_new RENAME TO history")
+                database.execSQL("CREATE TABLE medications_new (id TEXT NOT NULL PRIMARY KEY, name TEXT NOT NULL, dose TEXT NOT NULL, type TEXT NOT NULL, colorArgb INTEGER NOT NULL, emoji TEXT NOT NULL, takenToday REAL NOT NULL, dailyGoal INTEGER NOT NULL, lastTaken TEXT, sortOrder INTEGER NOT NULL, scheduleTime TEXT, scheduleDays TEXT NOT NULL DEFAULT '', reminderEnabled INTEGER NOT NULL DEFAULT 0, createdAt INTEGER NOT NULL DEFAULT 0, photoPath TEXT DEFAULT NULL, usePhotoInstead INTEGER NOT NULL DEFAULT 0, parentMedicationId TEXT DEFAULT NULL)")
+                database.execSQL("INSERT INTO medications_new SELECT id, name, dose, type, colorArgb, emoji, CAST(takenToday AS REAL), dailyGoal, lastTaken, sortOrder, scheduleTime, scheduleDays, reminderEnabled, createdAt, photoPath, usePhotoInstead, parentMedicationId FROM medications")
                 database.execSQL("DROP TABLE medications")
                 database.execSQL("ALTER TABLE medications_new RENAME TO medications")
             }

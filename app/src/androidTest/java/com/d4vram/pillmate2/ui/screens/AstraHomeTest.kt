@@ -33,13 +33,34 @@ class AstraHomeTest {
         compose.runOnIdle { assertEquals(0, saved) }
     }
 
-    @Test fun quantityStepperSavesSelectedInteger() {
-        var saved = 0
+    @Test fun quantityStepperSavesHalfTablet() {
+        var saved = 0.0
         compose.setContent { MaterialTheme { AstraDoseSheet(medication, busy = false, onDismiss = {}, onConfirm = { quantity, _ -> saved = quantity }) } }
+        compose.onNodeWithContentDescription(context.getString(R.string.dose_sheet_decrease)).assertIsEnabled()
+        repeat(2) { compose.onNodeWithContentDescription(context.getString(R.string.dose_sheet_decrease)).performClick() }
+        compose.onNodeWithText(context.resources.getQuantityString(R.plurals.dose_log_units, 2, com.d4vram.pillmate2.utils.formatQuantity(0.5))).performClick()
+        compose.runOnIdle { assertEquals(0.5, saved, 0.0) }
+    }
+
+    @Test fun quantityStepperSavesQuarterTabletAndStopsAtQuarter() {
+        var saved = 0.0
+        compose.setContent { MaterialTheme { AstraDoseSheet(medication, busy = false, onDismiss = {}, onConfirm = { quantity, _ -> saved = quantity }) } }
+        repeat(3) { compose.onNodeWithContentDescription(context.getString(R.string.dose_sheet_decrease)).performClick() }
         compose.onNodeWithContentDescription(context.getString(R.string.dose_sheet_decrease)).assertIsNotEnabled()
-        compose.onNodeWithContentDescription(context.getString(R.string.dose_sheet_increase)).performClick()
-        compose.onNodeWithText(context.resources.getQuantityString(R.plurals.dose_log_units, 2, 2)).performClick()
-        compose.runOnIdle { assertEquals(2, saved) }
+        compose.onNodeWithText(context.resources.getQuantityString(R.plurals.dose_log_units, 2, com.d4vram.pillmate2.utils.formatQuantity(0.25))).performClick()
+        compose.runOnIdle { assertEquals(0.25, saved, 0.0) }
+    }
+
+    @Test fun classicDialogSavesQuarterTablet() {
+        var saved = 0.0
+        compose.setContent {
+            CompositionLocalProvider(LocalAppDesign provides AppDesign.Legacy) {
+                MaterialTheme { TakeMedicationDialog(medication, listOf(medication), {}, { _, quantity, _ -> saved = quantity }) }
+            }
+        }
+        repeat(3) { compose.onNodeWithText("-").performClick() }
+        compose.onNodeWithText(context.getString(R.string.action_log)).performClick()
+        compose.runOnIdle { assertEquals(0.25, saved, 0.0) }
     }
 
     @Test fun catalogueDialogCannotConfirmWhileAnotherTakeIsSaving() {

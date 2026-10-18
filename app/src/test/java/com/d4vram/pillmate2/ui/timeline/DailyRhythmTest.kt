@@ -10,7 +10,7 @@ class DailyRhythmTest {
     private val date = LocalDate.of(2026, 9, 23)
 
     private fun entry(id: String, offset: Long, hour: Int, minute: Int = 0, medication: String = "med") = HistoryEntry(
-        id, medication, medication.uppercase(), "", "", Color.Green, "", 2,
+        id, medication, medication.uppercase(), "", "", Color.Green, "", 2.0,
         timestamp = date.plusDays(offset).atTime(hour, minute), dose = "5mg"
     )
 

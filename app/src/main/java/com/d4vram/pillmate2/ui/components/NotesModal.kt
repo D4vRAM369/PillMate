@@ -1,5 +1,6 @@
 package com.d4vram.pillmate2.ui.components
 
+import com.d4vram.pillmate2.utils.formatQuantity
 import com.d4vram.pillmate2.R
 import androidx.compose.ui.res.stringResource
 import android.Manifest
@@ -349,9 +350,9 @@ fun NotesModal(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            if (historyEntry.quantity > 1) {
+                            if (historyEntry.quantity != 1.0) {
                                 Text(
-                                    text = stringResource(R.string.entry_quantity_logged, historyEntry.quantity),
+                                    text = stringResource(R.string.entry_quantity_logged, formatQuantity(historyEntry.quantity)),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
