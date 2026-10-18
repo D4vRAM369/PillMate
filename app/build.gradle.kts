@@ -25,8 +25,8 @@ android {
         manifestPlaceholders["appLabel"] = "@string/app_name"
         minSdk = 26
         targetSdk = 36
-        versionCode = 14
-        versionName = "2.0.0-beta.3"
+        versionCode = 15
+        versionName = "2.0.0-beta.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
