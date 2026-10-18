@@ -42,7 +42,7 @@ Se apoya en tres ideas, y ninguna es negociable:
 2. **Registrar cuesta un toque.** Si apuntar es más lento que no apuntar, nadie apunta.
 3. **Describe, no juzga.** Cuenta lo que hay. No puntúa, no fija objetivos, no aconseja.
 
-> **Estado:** `2.0.0-beta.2`. Funciona y se usa a diario, pero solo se ha probado en unos pocos dispositivos: si algo falla, abre un *issue*. El APK está en [Releases](https://github.com/D4vRAM369/PillMate/releases/latest); aún no está en Google Play.
+> **Estado:** `2.0.0-beta.3`. Funciona y se usa a diario, pero solo se ha probado en unos pocos dispositivos: si algo falla, abre un *issue*. El APK está en [Releases](https://github.com/D4vRAM369/PillMate/releases/latest); no está en Google Play.
 
 ## Qué hace
 
@@ -51,7 +51,9 @@ Se apoya en tres ideas, y ninguna es negociable:
 - **Un toque.** Cuatro accesos rápidos en la pantalla principal. Pulsación larga para ajustar cantidad u hora. Si te equivocas, *Deshacer*.
 - **Sin abrir la app.** Un widget de escritorio y una notificación persistente con tus medicamentos habituales.
 - **Widget a tu gusto.** Se redimensiona (2×2, una fila o una columna) y se adapta solo. Tres formas, tres densidades y ocho colores.
+- **Medias y cuartas unidades.** La cantidad avanza de 0,25 en 0,25.
 - **Notas.** De texto en cada toma, y de voz cifradas.
+- **Archivar.** Los medicamentos que casi no usas salen de Inicio, el widget y los recordatorios sin borrar su historial. Se recuperan desde el icono de archivados en *Meds*.
 
 ### Entender
 

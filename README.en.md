@@ -42,7 +42,7 @@ Three principles guide the app:
 2. **Logging takes one tap.** If logging is slower than skipping it, people will skip it.
 3. **It describes, it does not judge.** It shows what you logged. It does not score adherence, set goals, or give advice.
 
-> **Status:** `2.0.0-beta.2` is the latest public release. It works and is used daily, but has only been tested on a small number of devices. If something breaks, please open an issue. Download the APK from [Releases](https://github.com/D4vRAM369/PillMate/releases/latest); PillMate is not on Google Play yet.
+> **Status:** `2.0.0-beta.3` is the latest public release. It works and is used daily, but has only been tested on a small number of devices. If something breaks, please open an issue. Download the APK from [Releases](https://github.com/D4vRAM369/PillMate/releases/latest); PillMate is not on Google Play.
 
 ## Features
 
@@ -51,7 +51,9 @@ Three principles guide the app:
 - **One tap.** Four quick actions on the home screen. Long-press to change the amount or time. If you make a mistake, undo it.
 - **Without opening the app.** Use a home-screen widget or a persistent notification to log a dose.
 - **A widget that fits your setup.** Resize it to 2×2, a row, or a column. Choose from three shapes, three densities, and eight colors.
+- **Half and quarter doses.** Amounts step by 0.25.
 - **Notes.** Add a text note to a dose or record an encrypted voice note.
+- **Archive.** Medications you rarely use leave Home, the widget and reminders without losing their history. Bring them back from the archive icon in *Meds*.
 
 ### See your pattern
 
