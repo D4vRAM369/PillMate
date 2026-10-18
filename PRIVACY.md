@@ -1,6 +1,6 @@
 # Política de privacidad de PillMate
 
-_Última actualización: 14 de octubre de 2026_ · [English below](#privacy-policy-for-pillmate)
+_Última actualización: 18 de octubre de 2026_ · [English below](#privacy-policy-for-pillmate)
 
 PillMate es una app de código abierto para registrar la medicación que tomas. Esta política explica qué hace con tus datos.
 
@@ -37,7 +37,7 @@ Si desinstalas la app, Android borra estos datos.
 Solo en estos casos, y siempre por decisión tuya:
 
 - **Copias y exportaciones.** Si exportas una copia de seguridad (ZIP), un CSV, un PDF o una nota de voz, tú eliges dónde guardarla o con qué app compartirla. A partir de ahí la trata esa app o servicio, no PillMate.
-- **Copia de seguridad de Android.** Si tienes activada la copia de seguridad de Google en tu móvil, Android puede incluir los datos de PillMate en ella, en tu propia cuenta de Google. Lo gestiona el sistema, no la app, y el desarrollador no tiene acceso. Puedes desactivarla en los ajustes de Android.
+- **Copia de seguridad de Android.** Si tienes activada la copia de seguridad de Google en tu móvil, Android puede incluir algunos ajustes de PillMate (apariencia, idioma) y las fotos de los medicamentos, en tu propia cuenta de Google. PillMate excluye de esa copia en la nube tu medicación, tus tomas, tus notas de voz y la clave que las cifra. Al pasar los datos directamente de un móvil a otro (cable o Wi-Fi), Android sí lo copia todo. Lo gestiona el sistema, no la app, y el desarrollador no tiene acceso. Puedes desactivarla en los ajustes de Android.
 
 Google Play, como tienda, puede recoger datos sobre la instalación según su propia política de privacidad. PillMate no añade nada a eso.
 
@@ -59,7 +59,7 @@ Dudas o peticiones: abre una incidencia en [github.com/D4vRAM369/PillMate/issues
 
 # Privacy policy for PillMate
 
-_Last updated: October 14, 2026_
+_Last updated: October 18, 2026_
 
 PillMate is an open-source app for logging the medication you take. This policy explains what it does with your data.
 
@@ -96,7 +96,7 @@ If you uninstall the app, Android deletes this data.
 Only in these cases, and always by your choice:
 
 - **Backups and exports.** If you export a backup (ZIP), a CSV, a PDF or a voice note, you choose where to save it or which app to share it with. From then on, that app or service handles it, not PillMate.
-- **Android backup.** If Google backup is turned on for your phone, Android may include PillMate's data in it, in your own Google account. The system handles this, not the app, and the developer has no access. You can turn it off in Android settings.
+- **Android backup.** If Google backup is turned on for your phone, Android may include some PillMate settings (appearance, language) and medication photos in it, in your own Google account. PillMate keeps your medications, doses, voice notes and the key that encrypts them out of that cloud backup. A direct phone-to-phone transfer (cable or Wi-Fi) does copy everything. The system handles this, not the app, and the developer has no access. You can turn it off in Android settings.
 
 Google Play, as the store, may collect installation data under its own privacy policy. PillMate adds nothing to that.
 
