@@ -111,6 +111,9 @@ android {
         }
     }
 
+    // MigrationTestHelper lee los esquemas exportados como assets del APK de test
+    sourceSets.getByName("androidTest").assets.srcDir("$projectDir/schemas")
+
     testOptions {
         unitTests {
             isReturnDefaultValues = true
@@ -178,7 +181,7 @@ dependencies {
 
     // Utilidades
     implementation("com.github.skydoves:colorpicker-compose:1.0.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1") // room-testing 2.8 la necesita
     implementation("net.lingala.zip4j:zip4j:2.11.5")
     implementation("com.google.accompanist:accompanist-permissions:0.36.0")
 
@@ -194,6 +197,7 @@ dependencies {
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation(libs.androidx.room.testing)
     androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
     androidTestImplementation(platform("androidx.compose:compose-bom:2024.12.01"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
