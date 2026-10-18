@@ -132,7 +132,6 @@ fun SettingsScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var snackbarMessage by remember { mutableStateOf<String?>(null) }
     var showUiDialog by remember { mutableStateOf(false) }
-    var showMergeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
     var showAboutDialog by remember { mutableStateOf(false) }
     var showChipPeriodDialog by remember { mutableStateOf(false) }
@@ -934,13 +933,6 @@ fun SettingsScreen(
                         }
                     )
 
-                    SettingsItem(
-                        title = stringResource(R.string.merge_title),
-                        description = stringResource(R.string.merge_settings_description),
-                        icon = Icons.Default.MergeType,
-                        onClick = { showMergeDialog = true }
-                    )
-
                     // 📁 Ver carpeta de backups
                     SettingsItem(
                         title = stringResource(R.string.settings_view_backups),
@@ -1005,9 +997,6 @@ fun SettingsScreen(
         }
     }
 
-    if (showMergeDialog) {
-        com.d4vram.pillmate2.ui.components.MedicationMergeDialog(repository) { showMergeDialog = false }
-    }
 
     if (showLanguageDialog) {
         AppLanguageDialog(
