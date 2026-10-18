@@ -79,7 +79,7 @@ class CsvUtilsTest {
         assertEquals("med-1", med.id)
         assertEquals("Omeprazol", med.name)
         assertEquals(2.0, med.takenToday, 0.0)
-        assertEquals("08:15", med.lastTaken)
+        assertNull(med.lastTaken) // texto de pantalla sin fecha: no se puede convertir
         assertEquals(false, med.reminderEnabled)
         assertEquals(0L, med.createdAt)
         assertNull(med.parentMedicationId)
@@ -114,7 +114,7 @@ class CsvUtilsTest {
             color = androidx.compose.ui.graphics.Color.Green, emoji = "T", takenToday = 1.75,
             reminderEnabled = true, createdAt = 1792012345000L, parentMedicationId = "family",
             scheduleTime = "08:00", scheduleDays = listOf("L", "V"), dailyGoal = 2,
-            lastTaken = "Hoy 08:00", sortOrder = 3, usePhotoInstead = true, archived = true
+            lastTaken = "2026-10-15T08:00", sortOrder = 3, usePhotoInstead = true, archived = true
         )
         val entry = com.d4vram.pillmate2.model.HistoryEntry(
             id = "original-entry", medicationId = medication.id, medicationName = medication.name,
@@ -126,6 +126,25 @@ class CsvUtilsTest {
         val parsed = CsvUtils.parseCsv(CsvUtils.buildCsv(listOf(medication), listOf(entry)))
         assertEquals(medication, parsed.medications.single())
         assertEquals(entry, parsed.history.single())
+    }
+
+    @Test
+    fun lastTakenIsExportedAsIsoAndLegacyTextIsNormalizedOnImport() {
+        assertEquals("2026-10-15T08:00", CsvUtils.normalizeLastTaken("2026-10-15T08:00"))
+        assertEquals("2026-10-15T08:00:30", CsvUtils.normalizeLastTaken(" 2026-10-15T08:00:30 "))
+        assertEquals("2026-10-03T21:45", CsvUtils.normalizeLastTaken("03/10/2026 21:45"))
+        assertNull(CsvUtils.normalizeLastTaken("Hoy 22:25"))
+        assertNull(CsvUtils.normalizeLastTaken("Ayer 07:10"))
+        assertNull(CsvUtils.normalizeLastTaken(""))
+        assertNull(CsvUtils.normalizeLastTaken(null))
+
+        val medication = com.d4vram.pillmate2.model.Medication(
+            id = "m", name = "Example", dose = "1", type = "Pastilla",
+            color = androidx.compose.ui.graphics.Color.Green, emoji = "T",
+            lastTaken = "03/10/2026 21:45"
+        )
+        val exported = CsvUtils.buildCsv(listOf(medication), emptyList()).lines()
+        assertEquals("2026-10-03T21:45", exported[3].split(',')[8])
     }
 
     @Test

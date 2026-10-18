@@ -7,6 +7,7 @@ import com.d4vram.pillmate2.model.Medication
 import java.io.File
 import java.math.BigDecimal
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 enum class CsvImportError {
     INVALID_FORMAT,
@@ -48,7 +49,7 @@ object CsvUtils {
                     medication.emoji,
                     quantityText(medication.takenToday),
                     medication.dailyGoal.toString(),
-                    medication.lastTaken ?: "",
+                    normalizeLastTaken(medication.lastTaken).orEmpty(),
                     medication.sortOrder.toString(),
                     medication.scheduleTime ?: "",
                     medication.scheduleDays.joinToString("|"),
@@ -85,6 +86,20 @@ object CsvUtils {
         }
 
         return builder.toString()
+    }
+
+    private val legacyDateTime = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+
+    /**
+     * lastTaken se guarda en ISO. Copias antiguas traen texto de pantalla: "dd/MM/yyyy HH:mm" se
+     * convierte; "Hoy/Ayer HH:mm" no dice de qué día era, así que queda null (el historial manda).
+     */
+    internal fun normalizeLastTaken(value: String?): String? {
+        val text = value?.trim().orEmpty()
+        if (text.isEmpty()) return null
+        return (runCatching { LocalDateTime.parse(text) }.getOrNull()
+            ?: runCatching { LocalDateTime.parse(text, legacyDateTime) }.getOrNull())
+            ?.toString()
     }
 
     fun parseCsv(csv: String): ParsedCsv {
@@ -124,7 +139,7 @@ object CsvUtils {
                     emoji = tokens[5],
                     takenToday = parseQuantity(tokens[6], allowZero = true),
                     dailyGoal = tokens[7].toIntOrNull() ?: 1,
-                    lastTaken = tokens[8].ifBlank { null },
+                    lastTaken = normalizeLastTaken(tokens[8]),
                     sortOrder = tokens[9 + legacyOffset].toIntOrNull() ?: 0,
                     scheduleTime = if (hasSchedule) tokens[10 + legacyOffset].ifBlank { null } else null,
                     scheduleDays = if (hasSchedule) tokens[11 + legacyOffset].split('|').mapNotNull { it.trim().takeIf { value -> value.isNotEmpty() } } else emptyList(),
