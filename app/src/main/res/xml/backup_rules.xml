@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 6-11: no distingue nube de transferencia entre móviles, así que se
-     excluye siempre lo mismo que en data_extraction_rules.xml (cloud-backup). -->
+<!-- Android 8 (API 26-27): la copia de Google aún no se cifraba con el bloqueo de
+     pantalla y requireFlags no existe, así que los datos de salud y la clave de
+     los audios quedan fuera. Android 9+ usa xml-v28/backup_rules.xml. -->
 <full-backup-content>
     <exclude domain="database" path="." />
     <exclude domain="file" path="audio_notes/" />

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 9-11: mismo criterio que data_extraction_rules.xml. Cada include exige
+     cifrado de extremo a extremo con el bloqueo de pantalla; lo que no se incluye
+     no se copia. -->
+<full-backup-content>
+    <include domain="database" path="." requireFlags="clientSideEncryption" />
+    <include domain="file" path="." requireFlags="clientSideEncryption" />
+    <include domain="sharedpref" path="." requireFlags="clientSideEncryption" />
+</full-backup-content>
