@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+. La copia en la nube (Google Drive) no lleva datos de salud:
+     ni la base de medicación ni los audios ni el secreto que cifra los audios
+     (subir audios cifrados junto a su clave anularía el cifrado).
+     La transferencia directa entre móviles (cable/Wi-Fi local) se copia entera. -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- Cloud backup rules -->
+        <exclude domain="database" path="." />
+        <exclude domain="file" path="audio_notes/" />
+        <exclude domain="file" path="voice_notes/" />
+        <exclude domain="sharedpref" path="audio_note_encryption.xml" />
     </cloud-backup>
-    <device-transfer>
-        <!-- Device transfer rules -->
-    </device-transfer>
+    <!-- Sin reglas = comportamiento por defecto: se transfiere todo. -->
+    <device-transfer />
 </data-extraction-rules>

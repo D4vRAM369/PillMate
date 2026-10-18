@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Android 6-11: no distingue nube de transferencia entre móviles, así que se
+     excluye siempre lo mismo que en data_extraction_rules.xml (cloud-backup). -->
 <full-backup-content>
-    <!-- Exclude specific files or directories from backup -->
+    <exclude domain="database" path="." />
+    <exclude domain="file" path="audio_notes/" />
+    <exclude domain="file" path="voice_notes/" />
+    <exclude domain="sharedpref" path="audio_note_encryption.xml" />
 </full-backup-content>
