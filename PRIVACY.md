@@ -37,7 +37,7 @@ Si desinstalas la app, Android borra estos datos.
 Solo en estos casos, y siempre por decisión tuya:
 
 - **Copias y exportaciones.** Si exportas una copia de seguridad (ZIP), un CSV, un PDF o una nota de voz, tú eliges dónde guardarla o con qué app compartirla. A partir de ahí la trata esa app o servicio, no PillMate.
-- **Copia de seguridad de Android.** Si tienes activada la copia de seguridad de Google en tu móvil, Android puede incluir algunos ajustes de PillMate (apariencia, idioma) y las fotos de los medicamentos, en tu propia cuenta de Google. PillMate excluye de esa copia en la nube tu medicación, tus tomas, tus notas de voz y la clave que las cifra. Al pasar los datos directamente de un móvil a otro (cable o Wi-Fi), Android sí lo copia todo. Lo gestiona el sistema, no la app, y el desarrollador no tiene acceso. Puedes desactivarla en los ajustes de Android.
+- **Copia de seguridad de Android.** Si tienes activada la copia de seguridad de Google en tu móvil, Android puede guardar los datos de PillMate en tu propia cuenta de Google, para recuperarlos al reinstalar la app o al estrenar móvil. PillMate solo lo permite cuando esa copia va **cifrada de extremo a extremo con el bloqueo de pantalla** de tu móvil (PIN, patrón o contraseña): sin él no se puede leer, tampoco Google. Si tu móvil no tiene bloqueo de pantalla, PillMate no se incluye en la copia en la nube. En Android 8, donde ese cifrado no existe, la medicación, las tomas y las notas de voz nunca se incluyen. Al pasar los datos directamente de un móvil a otro (cable o Wi-Fi), Android lo copia todo. Lo gestiona el sistema, no la app, y el desarrollador no tiene acceso. Puedes desactivarla en los ajustes de Android.
 
 Google Play, como tienda, puede recoger datos sobre la instalación según su propia política de privacidad. PillMate no añade nada a eso.
 
@@ -96,7 +96,7 @@ If you uninstall the app, Android deletes this data.
 Only in these cases, and always by your choice:
 
 - **Backups and exports.** If you export a backup (ZIP), a CSV, a PDF or a voice note, you choose where to save it or which app to share it with. From then on, that app or service handles it, not PillMate.
-- **Android backup.** If Google backup is turned on for your phone, Android may include some PillMate settings (appearance, language) and medication photos in it, in your own Google account. PillMate keeps your medications, doses, voice notes and the key that encrypts them out of that cloud backup. A direct phone-to-phone transfer (cable or Wi-Fi) does copy everything. The system handles this, not the app, and the developer has no access. You can turn it off in Android settings.
+- **Android backup.** If Google backup is turned on for your phone, Android may store PillMate's data in your own Google account, so it can be restored when you reinstall the app or set up a new phone. PillMate only allows this when that backup is **end-to-end encrypted with your phone's screen lock** (PIN, pattern or password): without it nobody can read it, Google included. If your phone has no screen lock, PillMate is left out of the cloud backup. On Android 8, where that encryption does not exist, medications, doses and voice notes are never included. A direct phone-to-phone transfer (cable or Wi-Fi) copies everything. The system handles this, not the app, and the developer has no access. You can turn it off in Android settings.
 
 Google Play, as the store, may collect installation data under its own privacy policy. PillMate adds nothing to that.
 
