@@ -83,6 +83,7 @@ class CsvUtilsTest {
         assertEquals(false, med.reminderEnabled)
         assertEquals(0L, med.createdAt)
         assertNull(med.parentMedicationId)
+        assertEquals(false, med.archived)
         assertEquals(listOf("L", "M", "X", "J", "V"), med.scheduleDays)
     }
 
@@ -113,7 +114,7 @@ class CsvUtilsTest {
             color = androidx.compose.ui.graphics.Color.Green, emoji = "T", takenToday = 1.75,
             reminderEnabled = true, createdAt = 1792012345000L, parentMedicationId = "family",
             scheduleTime = "08:00", scheduleDays = listOf("L", "V"), dailyGoal = 2,
-            lastTaken = "Hoy 08:00", sortOrder = 3, usePhotoInstead = true
+            lastTaken = "Hoy 08:00", sortOrder = 3, usePhotoInstead = true, archived = true
         )
         val entry = com.d4vram.pillmate2.model.HistoryEntry(
             id = "original-entry", medicationId = medication.id, medicationName = medication.name,

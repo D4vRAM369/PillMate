@@ -10,6 +10,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Archive
+import kotlinx.coroutines.launch
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -150,6 +152,18 @@ fun MedicationListItem(
                         onClick = { onEditMedication(medication.id); showMenu = false },
                         leadingIcon = {
                             Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary)
+                        }
+                    )
+                    val archiveContext = androidx.compose.ui.platform.LocalContext.current
+                    val archiveScope = rememberCoroutineScope()
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.action_archive)) },
+                        onClick = {
+                            showMenu = false
+                            archiveScope.launch { setMedicationArchived(archiveContext, repository, medication, archived = true) }
+                        },
+                        leadingIcon = {
+                            Icon(Icons.Outlined.Archive, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     )
                     DropdownMenuItem(

@@ -869,4 +869,14 @@
     <string name="merge_example">Each record: %1$s %2$s × 1 → %3$s %4$s × %5$s, at the same date and time.</string>
     <string name="merge_factor_mismatch">The factor changes recorded mg. Check strengths and multiplier.</string>
     <string name="merge_unresolved">Some old source records have unresolved references. Review them before merging.</string>
+    <string name="action_archive">Archive</string>
+    <string name="action_unarchive">Unarchive</string>
+    <string name="archived_title">Archived</string>
+    <string name="archived_hint">They don’t show on Home, the widget, Quick take or reminders. Their history is kept.</string>
+    <string name="archived_empty">No archived medications</string>
+    <string name="archived_last_taken">Last taken: %1$s</string>
+    <string name="archived_toast_archived">%1$s archived</string>
+    <string name="archived_toast_restored">%1$s is back in your list</string>
+    <string name="archived_option_history">Show in History</string>
+    <string name="archived_option_badge">Show count on the icon</string>
 </resources>

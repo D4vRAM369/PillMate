@@ -33,6 +33,9 @@ interface MedicationDao {
     @Query("SELECT COALESCE(MAX(sortOrder), -1) FROM medications")
     suspend fun getMaxSortOrder(): Int
 
+    @Query("UPDATE medications SET archived = :archived WHERE id = :id")
+    suspend fun setArchived(id: String, archived: Boolean)
+
     @Query("DELETE FROM medications WHERE id = :id")
     suspend fun deleteById(id: String)
 

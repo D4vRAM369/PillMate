@@ -133,6 +133,8 @@ class ThemeManager(private val context: Context) {
         private val CHIP_COUNT_PERIOD_KEY = stringPreferencesKey("chip_count_period")
         private val SORT_MODE_KEY = stringPreferencesKey("sort_mode")
         private val IS_LIST_VIEW_KEY = booleanPreferencesKey("is_list_view")
+        private val ARCHIVED_IN_HISTORY_KEY = booleanPreferencesKey("archived_in_history")
+        private val ARCHIVED_BADGE_KEY = booleanPreferencesKey("archived_badge")
         private val QUICK_TAKE_NOTIFICATION_KEY = booleanPreferencesKey("quick_take_notification_enabled")
     }
     
@@ -219,6 +221,23 @@ class ThemeManager(private val context: Context) {
         .map { preferences ->
             preferences[IS_LIST_VIEW_KEY] ?: false
         }
+
+    // 📦 Opciones de la hoja Archivados (ambas activadas por defecto)
+    val archivedInHistory: Flow<Boolean> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[ARCHIVED_IN_HISTORY_KEY] ?: true }
+
+    suspend fun setArchivedInHistory(show: Boolean) {
+        context.dataStore.edit { it[ARCHIVED_IN_HISTORY_KEY] = show }
+    }
+
+    val archivedBadge: Flow<Boolean> = context.dataStore.data
+        .catch { emit(emptyPreferences()) }
+        .map { it[ARCHIVED_BADGE_KEY] ?: true }
+
+    suspend fun setArchivedBadge(show: Boolean) {
+        context.dataStore.edit { it[ARCHIVED_BADGE_KEY] = show }
+    }
 
     suspend fun setListView(isList: Boolean) {
         context.dataStore.edit { preferences ->

@@ -36,7 +36,7 @@ object CsvUtils {
         val builder = StringBuilder()
         builder.appendLine(HEADER)
         builder.appendLine(SECTION_MEDICATIONS)
-        builder.appendLine("id,name,dose,type,colorArgb,emoji,totalTaken,dailyGoal,lastTaken,sortOrder,scheduleTime,scheduleDays,photoPath,usePhotoInstead,reminderEnabled,createdAt,parentMedicationId")
+        builder.appendLine("id,name,dose,type,colorArgb,emoji,totalTaken,dailyGoal,lastTaken,sortOrder,scheduleTime,scheduleDays,photoPath,usePhotoInstead,reminderEnabled,createdAt,parentMedicationId,archived")
         medications.forEach { medication ->
             builder.appendLine(
                 listOf(
@@ -56,7 +56,8 @@ object CsvUtils {
                     medication.usePhotoInstead.toString(), // 🖼️ Preferencia de visualización
                     medication.reminderEnabled.toString(),
                     medication.createdAt.toString(),
-                    medication.parentMedicationId.orEmpty()
+                    medication.parentMedicationId.orEmpty(),
+                    medication.archived.toString()
                 ).joinToCsv()
             )
         }
@@ -131,7 +132,8 @@ object CsvUtils {
                     usePhotoInstead = if (hasPhotoFields) tokens[13 + legacyOffset].toBooleanStrictOrNull() ?: false else false, // 🖼️ Preferencia
                     reminderEnabled = tokens.getOrNull(14 + legacyOffset)?.toBooleanStrictOrNull() ?: false,
                     createdAt = tokens.getOrNull(15 + legacyOffset)?.toLongOrNull() ?: 0L,
-                    parentMedicationId = tokens.getOrNull(16 + legacyOffset)?.ifBlank { null }
+                    parentMedicationId = tokens.getOrNull(16 + legacyOffset)?.ifBlank { null },
+                    archived = tokens.getOrNull(17 + legacyOffset)?.toBooleanStrictOrNull() ?: false
                 )
             )
             index++

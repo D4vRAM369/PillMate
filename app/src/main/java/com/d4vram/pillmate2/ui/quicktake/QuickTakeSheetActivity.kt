@@ -99,7 +99,8 @@ private fun QuickTakeSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    val medications by repository.medications.collectAsState()
+    val allMedications by repository.medications.collectAsState()
+    val medications = remember(allMedications) { allMedications.filterNot { it.archived } }
     val history by repository.historyEntries.collectAsState()
     // Top-5 por frecuencia 30d; si aún no hay tomas, mostrar los primeros 5.
     val top = remember(medications, history) {

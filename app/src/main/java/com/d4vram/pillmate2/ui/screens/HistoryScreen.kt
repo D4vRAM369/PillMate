@@ -121,9 +121,18 @@ fun HistoryScreen(
     navController: NavController,
     initialDay: LocalDate? = null // Si llega (desde el detalle de un día en Estadísticas), se abre mostrando solo ese día.
 ) {
-    val historyEntries by repository.historyEntries.collectAsState()
+    val allHistoryEntries by repository.historyEntries.collectAsState()
     val medications by repository.medications.collectAsState()
     val stats by repository.stats.collectAsState()
+    val showArchivedInHistory by com.d4vram.pillmate2.ui.theme.rememberThemeManager().archivedInHistory.collectAsState(initial = true)
+    // Solo oculta en esta pantalla; las tomas siguen en la base, Estadísticas y backups.
+    val historyEntries = remember(allHistoryEntries, medications, showArchivedInHistory) {
+        if (showArchivedInHistory) allHistoryEntries
+        else {
+            val archivedIds = medications.filter { it.archived }.map { it.id }.toSet()
+            allHistoryEntries.filterNot { it.medicationId in archivedIds }
+        }
+    }
     val dropMedicationIds = remember(medications) {
         medications.asSequence()
             .filter { MedicationType.fromStored(it.type) == MedicationType.DROPS }

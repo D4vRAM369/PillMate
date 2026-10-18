@@ -51,7 +51,8 @@ internal fun AstraHomeScreen(
     onEditMedication: (String) -> Unit,
     onDeleteMedication: (String) -> Unit
 ) {
-    val raw by repository.medications.collectAsState()
+    val allMedications by repository.medications.collectAsState()
+    val raw = remember(allMedications) { allMedications.filterNot { it.archived } }
     val history by repository.historyEntries.collectAsState()
     val sort by themeManager.sortMode.collectAsState(initial = SortMode.MANUAL)
     val listView by themeManager.isListView.collectAsState(initial = false)

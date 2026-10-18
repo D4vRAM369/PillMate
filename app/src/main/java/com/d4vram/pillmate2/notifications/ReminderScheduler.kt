@@ -160,7 +160,7 @@ object ReminderScheduler {
         val database = PillMateDatabase.getInstance(context)
         val medicationEntity = database.medicationDao().getMedicationById(medicationId)
 
-        if (medicationEntity != null && medicationEntity.reminderEnabled) {
+        if (medicationEntity != null && medicationEntity.reminderEnabled && !medicationEntity.archived) {
             // Convertir a domain model (simplificado)
             val medication = Medication(
                 id = medicationEntity.id,
@@ -185,7 +185,7 @@ object ReminderScheduler {
         val medications = database.medicationDao().getAllMedications()
 
         medications
-            .filter { it.reminderEnabled && !it.scheduleTime.isNullOrBlank() }
+            .filter { it.reminderEnabled && !it.archived && !it.scheduleTime.isNullOrBlank() }
             .forEach { entity ->
                 val medication = Medication(
                     id = entity.id,

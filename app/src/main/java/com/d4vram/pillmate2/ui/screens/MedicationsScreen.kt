@@ -13,12 +13,14 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.GridView
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.d4vram.pillmate2.data.MedicationRepository
+import com.d4vram.pillmate2.ui.components.ArchivedMedicationsSheet
 import com.d4vram.pillmate2.ui.components.MedicationListItem
 import com.d4vram.pillmate2.ui.components.ReorderableMedicationGrid
 import com.d4vram.pillmate2.ui.theme.ThemeManager
@@ -39,7 +41,11 @@ fun MedicationsScreen(
     onEditMedication: (String) -> Unit = {},
     onDeleteMedication: (String) -> Unit = {}
 ) {
-    val medications by repository.medications.collectAsState()
+    val allMedications by repository.medications.collectAsState()
+    // Activos en la lista; archivados solo en la hoja del icono 📦
+    val (archivedMedications, medications) = remember(allMedications) { allMedications.partition { it.archived } }
+    var showArchived by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    val showArchivedBadge by themeManager.archivedBadge.collectAsState(initial = true)
     val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(
         initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total
     )
@@ -74,6 +80,18 @@ fun MedicationsScreen(
                         )
                     },
                     actions = {
+                        // Archivados (a la izquierda del toggle de vista)
+                        IconButton(onClick = { showArchived = true }) {
+                            BadgedBox(badge = {
+                                if (showArchivedBadge && archivedMedications.isNotEmpty()) Badge { Text("${archivedMedications.size}") }
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Inventory2,
+                                    contentDescription = stringResource(R.string.archived_title),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                         // Toggle Grid <-> Lista
                         IconButton(onClick = {
                             scope.launch { themeManager.setListView(!isListView) }
@@ -200,5 +218,14 @@ fun MedicationsScreen(
                 item { Spacer(modifier = Modifier.height(80.dp)) }
             }
         }
+    }
+
+    if (showArchived) {
+        ArchivedMedicationsSheet(
+            archived = archivedMedications,
+            repository = repository,
+            themeManager = themeManager,
+            onDismiss = { showArchived = false }
+        )
     }
 }

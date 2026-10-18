@@ -143,7 +143,8 @@ private object QuickTakeWidgetRepository {
             val size = QuickTakeWidgetSize.fromStorage(
                 preferences[QuickTakeSettings.WIDGET_SIZE_KEY]
             )
-            val medicationsById = medications.associateBy { it.id }
+            // Un archivado deja su casilla vacía, igual que uno borrado.
+            val medicationsById = medications.filterNot { it.archived }.associateBy { it.id }
 
             QuickTakeWidgetData(
                 slots = slots.map { id -> id?.let { medicationsById[it] } },

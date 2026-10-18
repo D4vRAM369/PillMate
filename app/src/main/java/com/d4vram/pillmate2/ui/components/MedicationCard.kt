@@ -17,6 +17,8 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.outlined.Archive
+import kotlinx.coroutines.launch
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -198,6 +200,22 @@ fun MedicationCard(
                                     )
                                 }
                             )
+                            val archiveContext = LocalContext.current
+                            val archiveScope = rememberCoroutineScope()
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.action_archive)) },
+                                onClick = {
+                                    showMenu = false
+                                    archiveScope.launch { setMedicationArchived(archiveContext, repository, medication, archived = true) }
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Outlined.Archive,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            )
                             DropdownMenuItem(
                                 text = { Text(stringResource(R.string.action_delete)) },
                                 onClick = {
@@ -353,7 +371,7 @@ private fun CountBadge(
  * 📸 Muestra foto si está configurado usePhotoInstead
  */
 @Composable
-private fun PillIcon(
+internal fun PillIcon(
     emoji: String,
     color: Color,
     isTaken: Boolean,

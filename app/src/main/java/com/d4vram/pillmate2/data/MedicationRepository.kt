@@ -264,6 +264,11 @@ class MedicationRepository(
         }
     }
 
+    /** Archivar no borra nada: solo oculta el medicamento de las pantallas de toma. */
+    suspend fun setArchived(medicationId: String, archived: Boolean) {
+        medicationDao.setArchived(medicationId, archived)
+    }
+
     fun deleteMedication(medicationId: String) {
         scope.launch {
             medicationDao.deleteById(medicationId)
@@ -276,12 +281,14 @@ class MedicationRepository(
 
     fun reorderMedications(fromIndex: Int, toIndex: Int) {
         scope.launch {
-            val current = medications.value.toMutableList()
+            // Los índices vienen de la lista visible, que no incluye archivados.
+            val (archived, active) = medications.value.partition { it.archived }
+            val current = active.toMutableList()
             if (fromIndex !in current.indices || toIndex !in current.indices) return@launch
             val item = current.removeAt(fromIndex)
             current.add(toIndex, item)
 
-            val reordered = current.mapIndexed { index, medication ->
+            val reordered = (current + archived).mapIndexed { index, medication ->
                 medication.copy(sortOrder = index).toEntity()
             }
             medicationDao.upsertMedications(reordered)
@@ -579,7 +586,8 @@ class MedicationRepository(
         createdAt = createdAt,
         photoPath = photoPath,
         usePhotoInstead = usePhotoInstead,
-        parentMedicationId = parentMedicationId
+        parentMedicationId = parentMedicationId,
+        archived = archived
     )
 
     private fun Medication.toEntity(): MedicationEntity = MedicationEntity(
@@ -599,7 +607,8 @@ class MedicationRepository(
         createdAt = createdAt,
         photoPath = photoPath,
         usePhotoInstead = usePhotoInstead,
-        parentMedicationId = parentMedicationId
+        parentMedicationId = parentMedicationId,
+        archived = archived
     )
 
     private fun HistoryEntryEntity.toDomain(

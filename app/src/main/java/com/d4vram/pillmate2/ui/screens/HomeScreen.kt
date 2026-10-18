@@ -103,7 +103,8 @@ fun HomeScreen(
         return
     }
     // Estados observables del repositorio
-    val medicationsRaw by repository.medications.collectAsState()
+    val allMedications by repository.medications.collectAsState()
+    val medicationsRaw = remember(allMedications) { allMedications.filterNot { it.archived } }
     val historyEntries by repository.historyEntries.collectAsState()
     val stats by repository.stats.collectAsState()
     val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)

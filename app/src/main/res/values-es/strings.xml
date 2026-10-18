@@ -867,4 +867,14 @@
     <string name="merge_example">Cada registro: %1$s %2$s × 1 → %3$s %4$s × %5$s, en su misma fecha y hora.</string>
     <string name="merge_factor_mismatch">El factor no conserva los mg registrados. Revisa las concentraciones y el multiplicador.</string>
     <string name="merge_unresolved">Hay registros antiguos de origen sin asociar. Hay que revisar sus referencias antes de unir.</string>
+    <string name="action_archive">Archivar</string>
+    <string name="action_unarchive">Desarchivar</string>
+    <string name="archived_title">Archivados</string>
+    <string name="archived_hint">No salen en Inicio, el widget, Toma rápida ni recordatorios. Su historial se conserva.</string>
+    <string name="archived_empty">No hay medicamentos archivados</string>
+    <string name="archived_last_taken">Última toma: %1$s</string>
+    <string name="archived_toast_archived">%1$s archivado</string>
+    <string name="archived_toast_restored">%1$s vuelve a tu lista</string>
+    <string name="archived_option_history">Mostrar en Historial</string>
+    <string name="archived_option_badge">Mostrar contador en el icono</string>
 </resources>
