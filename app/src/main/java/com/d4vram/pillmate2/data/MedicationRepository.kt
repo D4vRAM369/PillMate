@@ -184,7 +184,7 @@ class MedicationRepository(
             val now = (customTimestamp ?: LocalDateTime.now()).withSecond(0).withNano(0)
             val updated = medication.copy(
                 takenToday = medication.takenToday + safeQuantity,
-                lastTaken = formatDateTime(now)
+                lastTaken = now.toString()
             )
             medicationDao.upsertMedication(updated)
 
@@ -223,7 +223,7 @@ class MedicationRepository(
             medicationDao.upsertMedication(medication.copy(
                 // This legacy field stores cumulative quantity (CSV: totalTaken).
                 takenToday = (medication.takenToday - entry.quantity).coerceAtLeast(0.0),
-                lastTaken = latest?.let(::formatDateTime)
+                lastTaken = latest?.toString()
             ))
         }
         true
@@ -526,10 +526,6 @@ class MedicationRepository(
         }
     }
 
-    private fun formatDateTime(dateTime: LocalDateTime): String {
-        return "${formatDate(dateTime)} ${formatTime(dateTime)}"
-    }
-
     private fun formatDate(dateTime: LocalDateTime): String {
         val today = LocalDateTime.now()
         val yesterday = today.minusDays(1)
@@ -571,10 +567,8 @@ class MedicationRepository(
         emoji = emoji,
         takenToday = takenToday,
         dailyGoal = dailyGoal,
-        lastTaken = lastTakenTimestamp?.let { formatDateTime(it) }
-            ?: lastTaken?.let { stored ->
-                parseTimestampOrNull(stored)?.let { parsed -> formatDateTime(parsed) } ?: stored
-            },
+        // ISO (LocalDateTime.toString()); la UI lo formatea con lastTakenLabel
+        lastTaken = lastTakenTimestamp?.toString() ?: lastTaken,
         lastTakenTimestamp = lastTakenTimestamp?.atZone(java.time.ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
             ?: lastTaken?.let { stored ->
                 parseTimestampOrNull(stored)?.atZone(java.time.ZoneId.systemDefault())?.toInstant()?.toEpochMilli()

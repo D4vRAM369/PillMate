@@ -10,7 +10,7 @@ import java.util.Locale
 
 @Database(
     entities = [MedicationEntity::class, HistoryEntryEntity::class, VoiceNoteEntity::class],
-    version = 17,
+    version = 18,
     exportSchema = true
 )
 abstract class PillMateDatabase : RoomDatabase() {
@@ -43,7 +43,8 @@ abstract class PillMateDatabase : RoomDatabase() {
                     MIGRATION_13_14,
                     MIGRATION_14_15,
                     MIGRATION_15_16,
-                    MIGRATION_16_17
+                    MIGRATION_16_17,
+                    MIGRATION_17_18
                 ).build().also { INSTANCE = it }
             }
         }
@@ -200,6 +201,19 @@ abstract class PillMateDatabase : RoomDatabase() {
         val MIGRATION_16_17 = object : Migration(16, 17) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("ALTER TABLE medications ADD COLUMN archived INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
+        val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                // lastTaken guardaba texto de pantalla ("Hoy 22:25") que se quedaba congelado.
+                // Se recalcula en ISO desde el historial; sin tomas queda NULL.
+                database.execSQL(
+                    "UPDATE medications SET lastTaken = (" +
+                        "SELECT MAX(h.timestampIso) FROM history h " +
+                        "WHERE h.medicationId = medications.id " +
+                        "AND h.timestampIso GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T*')"
+                )
             }
         }
 

@@ -120,7 +120,7 @@ fun ArchivedMedicationsSheet(
                                 )
                                 if (medication.lastTaken != null || medication.lastTakenTimestamp != null) {
                                     Text(
-                                        // lastTakenLabel usa el idioma del móvil; medication.lastTaken va siempre en español
+                                        // lastTakenLabel usa el idioma del móvil; medication.lastTaken guarda ISO
                                         text = stringResource(R.string.archived_last_taken, lastTakenLabel(medication)),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant

@@ -31,7 +31,7 @@ class FractionalMigrationTest {
         helper.writableDatabase
         helper.close()
         val database = Room.databaseBuilder(context, PillMateDatabase::class.java, name)
-            .addMigrations(PillMateDatabase.MIGRATION_15_16).build()
+            .addMigrations(PillMateDatabase.MIGRATION_15_16, PillMateDatabase.MIGRATION_16_17, PillMateDatabase.MIGRATION_17_18).build()
         try {
             val old = database.historyDao().getAllHistory().single()
             assertEquals(2.0, old.quantity, 0.0)

@@ -42,7 +42,7 @@ class MedicationUndoTest {
             assertTrue(repository.undoMedicationTaken(firstId))
             assertEquals(listOf(secondId), history.getAllHistory().map { it.id })
             assertEquals(2.0, medications.getMedicationById("test")!!.takenToday, 0.0)
-            assertEquals("Hoy 10:30", medications.getMedicationById("test")!!.lastTaken)
+            assertEquals(time.toString(), medications.getMedicationById("test")!!.lastTaken)
             assertFalse(repository.undoMedicationTaken(firstId))
             assertEquals(2.0, medications.getMedicationById("test")!!.takenToday, 0.0)
 
@@ -66,7 +66,7 @@ class MedicationUndoTest {
             assertTrue(repository.undoMedicationTaken(olderId))
             assertEquals(listOf(currentId), history.getAllHistory().map { it.id })
             assertEquals(1.0, medications.getMedicationById("test")!!.takenToday, 0.0)
-            assertEquals("Hoy 10:30", medications.getMedicationById("test")!!.lastTaken)
+            assertEquals(time.toString(), medications.getMedicationById("test")!!.lastTaken)
             withTimeout(5_000) {
                 repository.medications.first { list ->
                     list.singleOrNull()?.let {

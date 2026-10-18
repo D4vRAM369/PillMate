@@ -297,8 +297,8 @@ fun MedicationCard(
 }
 
 /**
- * "Hoy 14:14" / "Today 14:14": se calcula con la fecha real de la última toma. El texto que trae
- * el repositorio ([Medication.lastTaken]) está siempre en español y solo se usa si no hay fecha.
+ * "Hoy 14:14" / "Today 14:14": se calcula con la fecha real de la última toma. [Medication.lastTaken]
+ * guarda la fecha en ISO; solo se muestra tal cual si es texto heredado que no se pudo leer.
  */
 @Composable
 internal fun lastTakenLabel(medication: Medication): String {
