@@ -26,6 +26,7 @@ import androidx.glance.appwidget.updateAll
 import androidx.navigation.NavController
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.Medication
+import com.d4vram.pillmate2.model.hideArchivedUnless
 import com.d4vram.pillmate2.model.SortMode
 import com.d4vram.pillmate2.ui.components.MedicationListItem
 import com.d4vram.pillmate2.ui.components.ReorderableMedicationGrid
@@ -53,7 +54,11 @@ internal fun AstraHomeScreen(
 ) {
     val allMedications by repository.medications.collectAsState()
     val raw = remember(allMedications) { allMedications.filterNot { it.archived } }
-    val history by repository.historyEntries.collectAsState()
+    val allHistory by repository.historyEntries.collectAsState()
+    val showArchivedInHistory by themeManager.archivedInHistory.collectAsState(initial = true)
+    val history = remember(allHistory, allMedications, showArchivedInHistory) {
+        allHistory.hideArchivedUnless(showArchivedInHistory, allMedications)
+    }
     val sort by themeManager.sortMode.collectAsState(initial = SortMode.MANUAL)
     val listView by themeManager.isListView.collectAsState(initial = false)
     val period by themeManager.chipCountPeriod.collectAsState(initial = ChipCountPeriod.Total)

@@ -76,6 +76,7 @@ import androidx.navigation.NavController
 import com.d4vram.pillmate2.R
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.HistoryEntry
+import com.d4vram.pillmate2.model.hideArchivedUnless
 import com.d4vram.pillmate2.model.MedicationType
 import com.d4vram.pillmate2.ui.components.HistoryItem
 import com.d4vram.pillmate2.ui.components.NotesModal
@@ -127,11 +128,7 @@ fun HistoryScreen(
     val showArchivedInHistory by com.d4vram.pillmate2.ui.theme.rememberThemeManager().archivedInHistory.collectAsState(initial = true)
     // Solo oculta en esta pantalla; las tomas siguen en la base, Estadísticas y backups.
     val historyEntries = remember(allHistoryEntries, medications, showArchivedInHistory) {
-        if (showArchivedInHistory) allHistoryEntries
-        else {
-            val archivedIds = medications.filter { it.archived }.map { it.id }.toSet()
-            allHistoryEntries.filterNot { it.medicationId in archivedIds }
-        }
+        allHistoryEntries.hideArchivedUnless(showArchivedInHistory, medications)
     }
     val dropMedicationIds = remember(medications) {
         medications.asSequence()

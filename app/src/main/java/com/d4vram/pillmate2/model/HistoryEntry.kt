@@ -20,3 +20,16 @@ data class HistoryEntry(
     val dose: String? = null,
     val audioNoteUri: String? = null  // Ruta al archivo de audio encriptado
 )
+/**
+ * Quita las tomas de medicamentos archivados cuando el ajuste "Mostrar en Historial" está apagado.
+ * Solo para listas de historial: contadores, gráficas y backups siguen usando todas las tomas.
+ */
+fun List<HistoryEntry>.hideArchivedUnless(show: Boolean, medications: List<Medication>): List<HistoryEntry> {
+    return if (show) this else withoutArchived(medications)
+}
+
+/** Tomas de medicamentos que no están archivados. Para estadísticas, gráficas y exportaciones. */
+fun List<HistoryEntry>.withoutArchived(medications: List<Medication>): List<HistoryEntry> {
+    val archivedIds = medications.filter { it.archived }.map { it.id }.toSet()
+    return filterNot { it.medicationId in archivedIds }
+}

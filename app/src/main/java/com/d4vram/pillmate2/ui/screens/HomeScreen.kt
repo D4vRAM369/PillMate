@@ -72,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.d4vram.pillmate2.data.MedicationRepository
 import com.d4vram.pillmate2.model.HistoryEntry
+import com.d4vram.pillmate2.model.hideArchivedUnless
 import com.d4vram.pillmate2.model.Medication
 import java.time.LocalDateTime
 import com.d4vram.pillmate2.model.SortMode
@@ -105,7 +106,11 @@ fun HomeScreen(
     // Estados observables del repositorio
     val allMedications by repository.medications.collectAsState()
     val medicationsRaw = remember(allMedications) { allMedications.filterNot { it.archived } }
-    val historyEntries by repository.historyEntries.collectAsState()
+    val allHistoryEntries by repository.historyEntries.collectAsState()
+    val showArchivedInHistory by themeManager.archivedInHistory.collectAsState(initial = true)
+    val historyEntries = remember(allHistoryEntries, allMedications, showArchivedInHistory) {
+        allHistoryEntries.hideArchivedUnless(showArchivedInHistory, allMedications)
+    }
     val stats by repository.stats.collectAsState()
     val chipCountPeriod by themeManager.chipCountPeriod.collectAsState(initial = com.d4vram.pillmate2.ui.theme.ChipCountPeriod.Total)
     val sortMode by themeManager.sortMode.collectAsState(initial = SortMode.MANUAL)
