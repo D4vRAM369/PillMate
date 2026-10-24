@@ -174,8 +174,8 @@ class StatisticsViewModel(
 
         // Filtrar historial para ese día
         viewModelScope.launch {
-            val history = medicationRepository.getHistorySnapshot() 
-            val allMedications = medicationRepository.getMedicationsSnapshot()
+            val history = medicationRepository.getActiveHistorySnapshot() 
+            val allMedications = medicationRepository.getActiveMedicationsSnapshot()
             
             val entriesOnDate = history.filter { it.timestamp.toLocalDate() == date }
                 .sortedByDescending { it.timestamp }
@@ -225,11 +225,11 @@ class StatisticsViewModel(
 
             // 2. Cargar datos del repositorio
             val allHistory = if (range == FilterRange.ALL_TIME) {
-                medicationRepository.getHistorySnapshot()
+                medicationRepository.getActiveHistorySnapshot()
             } else {
-                medicationRepository.getHistoryBetween(queryStartDate.toEpochDay(), endDate.toEpochDay())
+                medicationRepository.getActiveHistoryBetween(queryStartDate.toEpochDay(), endDate.toEpochDay())
             }
-            val allMedications = medicationRepository.getMedicationsSnapshot()
+            val allMedications = medicationRepository.getActiveMedicationsSnapshot()
 
             // Capturar una copia local para evitar problemas de smart cast
             val currentSelectedId = selectedMedicationId
@@ -253,7 +253,7 @@ class StatisticsViewModel(
             // La tendencia compara con el periodo anterior de igual duración, que la query de arriba no trae
             val periodDays = ChronoUnit.DAYS.between(queryStartDate, endDate) + 1
             val previousPeriodDoses = if (range == FilterRange.ALL_TIME) 0 else {
-                medicationRepository.getHistoryBetween(
+                medicationRepository.getActiveHistoryBetween(
                     queryStartDate.minusDays(periodDays).toEpochDay(),
                     queryStartDate.minusDays(1).toEpochDay()
                 )

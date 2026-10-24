@@ -168,8 +168,8 @@ class PdfExportViewModel(
         gatherReportData(startDate, endDate)
 
     private suspend fun gatherReportData(startDate: LocalDate, endDate: LocalDate): PdfReportData {
-        val allMedications = repository.getMedicationsSnapshot()
-        val history = repository.getHistoryBetween(startDate.toEpochDay(), endDate.toEpochDay())
+        val allMedications = repository.getActiveMedicationsSnapshot()
+        val history = repository.getActiveHistoryBetween(startDate.toEpochDay(), endDate.toEpochDay())
             .sortedByDescending { it.timestamp }
 
         val totalDays = ChronoUnit.DAYS.between(startDate, endDate).toInt() + 1

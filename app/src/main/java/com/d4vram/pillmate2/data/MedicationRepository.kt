@@ -8,6 +8,7 @@ import com.d4vram.pillmate2.data.local.MedicationDao
 import com.d4vram.pillmate2.data.local.MedicationEntity
 import com.d4vram.pillmate2.data.local.PillMateDatabase
 import com.d4vram.pillmate2.model.HistoryEntry
+import com.d4vram.pillmate2.model.withoutArchived
 import com.d4vram.pillmate2.model.Medication
 import androidx.room.withTransaction
 import kotlinx.coroutines.flow.Flow
@@ -131,7 +132,7 @@ class MedicationRepository(
     }
 
     val stats: StateFlow<Stats> = combine(historyEntries, medicationsFlow) { history, medications ->
-        calculateStats(history, medications)
+        calculateStats(history.withoutArchived(medications), medications.filterNot { it.archived })
     }.stateIn(scope, SharingStarted.Eagerly, Stats(0, 0, 0))
 
     init {
@@ -432,6 +433,17 @@ class MedicationRepository(
         val doseFallback = medicationDao.getAllMedications().associateBy { it.name }
         return historyDao.getHistoryBetween(startIso, endIso).map { it.toDomain(doseFallback) }
     }
+
+    // Estadísticas, gráficas y exportaciones de informe: sin medicamentos archivados.
+    // Los backups y el CSV de datos siguen usando los snapshots completos para poder restaurar todo.
+    suspend fun getActiveMedicationsSnapshot(): List<Medication> =
+        getMedicationsSnapshot().filterNot { it.archived }
+
+    suspend fun getActiveHistorySnapshot(): List<HistoryEntry> =
+        getHistorySnapshot().withoutArchived(getMedicationsSnapshot())
+
+    suspend fun getActiveHistoryBetween(startEpochDay: Long, endEpochDay: Long): List<HistoryEntry> =
+        getHistoryBetween(startEpochDay, endEpochDay).withoutArchived(getMedicationsSnapshot())
 
     suspend fun replaceAllData(
         medications: List<Medication>,
