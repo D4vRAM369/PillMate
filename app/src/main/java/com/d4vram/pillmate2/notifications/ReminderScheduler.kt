@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Build
 import android.util.Log
 import com.d4vram.pillmate2.data.local.PillMateDatabase
+import com.d4vram.pillmate2.data.local.toDomain
 import com.d4vram.pillmate2.model.Medication
 import java.util.Calendar
 
@@ -161,19 +162,7 @@ object ReminderScheduler {
         val medicationEntity = database.medicationDao().getMedicationById(medicationId)
 
         if (medicationEntity != null && medicationEntity.reminderEnabled && !medicationEntity.archived) {
-            // Convertir a domain model (simplificado)
-            val medication = Medication(
-                id = medicationEntity.id,
-                name = medicationEntity.name,
-                dose = medicationEntity.dose,
-                type = medicationEntity.type,
-                color = androidx.compose.ui.graphics.Color(medicationEntity.colorArgb),
-                emoji = medicationEntity.emoji,
-                scheduleTime = medicationEntity.scheduleTime,
-                scheduleDays = medicationEntity.scheduleDays.split(",").filter { it.isNotBlank() },
-                reminderEnabled = medicationEntity.reminderEnabled
-            )
-            scheduleReminder(context, medication)
+            scheduleReminder(context, medicationEntity.toDomain())
         }
     }
 
@@ -186,20 +175,7 @@ object ReminderScheduler {
 
         medications
             .filter { it.reminderEnabled && !it.archived && !it.scheduleTime.isNullOrBlank() }
-            .forEach { entity ->
-                val medication = Medication(
-                    id = entity.id,
-                    name = entity.name,
-                    dose = entity.dose,
-                    type = entity.type,
-                    color = androidx.compose.ui.graphics.Color(entity.colorArgb),
-                    emoji = entity.emoji,
-                    scheduleTime = entity.scheduleTime,
-                    scheduleDays = entity.scheduleDays.split(",").filter { it.isNotBlank() },
-                    reminderEnabled = entity.reminderEnabled
-                )
-                scheduleReminder(context, medication)
-            }
+            .forEach { entity -> scheduleReminder(context, entity.toDomain()) }
 
         Log.d(TAG, "Reprogramados ${medications.count { it.reminderEnabled }} recordatorios")
     }

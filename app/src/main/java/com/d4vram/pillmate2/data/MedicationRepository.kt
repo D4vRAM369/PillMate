@@ -7,6 +7,8 @@ import com.d4vram.pillmate2.data.local.HistoryEntryEntity
 import com.d4vram.pillmate2.data.local.MedicationDao
 import com.d4vram.pillmate2.data.local.MedicationEntity
 import com.d4vram.pillmate2.data.local.PillMateDatabase
+import com.d4vram.pillmate2.data.local.parseTimestampOrNull
+import com.d4vram.pillmate2.data.local.toDomain
 import com.d4vram.pillmate2.model.HistoryEntry
 import com.d4vram.pillmate2.model.withoutArchived
 import com.d4vram.pillmate2.model.Medication
@@ -557,44 +559,8 @@ class MedicationRepository(
         return dateTime.format(formatter)
     }
 
-    private fun parseTimestampOrNull(timestampIso: String?): LocalDateTime? =
-        timestampIso?.let { iso -> runCatching { LocalDateTime.parse(iso) }.getOrNull() }
-
-    private fun String.toScheduleDaysList(): List<String> =
-        split(',')
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-
     private fun List<String>.toScheduleDaysString(): String =
         joinToString(separator = ",") { it.trim().uppercase() }
-
-    private fun MedicationEntity.toDomain(
-        lastTakenTimestamp: LocalDateTime? = null
-    ): Medication = Medication(
-        id = id,
-        name = name,
-        dose = dose,
-        type = type,
-        color = Color(colorArgb),
-        emoji = emoji,
-        takenToday = takenToday,
-        dailyGoal = dailyGoal,
-        // ISO (LocalDateTime.toString()); la UI lo formatea con lastTakenLabel
-        lastTaken = lastTakenTimestamp?.toString() ?: lastTaken,
-        lastTakenTimestamp = lastTakenTimestamp?.atZone(java.time.ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
-            ?: lastTaken?.let { stored ->
-                parseTimestampOrNull(stored)?.atZone(java.time.ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
-            },
-        sortOrder = sortOrder,
-        scheduleTime = scheduleTime,
-        scheduleDays = scheduleDays.toScheduleDaysList(),
-        reminderEnabled = reminderEnabled,
-        createdAt = createdAt,
-        photoPath = photoPath,
-        usePhotoInstead = usePhotoInstead,
-        parentMedicationId = parentMedicationId,
-        archived = archived
-    )
 
     private fun Medication.toEntity(): MedicationEntity = MedicationEntity(
         id = id,
