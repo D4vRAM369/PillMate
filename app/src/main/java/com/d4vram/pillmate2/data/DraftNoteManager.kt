@@ -145,11 +145,11 @@ class DraftNoteManager(private val context: Context) {
     }
 
     /**
-     * 🧹 Limpia borradores antiguos (más de 24 horas)
+     * 🧹 Limpia borradores antiguos (más de 30 días)
      *
-     * Llamar periódicamente para no acumular basura en disco
+     * Plazo largo a propósito: un borrador es texto del usuario sin guardar.
      */
-    suspend fun cleanOldDrafts(maxAgeMillis: Long = 24 * 60 * 60 * 1000) {
+    suspend fun cleanOldDrafts(maxAgeMillis: Long = 30L * 24 * 60 * 60 * 1000) {
         val now = System.currentTimeMillis()
 
         context.dataStore.edit { preferences ->

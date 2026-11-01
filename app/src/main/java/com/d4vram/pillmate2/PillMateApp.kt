@@ -3,7 +3,9 @@ package com.d4vram.pillmate2
 import android.app.Application
 import android.content.Context
 import androidx.core.content.ContextCompat
+import com.d4vram.pillmate2.data.AudioNoteManager
 import com.d4vram.pillmate2.data.BackupScheduler
+import com.d4vram.pillmate2.data.DraftNoteManager
 import com.d4vram.pillmate2.notifications.NotificationHelper
 import com.d4vram.pillmate2.ui.theme.ThemeManager
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +29,9 @@ class PillMateApp : Application() {
         NotificationHelper.createNotificationChannel(this)
         NotificationHelper.createQuickTakeChannel(this)
         appScope.launch {
+            // Proceso recién creado: nada reproduce audio, los descifrados sobran
+            AudioNoteManager(applicationContext).cleanupTempFiles()
+            DraftNoteManager(applicationContext).cleanOldDrafts()
             BackupScheduler.refresh(applicationContext)
             // Re-postear la notificación persistente de toma rápida si el
             // usuario la tenía activada (OEMs agresivos pueden haberla matado).
