@@ -185,7 +185,7 @@ object NotificationHelper {
 
         // Construir la notificación
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground) // TODO: Usar icono personalizado
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.notif_reminder_title, emoji, medicationName))
             .setContentText(context.getString(R.string.stats_entry_dose, dose))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
