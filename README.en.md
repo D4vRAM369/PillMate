@@ -42,7 +42,7 @@ Three principles guide the app:
 2. **Logging takes one tap.** If logging is slower than skipping it, people will skip it.
 3. **It describes, it does not judge.** It shows what you logged. It does not score adherence, set goals, or give advice.
 
-> **Status:** `2.0.0-beta.3` is the latest public release. It works and is used daily, but has only been tested on a small number of devices. If something breaks, please open an issue. Download the APK from [Releases](https://github.com/D4vRAM369/PillMate/releases/latest); PillMate is not on Google Play.
+> **Status:** `2.0.0` is the first stable release. It is used daily, but has only been tested on a small number of devices. If something breaks, please open an issue. Download the APK from [Releases](https://github.com/D4vRAM369/PillMate/releases/latest); PillMate is not on Google Play.
 
 ## Features
 
