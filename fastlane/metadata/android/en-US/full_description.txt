@@ -1,0 +1,19 @@
+PillMate is for medication you take <b>when you need it</b>, not on a fixed schedule. Log each dose with one tap, then see your own pattern: when you take it, how much, and how far apart.
+
+It is not an alarm-based pill reminder. Reminders exist, but they are optional.
+
+<b>Features</b>
+• One-tap dose logging, with home-screen widget and quick-log notification
+• Daily 24-hour clock, weekly view and statistics with calculated insights
+• Optional reminders
+• Photos of your medication and encrypted voice notes
+• Optional lock with fingerprint or face (checked by Android)
+• Backup to ZIP, CSV and PDF export, always to a place you choose
+
+<b>Privacy</b>
+• No internet permission: the app cannot connect to any server
+• No accounts, no analytics, no ads, no trackers
+• All data stays on your device
+• Free software, GPL-3.0-or-later
+
+PillMate records what you write down; it gives no medical advice and is not a medical device.

@@ -34,6 +34,13 @@ android {
         }
     }
 
+    // F-Droid (y IzzyOnDroid) firman/verifican por su cuenta: no incluir el bloque de metadatos
+    // de dependencias cifrado para Google, que el escáner de F-Droid rechaza.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
     signingConfigs {
         create("release") {
             if (keystorePropertiesFile.exists()) {
@@ -52,7 +59,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("release")
+            // Sin keystore.properties (p. ej. en el servidor de F-Droid) se genera el APK sin firmar
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         debug {
             // signingConfig = signingConfigs.getByName("release")
