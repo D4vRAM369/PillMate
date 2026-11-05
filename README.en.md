@@ -18,13 +18,13 @@
 </p>
 
 <p align="center">
-  <img src="screenshots/01-home.png" width="23%" alt="Home screen with quick access and the daily clock">
-  <img src="screenshots/02-historial-dia.png" width="23%" alt="One-day history with a dose selected on the clock">
-  <img src="screenshots/03-historial-semana.png" width="23%" alt="Weekly history with hourly bars">
-  <img src="screenshots/04-estadisticas.png" width="23%" alt="Statistics with the 24-hour rhythm and calculated insights">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/01-home.png" width="23%" alt="Home screen with quick access and the daily clock">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/02-historial-dia.png" width="23%" alt="History for one day: each dose is a dot on the 24-hour clock">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/03-historial-semana.png" width="23%" alt="History for the last 7 days: bars by hour">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/04-estadisticas.png" width="23%" alt="Statistics with the 24-hour rhythm and calculated insights">
 </p>
 
-<p align="center"><sub>Screenshots use sample data and show the Spanish interface.</sub></p>
+<p align="center"><sub>Screenshots use sample data.</sub></p>
 
 ---
 
