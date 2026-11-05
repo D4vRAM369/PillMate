@@ -1,0 +1,19 @@
+PillMate es para la medicación que tomas <b>cuando la necesitas</b>, no con horario fijo. Registra cada toma con un toque y descubre tu propio patrón: cuándo la tomas, cuánto y con qué separación.
+
+No es un recordatorio de pastillas con alarmas. Los recordatorios existen, pero son opcionales.
+
+<b>Funciones</b>
+• Registro de tomas con un toque, con widget y notificación de toma rápida
+• Reloj diario de 24 horas, vista semanal y estadísticas con conclusiones calculadas
+• Recordatorios opcionales
+• Fotos de tu medicación y notas de voz cifradas
+• Bloqueo opcional con huella o cara (lo comprueba Android)
+• Copia de seguridad en ZIP y exportación a CSV y PDF, siempre donde tú elijas
+
+<b>Privacidad</b>
+• Sin permiso de internet: la app no puede conectarse a ningún servidor
+• Sin cuentas, sin analítica, sin publicidad, sin rastreadores
+• Todos los datos se quedan en tu dispositivo
+• Software libre, GPL-3.0-or-later
+
+PillMate registra lo que anotas; no da consejo médico ni es un producto sanitario.
