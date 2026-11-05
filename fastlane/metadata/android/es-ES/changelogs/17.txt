@@ -1,0 +1,1 @@
+Actualización de empaquetado para F-Droid: compilación sin firma y ficha de la tienda. Sin cambios en la app.

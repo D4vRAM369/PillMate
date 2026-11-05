@@ -1,0 +1,1 @@
+Packaging update for F-Droid: unsigned builds and store metadata. No changes to the app itself.
