@@ -1,6 +1,11 @@
 package com.d4vram.pillmate2.ui.screens
 
 import com.d4vram.pillmate2.utils.formatQuantity
+import com.d4vram.pillmate2.utils.parseQuantity
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import com.d4vram.pillmate2.R
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -33,7 +38,9 @@ internal fun AstraDoseSheet(
     family: List<Medication> = emptyList(),
     onSelectMedication: (Medication) -> Unit = {}
 ) {
-    var quantity by rememberSaveable(medication.id) { mutableDoubleStateOf(1.0) }
+    // El texto del campo es la única fuente de verdad; la cantidad se deriva de él (null = no válida).
+    var quantityText by rememberSaveable(medication.id) { mutableStateOf(formatQuantity(1.0)) }
+    val quantity = parseQuantity(quantityText)
     var selectedTime by rememberSaveable(medication.id) { mutableStateOf<String?>(null) }
     val timestamp = selectedTime?.let(LocalDateTime::parse)
     val context = LocalContext.current
@@ -54,9 +61,9 @@ internal fun AstraDoseSheet(
             }
             Text(stringResource(R.string.dose_sheet_units))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                FilledIconButton(onClick = { quantity = (quantity - 0.25).coerceAtLeast(0.25) }, enabled = !busy && quantity > 0.25, modifier = Modifier.size(48.dp).semantics { contentDescription = decreaseLabel }) { Text("−") }
-                Text(formatQuantity(quantity), style = MaterialTheme.typography.displaySmall)
-                FilledIconButton(onClick = { quantity = (quantity + 0.25).coerceAtMost(999.0) }, enabled = !busy && quantity < 999, modifier = Modifier.size(48.dp).semantics { contentDescription = increaseLabel }) { Text("+") }
+                FilledIconButton(onClick = { quantityText = stepQuantity(quantity, -0.25) }, enabled = !busy && (quantity ?: 0.0) > 0.25, modifier = Modifier.size(48.dp).semantics { contentDescription = decreaseLabel }) { Text("−") }
+                DoseQuantityField(quantityText, { quantityText = it }, enabled = !busy, textStyle = MaterialTheme.typography.headlineMedium)
+                FilledIconButton(onClick = { quantityText = stepQuantity(quantity, 0.25) }, enabled = !busy && (quantity ?: 0.0) < 999, modifier = Modifier.size(48.dp).semantics { contentDescription = increaseLabel }) { Text("+") }
             }
             Text(timestamp?.format(DateTimeFormatter.ofPattern("dd/MM/yyyy · HH:mm")) ?: stringResource(R.string.dose_now), style = MaterialTheme.typography.titleMedium)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -72,10 +79,44 @@ internal fun AstraDoseSheet(
             }
             if (future) Text(stringResource(R.string.dose_future_error), color = MaterialTheme.colorScheme.error)
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            Button(onClick = { onConfirm(quantity, timestamp) }, enabled = !busy && !future, modifier = Modifier.fillMaxWidth()) {
-                Text(if (busy) stringResource(R.string.dose_saving) else pluralStringResource(R.plurals.dose_log_units, if (quantity == 1.0) 1 else 2, formatQuantity(quantity)))
+            Button(onClick = { quantity?.let { onConfirm(it, timestamp) } }, enabled = !busy && !future && quantity != null, modifier = Modifier.fillMaxWidth()) {
+                Text(when {
+                    busy -> stringResource(R.string.dose_saving)
+                    quantity == null -> stringResource(R.string.dose_quantity_invalid)
+                    else -> pluralStringResource(R.plurals.dose_log_units, if (quantity == 1.0) 1 else 2, formatQuantity(quantity))
+                })
             }
             TextButton(onClick = onDismiss, enabled = !busy, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.action_cancel)) }
         }
     }
+}
+
+/** ± button: steps from the typed amount (or 1 if the field is empty/invalid), clamped to 0,25…999. */
+internal fun stepQuantity(current: Double?, delta: Double): String =
+    formatQuantity(((current ?: 1.0) + delta).coerceIn(0.25, 999.0))
+
+/**
+ * Editable quantity between the − and + buttons, so 8 drops are typed instead of tapping + 28 times.
+ * Shared by the Astra sheet and the classic TakeMedicationDialog.
+ */
+@Composable
+internal fun DoseQuantityField(
+    text: String,
+    onTextChange: (String) -> Unit,
+    enabled: Boolean,
+    textStyle: TextStyle,
+    modifier: Modifier = Modifier
+) {
+    val label = stringResource(R.string.dose_sheet_units)
+    OutlinedTextField(
+        value = text,
+        // Solo dígitos y un separador; el resto ni se escribe. Máx. 6 caracteres ("999,25").
+        onValueChange = { new -> if (new.length <= 6 && new.all { it.isDigit() || it == ',' || it == '.' }) onTextChange(new) },
+        enabled = enabled,
+        singleLine = true,
+        isError = parseQuantity(text) == null,
+        textStyle = textStyle.copy(textAlign = TextAlign.Center),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        modifier = modifier.width(120.dp).semantics { contentDescription = label }
+    )
 }

@@ -227,6 +227,7 @@
     <string name="dose_sheet_title">Log dose</string>
     <string name="dose_sheet_doses">Available doses</string>
     <string name="dose_sheet_units">Number of units</string>
+    <string name="dose_quantity_invalid">Enter a valid amount</string>
     <string name="dose_sheet_decrease">Decrease quantity</string>
     <string name="dose_sheet_increase">Increase quantity</string>
     <string name="dose_now">Now</string>

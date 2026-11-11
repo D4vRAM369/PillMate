@@ -225,6 +225,7 @@
     <string name="dose_sheet_title">Registrar toma</string>
     <string name="dose_sheet_doses">Dosis disponibles</string>
     <string name="dose_sheet_units">Cantidad de unidades</string>
+    <string name="dose_quantity_invalid">Escribe una cantidad válida</string>
     <string name="dose_sheet_decrease">Reducir cantidad</string>
     <string name="dose_sheet_increase">Aumentar cantidad</string>
     <string name="dose_now">Ahora</string>

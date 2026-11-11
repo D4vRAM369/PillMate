@@ -1,6 +1,7 @@
 package com.d4vram.pillmate2.ui.components
 
 import com.d4vram.pillmate2.utils.formatQuantity
+import com.d4vram.pillmate2.utils.parseQuantity
 import com.d4vram.pillmate2.R
 import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.*
@@ -457,7 +458,9 @@ internal fun TakeMedicationDialog(
         return
     }
     var selectedMedication by remember { mutableStateOf(medication) }
-    var quantity by remember { mutableStateOf(1.0) }
+    // Texto = única fuente de verdad; la cantidad se deriva (null = no válida y no se puede registrar).
+    var quantityText by remember { mutableStateOf(formatQuantity(1.0)) }
+    val quantity = parseQuantity(quantityText)
 
     // Estado para el selector de hora
     var useCurrentTime by remember { mutableStateOf(true) }
@@ -641,7 +644,8 @@ internal fun TakeMedicationDialog(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         FilledIconButton(
-                            onClick = { if (quantity > 0.25) quantity = (quantity - 0.25).coerceAtLeast(0.25) },
+                            onClick = { quantityText = com.d4vram.pillmate2.ui.screens.stepQuantity(quantity, -0.25) },
+                            enabled = (quantity ?: 0.0) > 0.25,
                             modifier = Modifier.size(48.dp),
                             colors = IconButtonDefaults.filledIconButtonColors(
                                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
@@ -651,14 +655,16 @@ internal fun TakeMedicationDialog(
                             Text("-", style = MaterialTheme.typography.headlineSmall)
                         }
 
-                        Text(
-                            text = formatQuantity(quantity),
-                            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
+                        com.d4vram.pillmate2.ui.screens.DoseQuantityField(
+                            text = quantityText,
+                            onTextChange = { quantityText = it },
+                            enabled = true,
+                            textStyle = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
                         )
 
                         FilledIconButton(
-                            onClick = { quantity = (quantity + 0.25).coerceAtMost(999.0) },
+                            onClick = { quantityText = com.d4vram.pillmate2.ui.screens.stepQuantity(quantity, 0.25) },
+                            enabled = (quantity ?: 0.0) < 999,
                             modifier = Modifier.size(48.dp),
                             colors = IconButtonDefaults.filledIconButtonColors(
                                 containerColor = selectedMedication.color.copy(alpha = 0.8f),
@@ -675,7 +681,7 @@ internal fun TakeMedicationDialog(
                     ) {
                         listOf(1, 2, 5).forEach { quick ->
                             SuggestionChip(
-                                onClick = { quantity = (quantity + quick).coerceAtMost(999.0) },
+                                onClick = { quantityText = formatQuantity(((quantity ?: 0.0) + quick).coerceAtMost(999.0)) },
                                 label = { Text("+${quick}") },
                                 colors = SuggestionChipDefaults.suggestionChipColors(
                                     labelColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -703,8 +709,9 @@ internal fun TakeMedicationDialog(
                             .withSecond(0)
                             .withNano(0)
                     }
-                    onConfirm(selectedMedication.id, quantity.coerceAtLeast(0.25), timestamp)
+                    quantity?.let { onConfirm(selectedMedication.id, it, timestamp) }
                 },
+                enabled = quantity != null,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = buttonColor,
                     contentColor = textColor
