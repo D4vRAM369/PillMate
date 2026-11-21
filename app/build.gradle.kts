@@ -54,7 +54,9 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8: quita código y recursos sin usar (F-Droid lo pide). Reglas propias en proguard-rules.pro
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -76,7 +78,8 @@ android {
     if (project.hasProperty("dev")) {
         val devId = (project.property("dev") as String).ifBlank { "dev.d4vram.pillmate2" }
         androidComponents {
-            onVariants(selector().withBuildType("debug")) {
+            // También release: así se prueba el APK con R8 (assembleRelease -Pdev=<id desechable>)
+            onVariants(selector().all()) {
                 it.applicationId.set(devId)
                 it.manifestPlaceholders.put("appLabel", "PillMate Dev")
             }
