@@ -1,0 +1,3 @@
+- Escribe la cantidad directamente en «Añadir toma» (decimales con coma o punto); los botones −/+ siguen funcionando.
+- Corregido: en la hoja del permiso de fotos, «Ahora no» quedaba detrás de la barra de navegación de 3 botones.
+- App más ligera: unos 4 MB en vez de 17 MB.
