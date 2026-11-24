@@ -1,167 +1,169 @@
 <h1 align="center">PillMate</h1>
 
-<p align="center"><a href="README.en.md">English</a> · Español</p>
+<p align="center">English · <a href="README-ES.md">Español</a></p>
 
 <p align="center">
-  <img src="design/social-preview-es.png" width="100%" alt="PillMate: registra lo que tomas, cuando lo tomas. Descubre tu ritmo diario. Sin internet ni cuentas. Código abierto.">
+  <img src="design/social-preview.png" width="100%" alt="PillMate: medication tracking at your pace. Offline, no accounts, open source.">
 </p>
 
-> Registra cada toma **cuando la necesites** y descubre tu propio ritmo, sin horarios fijos.
+> Log each dose **when you need it** and discover your own patterns, without a fixed schedule.
 >
-> **Sin alarmas obligatorias · Sin cuentas · Sin conexión a internet.**
+> **No required alarms · No accounts · No internet access.**
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white" alt="Android 8.0 o superior">
+  <img src="https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white" alt="Android 8.0 or later">
   <img src="https://img.shields.io/badge/Kotlin-2.2-7F52FF?logo=kotlin&logoColor=white" alt="Kotlin 2.2">
-  <img src="https://img.shields.io/badge/internet-sin%20permiso-0F9D8A" alt="Sin permiso de internet">
-  <img src="https://img.shields.io/badge/licencia-GPL--3.0--or--later-blue" alt="Licencia GPL-3.0-or-later">
+  <img src="https://img.shields.io/badge/internet-no%20permission-0F9D8A" alt="No internet permission">
+  <img src="https://img.shields.io/badge/license-GPL--3.0--or--later-blue" alt="GPL-3.0-or-later license">
 </p>
 
 <p align="center">
-  <img src="screenshots/01-home.png" width="23%" alt="Pantalla principal: accesos rápidos y reloj del día">
-  <img src="screenshots/02-historial-dia.png" width="23%" alt="Historial de un día con una toma seleccionada en el reloj">
-  <img src="screenshots/03-historial-semana.png" width="23%" alt="Historial de una semana: barras por hora">
-  <img src="screenshots/04-estadisticas.png" width="23%" alt="Estadísticas: ritmo de 24 horas y datos calculados">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/01-home.png" width="23%" alt="Home screen with quick access and the daily clock">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/02-historial-dia.png" width="23%" alt="History for one day: each dose is a dot on the 24-hour clock">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/03-historial-semana.png" width="23%" alt="History for the last 7 days: bars by hour">
+  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/04-estadisticas.png" width="23%" alt="Statistics with the 24-hour rhythm and calculated insights">
 </p>
 
-<p align="center"><sub>Capturas con datos de ejemplo.</sub></p>
+<p align="center"><sub>Screenshots use sample data.</sub></p>
 
 ---
 
-**Contenido:** [Qué es](#qué-es) · [Qué hace](#qué-hace) · [Privacidad](#privacidad) · [Lo que no es](#lo-que-no-es) · [Instalar](#instalar) · [Compilar](#compilar) · [Cómo está hecha](#cómo-está-hecha) · [Contribuir](#contribuir) · [Apoyar](#apoyar-el-proyecto) · [Licencia](#licencia)
+**Contents:** [What it is](#what-it-is) · [Features](#features) · [Privacy](#privacy) · [What it is not](#what-it-is-not) · [Install](#install) · [Build](#build) · [How it works](#how-it-works) · [Contribute](#contribute) · [Support](#support) · [License](#license)
 
-## Qué es
+## What it is
 
-PillMate es una app Android para medicación **a demanda**: la que tomas cuando la necesitas, no a una hora fija. Apuntas cada toma con un toque y la app te devuelve tu patrón: a qué horas, cuánto y con qué separación.
+PillMate is an Android app for **on-demand medication logging**: medication you take when you need it, not on a fixed schedule. Log each dose with one tap, then see your own pattern: when you take it, how much, and how far apart.
 
-No es un pastillero de alarmas. Los recordatorios existen, pero son opcionales.
+It is not an alarm-based pill reminder. Reminders are available, but optional.
 
-Se apoya en tres ideas, y ninguna es negociable:
+Three principles guide the app:
 
-1. **Funciona sin internet.** No es que no lo use: no puede usarlo.
-2. **Registrar cuesta un toque.** Si apuntar es más lento que no apuntar, nadie apunta.
-3. **Describe, no juzga.** Cuenta lo que hay. No puntúa, no fija objetivos, no aconseja.
+1. **It works offline.** It does not just avoid the internet; it has no permission to use it.
+2. **Logging takes one tap.** If logging is slower than skipping it, people will skip it.
+3. **It describes, it does not judge.** It shows what you logged. It does not score adherence, set goals, or give advice.
 
-> **Estado:** `2.0.0`, primera versión estable. Se usa a diario, pero solo se ha probado en unos pocos dispositivos: si algo falla, abre un *issue*. El APK está en [Releases](https://github.com/D4vRAM369/PillMate/releases/latest); no está en Google Play.
+> **Status:** `2.0.0` is the first stable release. It is used daily, but has only been tested on a small number of devices. If something breaks, please open an issue. Download the APK from [Releases](https://github.com/D4vRAM369/PillMate/releases/latest); PillMate is not on Google Play.
 
-## Qué hace
+## Features
 
-### Registrar
+### Log doses
 
-- **Un toque.** Cuatro accesos rápidos en la pantalla principal. Pulsación larga para ajustar cantidad u hora. Si te equivocas, *Deshacer*.
-- **Sin abrir la app.** Un widget de escritorio y una notificación persistente con tus medicamentos habituales.
-- **Widget a tu gusto.** Se redimensiona (2×2, una fila o una columna) y se adapta solo. Tres formas, tres densidades y ocho colores.
-- **Medias y cuartas unidades.** La cantidad avanza de 0,25 en 0,25.
-- **Notas.** De texto en cada toma, y de voz cifradas.
-- **Archivar.** Los medicamentos que casi no usas salen de Inicio, el widget y los recordatorios sin borrar su historial. Se recuperan desde el icono de archivados en *Meds*.
+- **One tap.** Four quick actions on the home screen. Long-press to change the amount or time. If you make a mistake, undo it.
+- **Without opening the app.** Use a home-screen widget or a persistent notification to log a dose.
+- **A widget that fits your setup.** Resize it to 2×2, a row, or a column. Choose from three shapes, three densities, and eight colors.
+- **Half and quarter doses.** Amounts step by 0.25.
+- **Notes.** Add a text note to a dose or record an encrypted voice note.
+- **Archive.** Medications you rarely use leave Home, the widget and reminders without losing their history. Bring them back from the archive icon in *Meds*.
 
-### Entender
+### See your pattern
 
-- **Reloj de 24 horas.** Cada toma es un punto con el color de su medicamento. Con un día ves el momento exacto; con una semana o un mes, los puntos se convierten en barras y ves a qué horas se concentran. Toca un punto o una barra para ver qué fue.
-- **Tu patrón, en números.** Hora más activa, intervalo habitual entre tomas, medicamento más registrado y día con más tomas. Calculado con aritmética, sin IA.
-- **Estadísticas por medicamento.** Cantidad por día (mg, ml, gotas) y número de tomas, con las distintas dosis de un mismo medicamento agrupadas.
-- **Historial.** Por día, semana o mes, con búsqueda en las notas.
+- **24-hour clock.** Each dose appears as a dot in its medication's color. A day shows the exact time; a week or month groups doses by hour. Tap a dot or bar to see what was logged.
+- **Your pattern in numbers.** See your most active hour, usual interval between doses, most logged medication, and day with the most doses. These insights use arithmetic, not AI.
+- **Medication statistics.** See daily amounts (mg, ml, drops) and dose counts, with strengths of the same medication grouped together.
+- **History.** Browse by day, week, or month, and search notes.
 
-### Tus datos
+### Your data
 
-- **Copia de seguridad** completa en ZIP, restaurable. Exportación a **CSV** y a **PDF**.
-- **Bloqueo biométrico** opcional.
+- Create a restorable **ZIP backup**, or export to **CSV** or **PDF**.
+- Optionally lock the app with biometrics.
 
-### Y además
+### More
 
-- **Introducción interactiva** al abrir la app por primera vez: cuatro páginas que se tocan, no que se leen. Se puede repetir desde Ajustes.
-- **Dos diseños:** *Ritmo* (el nuevo) y *Clásico*, con tema claro, oscuro y Material You.
+- **Interactive introduction:** four short, tappable pages the first time you open the app. You can replay them from Settings.
+- **Two designs:** *Rhythm* and *Classic*, with light, dark, and Material You themes.
 
-## Privacidad
+## Privacy
 
-La app **no tiene permiso de internet**. No puede enviar nada a ningún sitio, y hay un test que falla si alguien se lo añade ([`PrivacyContractTest`](app/src/test/java/com/d4vram/pillmate2/ai/PrivacyContractTest.kt)).
+PillMate **has no internet permission**. It cannot send your data anywhere. An automated test checks that the final app package does not include internet access ([`PrivacyContractTest`](app/src/test/java/com/d4vram/pillmate2/ai/PrivacyContractTest.kt)).
 
-- Sin cuentas, sin analítica, sin publicidad, sin servicios de terceros.
-- Todo se guarda en el dispositivo. Las copias salen solo cuando tú las exportas.
+- No accounts, analytics, ads, or third-party services.
+- Data stays on your device. It leaves only when you choose to export it.
 
-Permisos que sí pide, y para qué:
+Permissions and why the app uses them:
 
-| Permiso | Para qué |
+| Permission | Purpose |
 |---|---|
-| Notificaciones, alarmas exactas, arranque | Recordatorios opcionales y notificación de toma rápida |
-| Micrófono | Notas de voz |
-| Cámara y fotos | Foto del medicamento |
-| Biometría | Bloqueo de la app |
+| Notifications, exact alarms, startup | Optional reminders and the quick-dose notification |
+| Microphone | Voice notes |
+| Camera and photos | Medication photos |
+| Biometrics | App lock |
 
-## Lo que no es
+## What it is not
 
-PillMate describe lo que registras; **no da consejo médico**. No calcula dosis máximas, no avisa de interacciones y no puntúa tu "adherencia". No es un producto sanitario. Las decisiones sobre tu medicación son tuyas y de quien te la prescribe.
+PillMate describes what you log; it **does not give medical advice**. It does not calculate maximum doses, check interactions, or score your adherence. It is not a medical device. Decisions about your medication remain between you and your prescriber.
 
-## Instalar
+## Install
 
-1. Descarga el APK de la [última versión](https://github.com/D4vRAM369/PillMate/releases/latest).
-2. Ábrelo en el móvil. Android te pedirá permiso para instalar apps desde ese origen (el navegador o el gestor de archivos): acéptalo.
-3. Abre PillMate. La introducción te enseña lo básico en un minuto.
+1. Download the latest APK from [Releases](https://github.com/D4vRAM369/PillMate/releases/latest).
+2. Open it on your phone. Android will ask you to allow installs from that source, such as your browser or file manager.
+3. Open PillMate. The introduction covers the basics in about a minute.
 
-Requiere Android 8.0 o superior.
+Requires Android 8.0 or later.
 
-**Actualizaciones.** La app no tiene internet, así que no puede avisarte de versiones nuevas. Puedes mirar [Releases](https://github.com/D4vRAM369/PillMate/releases) de vez en cuando o usar [Obtainium](https://github.com/ImranR98/Obtainium), que vigila este repositorio por ti. Al actualizar, tus datos se conservan.
+**Updates.** PillMate has no internet access, so it cannot notify you about new versions. Check [Releases](https://github.com/D4vRAM369/PillMate/releases) or use [Obtainium](https://github.com/ImranR98/Obtainium) to watch this repository. Updating preserves your data.
 
-**Antes de actualizar o cambiar de móvil**, haz una copia de seguridad en Ajustes → Datos.
+**Before updating or changing phones**, create a backup from Settings → Data.
 
-## Compilar
+## Build
 
-Necesitas Android Studio (o el SDK de Android) y JDK 17 o superior.
+You need Android Studio (or the Android SDK) and JDK 17 or later.
 
 ```bash
 git clone https://github.com/D4vRAM369/PillMate.git
 cd PillMate
-./gradlew :app:assembleDebug        # compila
-./gradlew :app:testDebugUnitTest    # tests unitarios
-./gradlew :app:installDebug         # instala en un dispositivo conectado
+./gradlew :app:assembleDebug        # build
+./gradlew :app:testDebugUnitTest    # run unit tests
 ```
 
-Si ya usas PillMate en ese dispositivo y solo quieres probar cambios, añade `-Pdev`: la build se instala como **PillMate Dev** (`dev.d4vram.pillmate2`), una app aparte con su propia base de datos, y tus datos reales no se tocan.
+To install a separate development build alongside your regular app, use the `-Pdev` variant:
 
 ```bash
-./gradlew :app:installDebug -Pdev
+./gradlew :app:assembleDebug -Pdev
+adb install --user 0 -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Para compilar `release` hace falta un `keystore.properties` en la raíz (no se versiona) con `storeFile`, `storePassword`, `keyAlias` y `keyPassword`.
+The development build uses the application ID `dev.d4vram.pillmate2` and has its own database.
 
-## Cómo está hecha
+To build a signed release, add a local, untracked `keystore.properties` file in the project root with `storeFile`, `storePassword`, `keyAlias`, and `keyPassword`.
 
-Kotlin · Jetpack Compose y Material 3 · Room · DataStore · Glance (widget) · Navigation Compose. Mínimo Android 8.0 (API 26), compilada contra Android 15 (API 35).
+## How it works
 
-Un solo módulo, arquitectura MVVM: pantallas en Compose, `ViewModel` con `StateFlow`, un repositorio y Room debajo.
+Kotlin · Jetpack Compose and Material 3 · Room · DataStore · Glance (widget) · Navigation Compose. Minimum Android version: API 26 (Android 8.0); compiled against Android 15 (API 35).
+
+The app has one module and follows MVVM: Compose screens, `ViewModel`s with `StateFlow`, a repository, and Room underneath.
 
 ```
 app/src/main/java/com/d4vram/pillmate2/
-├── data/            Room (entidades, DAO, migraciones), repositorio, copias y exportación
-├── model/           Modelos que usa la interfaz
-├── ai/              SmartInsightEngine: el "patrón en números". Aritmética, pese al nombre
-├── notifications/   Recordatorios y notificación de toma rápida
-├── widget/          Widget de escritorio (Glance)
+├── data/            Room (entities, DAOs, migrations), repository, backup and export
+├── model/           Models used by the interface
+├── ai/              SmartInsightEngine: arithmetic-based patterns, despite the name
+├── notifications/   Reminders and the quick-dose notification
+├── widget/          Home-screen widget (Glance)
 └── ui/
-    ├── screens/     Home, Medicamentos, Historial, Estadísticas, Notas, Ajustes
-    ├── timeline/    Reloj de 24 horas
-    ├── onboarding/  Introducción
-    └── theme/       Temas, diseños y preferencias
+    ├── screens/     Home, medications, history, statistics, notes, settings
+    ├── timeline/    24-hour clock
+    ├── onboarding/  Introduction
+    └── theme/       Themes, designs, and preferences
 ```
 
-El esquema de la base de datos se exporta a [`app/schemas/`](app/schemas) para poder comprobar las migraciones.
+The Room schema is exported to [`app/schemas/`](app/schemas) so migrations can be checked.
 
-## Contribuir
+## Contribute
 
-Los *issues* con fallos o ideas son bienvenidos. Antes de proponer una función, ten en cuenta los tres principios de arriba y uno más: la app no usa IA.
+Bug reports and ideas are welcome. Before suggesting a feature, keep the three principles above in mind—and one more: the app does not use AI.
 
-Si envías cambios: que `./gradlew :app:testDebugUnitTest` pase, y nada de datos de medicación reales en ejemplos, capturas ni tests.
+For code changes, run `./gradlew :app:testDebugUnitTest`. Do not include real medication data in examples, screenshots, or tests.
 
-## Apoyar el proyecto
+## Support
 
-PillMate es gratis, sin anuncios ni compras. Si te resulta útil y quieres invitarme a un café:
+PillMate is free and will stay free, with no ads or in-app purchases. If you find it useful and would like to buy me a coffee:
 
 <a href="https://www.buymeacoffee.com/D4vRAM369"><img src="https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy Me a Coffee"></a>
 
-## Licencia
+## License
 
-Copyright © 2025-2026 D4vRAM369
+Copyright © 2025–2026 D4vRAM369
 
-PillMate es software libre: puedes redistribuirlo y modificarlo bajo los términos de la [GNU General Public License, versión 3](LICENSE) o, si lo prefieres, cualquier versión posterior. Se distribuye con la esperanza de que sea útil, pero **sin ninguna garantía**.
+PillMate is free software: you may redistribute and modify it under the terms of the [GNU General Public License, version 3](LICENSE), or any later version. It is distributed in the hope that it will be useful, but **without any warranty**.
 
-En corto: puedes usarla, estudiarla, cambiarla y compartirla. Si distribuyes una versión modificada, tiene que seguir siendo libre y bajo esta misma licencia.
+In short: you can use it, study it, change it, and share it. If you distribute a modified version, it must remain free under this same license.
